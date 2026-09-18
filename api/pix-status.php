@@ -53,28 +53,7 @@ if ($expiresTs > 0 && $now >= $expiresTs) {
     ]);
 }
 
-// 3. Check Mock Auto-confirm
-$autoConfirmTs = !empty($tx['mock_auto_confirm_at']) ? strtotime($tx['mock_auto_confirm_at']) : 0;
-if ($tx['gateway'] === 'mock' && $autoConfirmTs > 0 && $now >= $autoConfirmTs) {
-    // Auto-confirm mock payment
-    $txRepo->markPaid($txId);
-    $orderRepo->markPaid((int)$order['id']);
-    $eventRepo->log($workspace->id, (int)$order['id'], 'pix_paid', [
-        'transaction_id' => $txId,
-        'amount'         => (float)$tx['amount'],
-        'auto_confirmed' => true
-    ]);
-
-    JsonResponse::send([
-        'status'             => 'success',
-        'transaction_status' => 'paid',
-        'paid'               => true,
-        'paid_at'            => date('Y-m-d H:i:s'),
-        'quotas'             => 110,
-    ]);
-}
-
-// 4. Still pending
+// 3. Still pending
 $secondsRemaining = max(0, $expiresTs - $now);
 JsonResponse::send([
     'status'             => 'success',
@@ -83,3 +62,4 @@ JsonResponse::send([
     'expires_at'         => $tx['expires_at'],
     'seconds_remaining'  => $secondsRemaining
 ]);
+

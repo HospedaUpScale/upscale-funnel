@@ -31,7 +31,6 @@ return [
 
     'pix' => [
         'expiry_minutes' => (int) Env::get('PIX_EXPIRY_MINUTES', 15),
-        'mock_autoconfirm_seconds' => (int) Env::get('MOCK_PIX_AUTOCONFIRM_SECONDS', 25),
         'sandbox_pix_key' => Env::get('SANDBOX_PIX_KEY', '00000000000'),
         'sandbox_merchant_name' => Env::get('SANDBOX_MERCHANT_NAME', 'UPSCALE SANDBOX'),
         'sandbox_merchant_city' => Env::get('SANDBOX_MERCHANT_CITY', 'SAO PAULO'),

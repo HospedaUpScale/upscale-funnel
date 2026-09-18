@@ -110,7 +110,7 @@ $transaction = $txRepo->create([
     'pix_qr_base64'       => $charge->qrBase64,
     'amount'              => $price,
     'split_details'       => $splitDetails,
-    'mock_auto_confirm_at'=> $charge->mockAutoConfirmAt,
+    'mock_auto_confirm_at'=> null,
     'expires_at'          => $charge->expiresAt,
 ]);
 

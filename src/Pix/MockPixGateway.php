@@ -49,10 +49,7 @@ class MockPixGateway implements PixGatewayInterface
 
         // 3. Timers
         $expiryMinutes = $this->config['expiry_minutes'] ?? 15;
-        $autoConfirmSecs = $this->config['mock_autoconfirm_seconds'] ?? 25;
-
         $expiresAt = date('Y-m-d H:i:s', time() + ($expiryMinutes * 60));
-        $autoConfirmAt = date('Y-m-d H:i:s', time() + $autoConfirmSecs);
 
         return new PixCharge(
             gatewayTxId: $gatewayTxId,
@@ -60,7 +57,7 @@ class MockPixGateway implements PixGatewayInterface
             qrBase64: $qrBase64,
             expiresAt: $expiresAt,
             amount: $amount,
-            mockAutoConfirmAt: $autoConfirmAt
+            mockAutoConfirmAt: null
         );
     }
 

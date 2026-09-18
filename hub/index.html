@@ -2009,17 +2009,17 @@
           <div>
             <div class="integration-overview-title" id="integration-overview-title">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="9"/></svg>
-              Ecossistema conectado
+              Conexões do Ecossistema
             </div>
-            <div class="integration-overview-sub">Acompanhe a cadeia completa da campanha ao pagamento.</div>
+            <div class="integration-overview-sub">Acompanhe o status real de cada integração e webhook.</div>
           </div>
           <button class="btn-pill-secondary" onclick="navigate('integrations')">Gerenciar integrações</button>
         </div>
         <div class="integration-grid">
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Plataforma de rifa</span><span class="health-dot ok" data-health="campaigns"></span></span><span class="integration-mini-state" data-health-label="campaigns">Sorteamos conectado</span></button>
+          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Plataforma de rifa</span><span class="health-dot warn" data-health="campaigns"></span></span><span class="integration-mini-state" data-health-label="campaigns">Aguardando integração</span></button>
           <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Widget de oferta</span><span class="health-dot ok" data-health="widget"></span></span><span class="integration-mini-state" data-health-label="widget">Embed operacional</span></button>
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Gateway Pix</span><span class="health-dot" data-health="pix"></span></span><span class="integration-mini-state" data-health-label="pix">Verificando API</span></button>
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Webhooks</span><span class="health-dot" data-health="webhook"></span></span><span class="integration-mini-state" data-health-label="webhook">Verificando eventos</span></button>
+          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Gateway Pix</span><span class="health-dot warn" data-health="pix"></span></span><span class="integration-mini-state" data-health-label="pix">Aguardando gateway</span></button>
+          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Webhooks</span><span class="health-dot warn" data-health="webhook"></span></span><span class="integration-mini-state" data-health-label="webhook">Aguardando eventos</span></button>
           <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Vídeo Vturb</span><span class="health-dot warn" data-health="vturb"></span></span><span class="integration-mini-state" data-health-label="vturb">Configuração opcional</span></button>
         </div>
       </section>
@@ -2106,7 +2106,7 @@
 
               <div>
                 <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:600; margin-bottom:4px;">
-                  <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4l-2.6-2.6a1 1 0 0 0-1.4 0l-1.4 1.4"/><path d="m13 7-2-2a1 1 0 0 0-1.4 0L5.3 9.3a1 1 0 0 0 0 1.4l2.6 2.6a1 1 0 0 0 1.4 0l1.4-1.4"/><path d="m18 11 3 3"/><path d="m3 13 3-3"/></svg> Parceiro White-Label (ex: Play55)</span>
+                  <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4l-2.6-2.6a1 1 0 0 0-1.4 0l-1.4 1.4"/><path d="m13 7-2-2a1 1 0 0 0-1.4 0L5.3 9.3a1 1 0 0 0 0 1.4l2.6 2.6a1 1 0 0 0 1.4 0l1.4-1.4"/><path d="m18 11 3 3"/><path d="m3 13 3-3"/></svg> Parceiro / Afiliado</span>
                   <strong class="fx-num" style="color:var(--ink-800)">5%</strong>
                 </div>
                 <div style="height:6px; background:var(--gray-100); border-radius:3px; overflow:hidden;">
@@ -2195,10 +2195,10 @@
                 </div>
               </div>
               <h2 id="hero-campaign-title" style="font-family:var(--font-ui); font-size:20px; font-weight:800; color:var(--ink-900); margin:0; letter-spacing:-0.02em;">
-                Kit Bobzão Bitruck + Ford F250
+                Aguardando Ação Ativa
               </h2>
               <p id="hero-campaign-meta" style="font-size:12px; color:var(--gray-400); margin:4px 0 0;">
-                Plataforma: <strong id="hero-meta-platform" style="color:var(--ink-900);">Sorteamos</strong> | Cota Base: <strong id="hero-meta-price" style="color:var(--ink-900);">R$ 90,00</strong> | Booster: <strong id="hero-meta-booster" style="color:var(--ink-900);">110 Cotas</strong>
+                Plataforma: <strong id="hero-meta-platform" style="color:var(--ink-900);">—</strong> | Cota Base: <strong id="hero-meta-price" style="color:var(--ink-900);">—</strong> | Booster: <strong id="hero-meta-booster" style="color:var(--ink-900);">—</strong>
               </p>
             </div>
 
@@ -2662,20 +2662,20 @@
 
         <div class="integration-catalog">
           <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span><div><h3>Plataforma de rifa</h3><p>Origem dos pedidos, compradores e campanhas.</p></div></div><span class="health-dot ok" data-health="campaigns"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Provedor</span><strong>Sorteamos / API externa</strong></div><div class="integration-meta-row"><span>Responsabilidade</span><strong>Pedido e liberação de cotas</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="campaigns">Conectado</strong></div></div>
+            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span><div><h3>Plataforma de rifa</h3><p>Origem dos pedidos, compradores e campanhas.</p></div></div><span class="health-dot warn" data-health="campaigns"></span></div>
+            <div class="integration-meta"><div class="integration-meta-row"><span>Provedor</span><strong>API / Webhook externo</strong></div><div class="integration-meta-row"><span>Responsabilidade</span><strong>Pedido e liberação de cotas</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="campaigns">Aguardando</strong></div></div>
           </article>
           <article class="integration-card">
             <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="3"/><path d="M9 18h6"/></svg></span><div><h3>Widget de oferta</h3><p>Raspadinha, personalização e bridge do iframe.</p></div></div><span class="health-dot ok" data-health="widget"></span></div>
             <div class="integration-meta"><div class="integration-meta-row"><span>Canal</span><strong>Iframe + postMessage</strong></div><div class="integration-meta-row"><span>Eventos</span><strong>card:pronto · dx:altura</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="widget">Operacional</strong></div></div>
           </article>
           <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 15h2"/></svg></span><div><h3>Gateway Pix e split</h3><p>Geração de cobranças e divisão automática.</p></div></div><span class="health-dot" data-health="pix"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Fluxos</span><strong>Pré-bump e pós-Pix</strong></div><div class="integration-meta-row"><span>Split padrão</span><strong>85% · 10% · 5%</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="pix">Verificando</strong></div></div>
+            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 15h2"/></svg></span><div><h3>Gateway Pix e split</h3><p>Geração de cobranças e divisão automática.</p></div></div><span class="health-dot warn" data-health="pix"></span></div>
+            <div class="integration-meta"><div class="integration-meta-row"><span>Fluxos</span><strong>Pré-bump e pós-Pix</strong></div><div class="integration-meta-row"><span>Split padrão</span><strong>85% · 10% · 5%</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="pix">Aguardando</strong></div></div>
           </article>
           <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a3 3 0 1 0-2.83-4H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H8.83A3 3 0 1 0 6 20"/></svg></span><div><h3>Webhooks e eventos</h3><p>Confirmação bancária, baixa e rastreabilidade.</p></div></div><span class="health-dot" data-health="webhook"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Entrada</span><strong>/api/webhook/pix</strong></div><div class="integration-meta-row"><span>Auditoria</span><strong>Logs por workspace</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="webhook">Verificando</strong></div></div>
+            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a3 3 0 1 0-2.83-4H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H8.83A3 3 0 1 0 6 20"/></svg></span><div><h3>Webhooks e eventos</h3><p>Confirmação bancária, baixa e rastreabilidade.</p></div></div><span class="health-dot warn" data-health="webhook"></span></div>
+            <div class="integration-meta"><div class="integration-meta-row"><span>Entrada</span><strong>/api/webhook/pix</strong></div><div class="integration-meta-row"><span>Auditoria</span><strong>Logs por workspace</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="webhook">Aguardando</strong></div></div>
           </article>
           <article class="integration-card">
             <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3V9z"/></svg></span><div><h3>Vturb / ConverteAI</h3><p>Player de vídeo e sincronização do pitch.</p></div></div><span class="health-dot warn" data-health="vturb"></span></div>
@@ -2695,7 +2695,7 @@
         <div class="card">
           <div class="card-title">Como Plugar Qualquer Plataforma de Rifas à Rede upScale Media</div>
           <p style="font-size:13.5px; color:var(--gray-600); margin-bottom:20px;">
-            A <strong>upScale Media Network</strong> é a nova rede de monetização e upsell. Para conectar plataformas como <strong>Sorteamos</strong>, <strong>Play55</strong> ou qualquer checkout externo, basta copiar as credenciais abaixo:
+            A <strong>upScale Media Network</strong> é a nova rede de monetização e upsell. Para conectar plataformas externas (como <strong>Sorteamos</strong>, <strong>SorteiMe</strong> ou checkout próprio), basta copiar as credenciais abaixo:
           </p>
 
           <div style="display:grid; gap:16px; margin-bottom:24px;">
@@ -2742,27 +2742,19 @@ window.addEventListener('message', function(e) {
         <div class="grid-2">
           <div>
             <div class="card">
-              <div class="card-title">Simulador de Experiência do Comprador</div>
+              <div class="card-title">Visualização do Comprador (Mobile)</div>
               <p style="font-size:13px; color:var(--gray-500); margin-bottom:16px;">
-                Teste a raspadinha em tempo real. Ao clicar em "Ativar", uma cobrança Pix real é gerada pela API. Você pode forçar a confirmação bancária com o botão abaixo para testar a explosão de confetes e ativação de cotas:
+                Esta é a visualização exata que o comprador terá no celular ao acessar o Booster ou raspar a cartela após a compra de cotas na rifa.
               </p>
 
-              <div style="margin-bottom:14px;">
-                <label style="font-size:12px; font-weight:700; color:var(--gray-600);">ID da Transação Pix Gerada:</label>
-                <input type="number" class="field-control" id="sim-force-tx" value="1" style="width:100%; margin-top:4px;" />
+              <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="btn-pill" style="flex:1;" onclick="document.getElementById('sim-frame').src = document.getElementById('sim-frame').src;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Recarregar Prévia
+                </button>
+                <button class="btn-pill-secondary" onclick="testarHandshake()">
+                  Testar API Handshake
+                </button>
               </div>
-
-              <button class="btn-pill" style="width:100%;" onclick="forcarPagamentoSimulador()">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Simular Confirmação do Pix no Banco (BACEN)
-              </button>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Disparo de Handshake de Teste</div>
-              <p style="font-size:13px; color:var(--gray-500); margin-bottom:12px;">
-                Verifica se a API responde à verificação de integridade da plataforma parceira:
-              </p>
-              <button class="btn-pill-secondary" onclick="testarHandshake()">Disparar Ping de Handshake</button>
               <pre id="handshake-output" style="margin-top:12px; padding:10px; background:var(--gray-50); border:1px solid var(--gray-150); border-radius:8px; font-size:11px; font-family:var(--font-accent); max-height:160px; overflow:auto; display:none;"></pre>
             </div>
           </div>
@@ -3879,30 +3871,6 @@ window.addEventListener('message', function(e) {
     .catch(e => console.error(e));
   }
 
-  function forcarPorId(txId) {
-    var token = getAdminToken();
-    fetch('../api/admin/force-paid.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ transaction_id: txId })
-    })
-    .then(r => r.json())
-    .then(res => {
-      if (res.status === 'success') {
-        showToast('Pagamento da Transação #' + txId + ' confirmado com sucesso!', 'success');
-        carregarMetricas();
-      } else {
-        showToast('Erro ao confirmar: ' + (res.message || 'Falha'), 'error');
-      }
-    })
-    .catch(err => showToast('Erro de conexão ao forçar pagamento.', 'error'));
-  }
-
-  function forcarPagamentoSimulador() {
-    var txId = parseInt(document.getElementById('sim-force-tx').value) || 1;
-    forcarPorId(txId);
-  }
-
   function testarHandshake() {
     fetch('../api/index.php?format=json')
     .then(r => r.json())
@@ -3945,18 +3913,34 @@ window.addEventListener('message', function(e) {
     atualizarSaudeIntegracao('widget', 'ok', 'Embed operacional');
 
     Promise.allSettled(checks).then(function(results) {
-      var ready = 1;
-      if (results[0].status === 'fulfilled' && results[0].value.status === 'success') {
-        atualizarSaudeIntegracao('campaigns', 'ok', 'Campanhas sincronizadas'); ready++;
-      } else atualizarSaudeIntegracao('campaigns', 'error', 'Conexão indisponível');
+      var ready = 1; // Widget embed operacional
+      if (results[0].status === 'fulfilled' && results[0].value && results[0].value.status === 'success' && results[0].value.data && results[0].value.data.length > 0) {
+        atualizarSaudeIntegracao('campaigns', 'ok', 'Campanhas ativas (' + results[0].value.data.length + ')'); ready++;
+      } else {
+        atualizarSaudeIntegracao('campaigns', 'warn', 'Aguardando integração');
+      }
 
-      if (results[1].status === 'fulfilled' && results[1].value.status === 'success') {
-        atualizarSaudeIntegracao('pix', 'ok', 'API Pix respondendo'); ready++;
-      } else atualizarSaudeIntegracao('pix', 'error', 'Gateway indisponível');
+      if (results[1].status === 'fulfilled' && results[1].value && results[1].value.status === 'success') {
+        var metricsData = results[1].value.metrics || {};
+        if (metricsData.paid_orders > 0) {
+          atualizarSaudeIntegracao('pix', 'ok', 'Processando pagamentos'); ready++;
+        } else {
+          atualizarSaudeIntegracao('pix', 'warn', 'Aguardando 1º pagamento');
+        }
+      } else {
+        atualizarSaudeIntegracao('pix', 'warn', 'Gateway aguardando config');
+      }
 
-      if (results[2].status === 'fulfilled' && results[2].value.status === 'success') {
-        atualizarSaudeIntegracao('webhook', 'ok', 'Auditoria disponível'); ready++;
-      } else atualizarSaudeIntegracao('webhook', 'error', 'Eventos indisponíveis');
+      if (results[2].status === 'fulfilled' && results[2].value && results[2].value.status === 'success') {
+        var logs = results[2].value.data || [];
+        if (logs.length > 0) {
+          atualizarSaudeIntegracao('webhook', 'ok', 'Webhooks recebidos (' + logs.length + ')'); ready++;
+        } else {
+          atualizarSaudeIntegracao('webhook', 'warn', 'Aguardando webhook');
+        }
+      } else {
+        atualizarSaudeIntegracao('webhook', 'warn', 'Aguardando webhook');
+      }
 
       var vturbInput = document.getElementById('camp-vturb-player');
       var hasVturb = vturbInput && vturbInput.value.trim().length > 0;
