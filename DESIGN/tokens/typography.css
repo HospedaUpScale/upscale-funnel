@@ -1,0 +1,55 @@
+:root{
+/* families */
+--font-display:"Urbanist",system-ui,sans-serif;      /* headlines, big numbers, marketing */
+--font-ui:"Plus Jakarta Sans",system-ui,sans-serif;  /* product UI, body, labels */
+--font-accent:"Plus Jakarta Sans",system-ui,sans-serif;  /* tabular data, numbers, UI */
+
+/* sizes — taken from the dashboard screens (dense UI) */
+--text-2xs:11px;
+--text-xs:12px;
+--text-sm:13px;
+--text-base:14px;
+--text-md:16px;
+--text-lg:18px;
+--text-xl:20px;
+--text-2xl:24px;
+--text-3xl:28px;
+--text-4xl:32px;
+--text-5xl:40px;
+--text-6xl:56px;
+--text-7xl:72px;
+
+/* weights */
+--weight-light:300;
+--weight-regular:400;
+--weight-medium:500;
+--weight-semibold:600;
+--weight-bold:700;
+
+/* line heights */
+--leading-tight:1.08;
+--leading-snug:1.2;
+--leading-normal:1.45;
+--leading-relaxed:1.6;
+
+/* tracking */
+--tracking-tight:-0.02em;
+--tracking-snug:-0.01em;
+--tracking-normal:0;
+--tracking-wide:0.04em;
+--tracking-caps:0.09em;
+
+/* composed roles */
+--type-display:var(--weight-light) var(--text-6xl)/var(--leading-tight) var(--font-display);
+--type-h1:var(--weight-semibold) var(--text-4xl)/var(--leading-snug) var(--font-display);
+--type-h2:var(--weight-semibold) var(--text-2xl)/var(--leading-snug) var(--font-display);
+--type-h3:var(--weight-semibold) var(--text-md)/var(--leading-snug) var(--font-ui);
+--type-card-title:var(--weight-semibold) var(--text-md)/1.25 var(--font-ui);
+--type-body:var(--weight-regular) var(--text-base)/var(--leading-normal) var(--font-ui);
+--type-body-sm:var(--weight-regular) var(--text-sm)/var(--leading-normal) var(--font-ui);
+--type-label:var(--weight-medium) var(--text-xs)/1.3 var(--font-ui);
+--type-caption:var(--weight-regular) var(--text-2xs)/1.35 var(--font-ui);
+--type-eyebrow:var(--weight-semibold) var(--text-2xs)/1.2 var(--font-ui);
+--type-metric:var(--weight-bold) var(--text-3xl)/1.05 var(--font-ui);
+--type-numeric:var(--weight-medium) var(--text-sm)/1.2 var(--font-accent);
+}

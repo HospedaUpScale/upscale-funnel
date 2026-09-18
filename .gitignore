@@ -1,0 +1,25 @@
+# Ambiente e secrets
+.env
+*.sqlite
+storage/database.sqlite
+
+# Backups
+_design_backup_*/
+
+# Logs
+api/logs/*.log
+*.log
+
+# Testes
+teste/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Deploy zip
+*.zip

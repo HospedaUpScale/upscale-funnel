@@ -1,0 +1,5 @@
+/* Webfonts. The source case study names three families: Space Grotesk, Urbanist,
+   Plus Jakarta Sans. No binaries were supplied, so all three load from Google Fonts
+   (they are the originals, not substitutes). Swap these @import lines for local
+   @font-face rules if self-hosted files become available. */
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..800;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400&family=Space+Grotesk:wght@400..700&display=swap");

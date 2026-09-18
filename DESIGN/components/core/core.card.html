@@ -1,0 +1,46 @@
+<!-- @dsCard group="Components" viewport="700x260" name="Core — buttons, badges, controls" subtitle="Button variants, icon buttons, badges, avatars, tabs, switch, progress" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>window.FYNIX_ASSET_BASE="../../"</script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0;background:var(--surface-canvas)}#root{padding:18px}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:grid;gap:12px}.lbl{font:var(--type-eyebrow);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-subtle)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { Button, IconButton, Badge, Avatar, Tabs, Switch, ProgressBar, Icon } = window.UpscaleHubDesignSystem_b4eac1;
+function Demo(){const [tab,setTab]=React.useState('expense');const [on,setOn]=React.useState(true);return(
+<div className="col">
+  <div className="row">
+    <Button>Get Started</Button>
+    <Button variant="brand" iconRight="arrow-up-right">Send</Button>
+    <Button variant="secondary" iconRight="arrow-down">Deposit</Button>
+    <Button variant="soft" icon="sparkles">Get Plus</Button>
+    <Button variant="ghost" icon="download">Export</Button>
+    <Button variant="danger" icon="trash-2">Delete</Button>
+    <Button disabled>Disabled</Button>
+  </div>
+  <div className="row">
+    <Button size="sm">Small</Button><Button size="md">Medium</Button><Button size="lg">Large</Button>
+    <Button variant="brand" pill={false} size="sm">Exchange</Button>
+    <span style={{width:12}}/>
+    <IconButton icon="settings" label="Settings"/><IconButton icon="bell" label="Alerts" badge/>
+    <IconButton icon="plus" label="Add" variant="brand"/><IconButton icon="arrow-up" label="Send" variant="inverse"/>
+    <IconButton icon="more-horizontal" label="More" variant="bare"/><IconButton icon="gift" label="Rewards" active/>
+  </div>
+  <div className="row">
+    <Badge tone="success">Completed</Badge><Badge tone="warning">Pending</Badge><Badge tone="danger">Failed</Badge>
+    <Badge tone="neutral" dot>Draft</Badge><Badge tone="brand">1 Strategy</Badge><Badge tone="inverse">Guide</Badge>
+    <Badge tone="outline" icon="trending-up">+12%</Badge>
+    <span style={{width:8}}/>
+    <Avatar name="Jenny Wilson" size="xs"/><Avatar name="Arlene A" size="sm"/><Avatar name="Jenny Wilson" ring/><Avatar name="AI" size="lg" status="online"/>
+  </div>
+  <div className="row" style={{gap:28}}>
+    <Tabs items={[{id:'income',label:'Income',meta:'($4,800)'},{id:'expense',label:'Expense',meta:'($3,500)'}]} value={tab} onChange={setTab}/>
+    <Tabs variant="pill" items={['Daily','Weekly','Monthly']} value="Weekly"/>
+    <Switch checked={on} onChange={setOn} label="AI insights"/>
+    <ProgressBar style={{width:150}} value={45} label="Spending limit" valueLabel="45%"/>
+  </div>
+</div>);}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

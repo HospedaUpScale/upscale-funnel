@@ -1,0 +1,58 @@
+# ==============================================================================
+# .htaccess - Hospedagem Raspadinha /rasp2/ (Hostinger / Apache)
+# ==============================================================================
+
+# 0. Rotas do funil e arquivo inicial dinâmico
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:config|migrations|scripts|src|storage)(?:/|$) - [F,L,NC]
+    RewriteRule ^f/([a-z0-9-]+)/?$ funnel.php?slug=$1 [L,QSA,NC]
+</IfModule>
+
+DirectoryIndex funnel.php index.html
+Options -Indexes +FollowSymLinks
+
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+
+# Bloqueio de segurança para arquivos sensíveis (.env, bancos SQLite e logs)
+<FilesMatch "(\.env|\.sqlite|\.log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 1. Desativa a restrição de X-Frame-Options herdada da Hostinger
+<IfModule mod_headers.c>
+    Header always unset X-Frame-Options
+    Header unset X-Frame-Options
+
+    # 2. Libera o Iframe para a rifa pai (sinceropremios.com, sorteamos.com.br e domínios próprios)
+    Header always set Content-Security-Policy "frame-ancestors 'self' * https://sinceropremios.com https://*.sinceropremios.com https://oferta.vagnerpecuaria.site https://vagnerpecuaria.site https://oferta.vendedorsincero.pro https://sorteamos.com.br https://*.sorteamos.com.br;"
+
+    # 3. Libera CORS para assets (fontes, vídeos, JSON)
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+</IfModule>
+
+# 4. Tipos MIME corretos
+<IfModule mod_mime.c>
+    AddType video/mp4 .mp4
+    AddType font/woff2 .woff2
+    AddType text/html .html
+    AddType application/javascript .js
+</IfModule>
+
+# 5. Evita cache agressivo em arquivos HTML de oferta
+<FilesMatch "\.(html|htm)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </IfModule>
+</FilesMatch>

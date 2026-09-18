@@ -1,0 +1,115 @@
+:root{
+/* ---- Brand primitives ---- */
+--blue-600:#0229C4; /* HEX #0229C4 — primary brand blue, from the upScale logo */
+--green-500:#9FE870; /* HEX #9FE870 — secondary accent / positive */
+--ink-900:#05153F;   /* deep navy ink, derived from the brand blue */
+--gray-500:#787878;  /* HEX #787878 — neutral gray */
+--white:#FFFFFF;
+
+/* ---- Blue ramp (primary) ---- */
+--blue-50:#EEF1FE;
+--blue-100:#DCE2FD;
+--blue-200:#B9C5FB;
+--blue-300:#8A9DF7;
+--blue-400:#4A63E8;
+--blue-500:#0F39D6;
+--blue-700:#021F96;
+--blue-800:#041A6B;
+
+/* ---- Green ramp (secondary accent, positive states) ---- */
+--green-50:#F3FCEC;
+--green-100:#E8F8DC;
+--green-200:#D3F2BD;
+--green-300:#BCEC9C;
+--green-400:#ACE885;
+--green-600:#8AD858;
+--green-700:#6FBF3F;
+
+/* ---- Navy ink ramp ---- */
+--ink-800:#071C52;
+--ink-700:#0A2469;
+--ink-600:#123080;
+--ink-300:#8A96BD;
+--ink-100:#DADEEC;
+
+/* ---- Neutral ramp (Clean Modern SaaS Slate) ---- */
+--gray-25:#FFFFFF;
+--gray-50:#F8FAFC;
+--gray-100:#F1F5F9;
+--gray-150:#E2E8F0;
+--gray-200:#CBD5E1;
+--gray-300:#94A3B8;
+--gray-400:#64748B;
+--gray-500:#475569;
+--gray-600:#334155;
+--gray-700:#1E293B;
+
+/* ---- Status primitives ---- */
+--red-600:#E5484D;
+--red-100:#FEE2E2;
+--amber-600:#D97706;
+--amber-100:#FEF3C7;
+
+/* ---- Semantic surfaces ---- */
+--surface-canvas:#F8FAFC;              /* app background behind cards */
+--surface-card:var(--white);           /* default card */
+--surface-sunken:var(--gray-50);       /* table heads, inset rows */
+--surface-raised:var(--white);
+--surface-inverse:var(--ink-900);      /* dark panels, dark buttons */
+--surface-brand:var(--blue-600);       /* hero/balance surfaces, brand fills */
+--surface-brand-soft:var(--blue-100);  /* tinted rows, active nav */
+--surface-accent:var(--green-500);     /* secondary accent fills */
+--surface-accent-soft:var(--green-100);
+--surface-hover:var(--gray-50);
+--surface-active:var(--gray-150);
+--surface-overlay:rgba(5,21,63,.36);   /* modal scrim */
+--surface-glass:rgba(255,255,255,.72); /* blurred toolbars */
+
+/* ---- Semantic text ---- */
+--text-heading:var(--ink-900);
+--text-body:var(--ink-900);
+--text-muted:var(--gray-500);
+--text-subtle:var(--gray-400);
+--text-on-brand:var(--white);       /* white on the brand blue */
+--text-on-accent:var(--ink-900);    /* ink on the lime accent — never white */
+--text-on-inverse:var(--white);
+--text-link:var(--blue-600);
+--text-positive:var(--green-700);
+--text-negative:var(--red-600);
+
+/* ---- Semantic borders ---- */
+--border-subtle:var(--gray-150);
+--border-default:var(--gray-200);
+--border-strong:var(--gray-300);
+--border-brand:var(--blue-600);
+--border-inverse:var(--ink-800);
+--focus-ring:rgba(2,41,196,.38);
+
+/* ---- Semantic status ---- */
+--status-success-fg:#2F7A1E;
+--status-success-bg:var(--green-100);
+--status-danger-fg:var(--red-600);
+--status-danger-bg:var(--red-100);
+--status-warning-fg:#9A6412;
+--status-warning-bg:var(--amber-100);
+--status-neutral-fg:var(--gray-600);
+--status-neutral-bg:var(--gray-100);
+--status-info-fg:var(--blue-700);
+--status-info-bg:var(--blue-50);
+
+/* ---- Data visualisation ---- */
+--chart-1:var(--blue-600);  /* income / primary series */
+--chart-2:var(--green-500); /* expense / secondary series */
+--chart-3:var(--ink-900);
+--chart-4:var(--blue-200);
+--chart-5:var(--gray-300);
+--chart-grid:var(--gray-150);
+--chart-axis:var(--gray-400);
+
+/* ---- Brand gradients ---- */
+--gradient-brand:radial-gradient(120% 140% at 12% 18%,#3A5BE8 0%,#0229C4 46%,#021F96 100%); /* @kind color */
+--gradient-ink:linear-gradient(145deg,#071C52 0%,#05153F 60%,#030E2B 100%); /* @kind color */
+--gradient-orb:radial-gradient(60% 60% at 32% 26%,#DCE2FD 0%,#4A63E8 36%,#0229C4 74%,#05153F 100%); /* @kind color */
+--gradient-page:linear-gradient(180deg,#F4F4F4 0%,#EDEDED 100%); /* @kind color */
+--gradient-protect:linear-gradient(180deg,rgba(237,237,237,0) 0%,#EDEDED 72%); /* @kind color */
+}

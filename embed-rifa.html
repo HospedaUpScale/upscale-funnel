@@ -1,0 +1,184 @@
+<!--
+  ════════════════════════════════════════════════════════════════
+  BOOSTER 110X — bloco para colar no painel da rifa
+  (página de obrigado / pós-pagamento)
+
+  Duas peças:
+    1. o iframe, que carrega o card hospedado
+    2. a ponte, que descobre o nome do comprador, repassa pro card
+       e ajusta a altura do iframe conforme o conteúdo muda
+
+  A ponte roda no contexto da página da rifa, então ela enxerga o
+  DOM da página de obrigado. O card, dentro do iframe, não enxerga.
+
+  ANTES DE PUBLICAR, troque CARD_URL pela URL onde o card está
+  hospedado. Precisa ser HTTPS e sem barra no final.
+  ════════════════════════════════════════════════════════════════
+-->
+
+<div id="booster-wrap" style="width:100%;max-width:640px;margin:0 auto;line-height:0">
+  <iframe
+    id="booster-frame"
+    src="https://oferta.vendedorsincero.pro/upscale1/"
+    title="Sua condição especial"
+    scrolling="no"
+    allow="autoplay; encrypted-media"
+    loading="eager"
+    style="display:block;width:100%;border:0;height:900px;background:transparent"
+  ></iframe>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── CONFIG ─────────────────────────────────────────────── */
+
+  // Origem exata do card. Sem barra no final. Precisa bater com
+  // o que está em data-origens dentro do card (mas ao contrário:
+  // lá é a origem do pai, aqui é a origem do filho).
+  var CARD_URL = 'https://oferta.vendedorsincero.pro';
+
+  // Merge tag da plataforma da rifa, se existir. Se ela substituir
+  // isso no servidor, é a rota mais confiável. Se não substituir,
+  // o valor continua sendo o texto literal e o filtro descarta.
+  var MERGE = '{{nome}}';
+
+  // Altura mínima, usada até o card informar a real.
+  var ALTURA_MIN = 620;
+
+  /* ── ESTADO ─────────────────────────────────────────────── */
+
+  var frame = document.getElementById('booster-frame');
+  var enviado = '';
+
+  /* ── HIGIENE DO NOME ────────────────────────────────────── */
+
+  function primeiroNome(s) {
+    if (!s) return '';
+    s = String(s).trim();
+    if (s.indexOf('{{') === 0 || s.indexOf('${') === 0) return '';  // merge tag crua
+    var p = s.split(/\s+/)[0];
+    if (!p || p.length < 2 || p.length > 24) return '';
+    if (/\d/.test(p)) return '';
+    if (!/^[A-Za-zÀ-ÿ'-]+$/.test(p)) return '';
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  }
+
+  /* ── ROTA 1: merge tag ──────────────────────────────────── */
+  function daMergeTag() {
+    return primeiroNome(MERGE);
+  }
+
+  /* ── ROTA 2: querystring da página de obrigado ──────────── */
+  function daUrl() {
+    try {
+      var q = new URLSearchParams(location.search);
+      var chaves = ['nome', 'name', 'first_name', 'firstname', 'cliente', 'comprador'];
+      for (var i = 0; i < chaves.length; i++) {
+        var n = primeiroNome(q.get(chaves[i]));
+        if (n) return n;
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  /* ── ROTA 3: DOM da página ──────────────────────────────── */
+  function doDom() {
+    // (a) marcações explícitas
+    try {
+      var seletores = [
+        '[data-nome-cliente]', '[data-buyer-name]', '[data-comprador]',
+        '.nome-cliente', '.buyer-name', '#nome-cliente'
+      ];
+      for (var i = 0; i < seletores.length; i++) {
+        var el = document.querySelector(seletores[i]);
+        if (!el) continue;
+        var bruto = el.getAttribute('data-nome-cliente') ||
+                    el.getAttribute('data-buyer-name') ||
+                    el.getAttribute('data-comprador') ||
+                    el.textContent;
+        var n = primeiroNome(bruto);
+        if (n) return n;
+      }
+    } catch (e) {}
+
+    // (b) rótulo "Nome:" seguido do valor
+    try {
+      var rotulos = /^\s*(nome|comprador|cliente|titular)\s*:?\s*$/i;
+      var nos = document.querySelectorAll('span,td,dt,label,p,div,strong,b,h6');
+      for (var j = 0; j < nos.length; j++) {
+        var no = nos[j];
+        if (no.children.length) continue;                 // só folhas
+        if (!rotulos.test(no.textContent || '')) continue;
+        var viz = no.nextElementSibling ||
+                  (no.parentElement && no.parentElement.nextElementSibling);
+        if (!viz) continue;
+        var cand = primeiroNome(viz.textContent);
+        if (cand) return cand;
+      }
+    } catch (e) {}
+
+    return '';
+  }
+
+  /* ── ENVIO ──────────────────────────────────────────────── */
+
+  function mandar(nome) {
+    if (!nome || nome === enviado) return false;
+    if (!frame || !frame.contentWindow) return false;
+    try {
+      frame.contentWindow.postMessage({ tipo: 'card:nome', nome: nome }, CARD_URL);
+      enviado = nome;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function resolver() {
+    var n = daMergeTag() || daUrl() || doDom();
+    return n ? mandar(n) : false;
+  }
+
+  /* ── RECEBIMENTO ────────────────────────────────────────── */
+
+  window.addEventListener('message', function (ev) {
+    if (ev.origin !== CARD_URL) return;
+    var d = ev.data;
+    if (!d || typeof d !== 'object') return;
+
+    // o card avisa que carregou e já pode receber o nome
+    if (d.tipo === 'card:pronto') {
+      enviado = '';            // força reenvio se o card recarregou
+      resolver();
+      return;
+    }
+
+    // o card informa a altura dele conforme o conteúdo muda
+    if (d.tipo === 'dx:altura') {
+      var h = parseInt(d.altura, 10);
+      if (h > 0 && h < 6000) {
+        frame.style.height = Math.max(h, ALTURA_MIN) + 'px';
+      }
+    }
+  });
+
+  /* ── AGENDA ─────────────────────────────────────────────── */
+  // A primeira tentativa quase sempre falha: a página ainda não
+  // pintou o nome. Depois disso, observa o DOM até achar.
+
+  resolver();
+  [100, 400, 1000, 2500, 5000].forEach(function (t) { setTimeout(resolver, t); });
+
+  if (window.MutationObserver) {
+    var mo = new MutationObserver(function () {
+      if (resolver()) mo.disconnect();
+    });
+    mo.observe(document.body || document.documentElement, {
+      childList: true, subtree: true, characterData: true
+    });
+    setTimeout(function () { mo.disconnect(); }, 12000);
+  }
+})();
+</script>

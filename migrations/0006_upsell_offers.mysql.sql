@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS upsell_offers (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    workspace_id INT UNSIGNED NOT NULL,
+    campaign_id INT UNSIGNED NULL,
+    type ENUM('pre_bump','post_pix_scratch','vsl_scratch','double_scratch') NOT NULL DEFAULT 'post_pix_scratch',
+    title VARCHAR(190) NOT NULL,
+    subtitle VARCHAR(190) NULL,
+    price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    quota_count INT UNSIGNED NULL,
+    vturb_account_id VARCHAR(100) NULL,
+    vturb_player_id VARCHAR(100) NULL,
+    legacy_checkout_url VARCHAR(500) NULL,
+    checkout_mode ENUM('pix_native','external_redirect') NOT NULL DEFAULT 'pix_native',
+    theme_config JSON NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_offers_workspace FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+    CONSTRAINT fk_offers_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

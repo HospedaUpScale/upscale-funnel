@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x220" name="Forms — inputs, search, select, choice" subtitle="Text field states, global search pill, dropdown, checkbox and radio" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>window.FYNIX_ASSET_BASE="../../"</script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0;background:var(--surface-canvas)}#root{padding:18px}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:grid;gap:12px}.lbl{font:var(--type-eyebrow);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-subtle)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { Input, SearchField, Select, Checkbox, Radio } = window.UpscaleHubDesignSystem_b4eac1;
+function Demo(){const [v,setV]=React.useState('This Month');const [c,setC]=React.useState(true);const [r,setR]=React.useState('personal');return(
+<div className="col">
+  <div className="row" style={{alignItems:'flex-start',gap:14}}>
+    <Input style={{width:190}} label="Amount" icon="dollar-sign" suffix="USD" placeholder="0.00"/>
+    <Input style={{width:190}} label="Card number" icon="credit-card" value="5582 5574 8376 5487" hint="Platinum Plus Visa"/>
+    <Input style={{width:190}} label="Email" icon="mail" value="jenny@" error="Enter a valid email address"/>
+  </div>
+  <div className="row" style={{gap:14}}>
+    <SearchField width={260}/>
+    <Select options={['This Month','This Year','All time']} value={v} onChange={setV}/>
+    <Select variant="field" width={150} options={['All Category','Income','Expense']} value="All Category"/>
+  </div>
+  <div className="row" style={{gap:24}}>
+    <Checkbox checked={c} onChange={setC} label="Select all rows"/>
+    <Checkbox indeterminate label="Partial"/>
+    <Checkbox disabled label="Locked"/>
+    <Radio checked={r==='personal'} onChange={()=>setR('personal')} label="Personal account"/>
+    <Radio checked={r==='business'} onChange={()=>setR('business')} label="Business account"/>
+  </div>
+</div>);}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

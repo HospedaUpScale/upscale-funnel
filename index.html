@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base href="." target="_top">
+<title>Booster 110X · Vendedor Sincero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..800;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400&family=Space+Grotesk:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════════════════════════════
+     UPSCALE HUB DESIGN SYSTEM (FYNIX) - WIDGET DE ALTA CONVERSÃO
+     Cor Primária: #0229C4 (sempre)
+     Acento Secundário: #9FE870 (lime positivo)
+     Tinta: #05153F (deep navy ink)
+     Superfícies: #05153F, #071C52, #EDEDED e #FFFFFF
+     Tipografia: Urbanist + Plus Jakarta Sans + Space Grotesk
+     ══════════════════════════════════════════════════════════════════ */
+  *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { color-scheme:dark; }
+  html, body { background:transparent; margin:0; }
+
+  :root {
+    /* Brand primitives */
+    --blue-600: #0229C4;
+    --blue-500: #0F39D6;
+    --blue-700: #021F96;
+    --blue-400: #4A63E8;
+    --blue-300: #8A9DF7;
+    --blue-100: #DCE2FD;
+    --blue-50:  #EEF1FE;
+
+    --green-500: #9FE870;
+    --green-400: #ACE885;
+    --green-100: #E8F8DC;
+    --green-700: #2F7A1E;
+
+    --ink-900: #05153F;
+    --ink-800: #071C52;
+    --ink-700: #0A2469;
+    --ink-300: #8A96BD;
+    --ink-100: #DADEEC;
+
+    --gray-25:  #FAFAFA;
+    --gray-50:  #F5F5F5;
+    --gray-100: #EDEDED;
+    --gray-150: #E6E6E6;
+    --gray-200: #DEDEDE;
+    --gray-300: #CFCFCF;
+    --gray-400: #A3A3A3;
+    --gray-500: #787878;
+    --white:    #FFFFFF;
+
+    --red-600: #E5484D;
+    --red-100: #FDECEC;
+    --amber-600: #E8A33D;
+    --amber-100: #FDF3E3;
+
+    /* Typography */
+    --font-display: "Urbanist", system-ui, sans-serif;
+    --font-ui:      "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-accent:  "Plus Jakarta Sans", system-ui, sans-serif;
+
+    /* Elevation & Shadows */
+    --shadow-card: 0 1px 2px rgba(5,21,63,.04), 0 8px 24px -14px rgba(5,21,63,.16);
+    --shadow-brand: 0 10px 24px -12px rgba(2,41,196,.55);
+    --shadow-glow: 0 0 35px rgba(2,41,196,.35);
+
+    /* Gradients */
+    --gradient-brand: radial-gradient(120% 140% at 12% 18%, #3A5BE8 0%, #0229C4 46%, #021F96 100%);
+    --gradient-ink: linear-gradient(155deg, #071C52 0%, #05153F 65%, #030E2B 100%);
+  }
+
+  #rp {
+    width:100%;
+    max-width:560px;
+    margin:0 auto;
+    padding:clamp(10px, 3cqw, 16px);
+    container-type: inline-size;
+    font-family:var(--font-ui);
+    color:var(--white);
+    -webkit-font-smoothing:antialiased;
+    --pad: clamp(16px, 4.8cqw, 28px);
+  }
+
+  /* ══ CARTÃO PRINCIPAL (SHELL) ══ */
+  .shell {
+    position:relative; overflow:hidden;
+    background:var(--gradient-ink);
+    border:1.5px solid rgba(2,41,196,.45);
+    border-radius:10px;
+    box-shadow:var(--shadow-glow), 0 24px 60px rgba(5,21,63,.6), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .shell::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px; z-index:40;
+    background:linear-gradient(90deg, #0229C4, #9FE870, #0229C4);
+    background-size:200% auto; animation:scan 2.8s linear infinite;
+  }
+  @keyframes scan { to { background-position:200% center; } }
+  .shell::after {
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 20%, rgba(2,41,196,.18), transparent 60%);
+  }
+
+  /* ══ BARRA DE STATUS SUPERIOR ══ */
+  .topbar {
+    position:relative; z-index:5;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    min-height:48px; padding:10px 18px;
+    background:rgba(5,21,63,.82); backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .tb-alert { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
+  .tb-dot {
+    width:7px; height:7px; border-radius:50%; background:var(--green-500);
+    box-shadow:0 0 10px var(--green-500); flex-shrink:0; animation:blk .9s ease-in-out infinite;
+  }
+  @keyframes blk { 0%,100%{opacity:1} 50%{opacity:.2} }
+  .tb-txt {
+    font-size:12px; font-weight:600; color:var(--ink-100);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .tb-tag {
+    flex-shrink:0; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+    padding:4px 10px; border-radius:4px;
+    background:var(--green-500); color:var(--ink-900);
+  }
+
+  .view { display:none; }
+  .view.on { display:block; }
+
+  /* ══ 1. RASPADINHA INTERATIVA ══ */
+  .view--scratch.on {
+    position:relative; z-index:2;
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding:clamp(20px, 5cqw, 32px) var(--pad) clamp(18px, 4cqw, 26px);
+  }
+  .live-pill {
+    display:inline-flex; align-items:center; gap:7px; margin:0 auto 14px;
+    border:1px solid rgba(2,41,196,.5); background:rgba(2,41,196,.18);
+    border-radius:4px; padding:4px 10px;
+  }
+  .lp-dot { width:6px; height:6px; border-radius:50%; background:var(--green-500); box-shadow:0 0 8px var(--green-500); }
+  .lp-tx { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--ink-100); }
+
+  .eyebrow {
+    font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:2px;
+    color:var(--ink-300); margin-bottom:6px;
+  }
+  .title {
+    font-family:var(--font-display); font-size:clamp(34px, 9.5cqw, 54px); font-weight:800;
+    text-transform:uppercase; line-height:1.06; letter-spacing:-0.5px; margin-bottom:12px;
+  }
+  .title span {
+    display:block;
+    background:linear-gradient(100deg, #FFFFFF, #B9C5FB 80%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 16px rgba(2,41,196,.5));
+  }
+  .intro { max-width:360px; font-size:14.5px; line-height:1.45; color:var(--ink-100); margin:0 auto 18px; }
+
+  /* Painel de raspagem (Canvas) */
+  .ticket {
+    position:relative; width:100%; max-width:440px; aspect-ratio:2.05;
+    border-radius:8px; overflow:hidden;
+    background:var(--ink-800); border:2px solid var(--blue-600);
+    box-shadow:0 0 0 3px rgba(2,41,196,.16), 0 12px 35px rgba(2,41,196,.35);
+    margin-bottom:16px; touch-action:none; cursor:crosshair; user-select:none;
+  }
+  .ticket::after {
+    content:''; position:absolute; inset:8px; border:1px dashed rgba(185,197,251,.45);
+    border-radius:6px; z-index:4; pointer-events:none;
+  }
+  .under {
+    position:absolute; inset:0; z-index:1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 6%;
+    background:radial-gradient(ellipse at 50% 30%, rgba(2,41,196,.35) 0%, transparent 80%), #071C52;
+  }
+  .under-k {
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--green-500); margin-bottom:4px;
+  }
+  .under-v {
+    font-family:var(--font-display); font-size:clamp(30px, 8cqw, 46px); font-weight:800;
+    line-height:1; color:var(--white); text-shadow:0 0 25px rgba(2,41,196,.7);
+  }
+  .under-s {
+    font-family:var(--font-accent); font-size:14px; color:var(--ink-100);
+    margin-top:6px; font-weight:600;
+  }
+
+  #canvas { position:absolute; inset:0; z-index:2; width:100%; height:100%; display:block; }
+  #canvas.gone { animation:lift .35s ease-in forwards; pointer-events:none; }
+  @keyframes lift { 0%{opacity:1} 100%{opacity:0; transform:scale(1.05)} }
+
+  .hand {
+    position:absolute; z-index:3; top:65%; left:50%; pointer-events:none;
+    transform:translate(-50%,-50%); animation:swipe 1.6s ease-in-out infinite; color:var(--white);
+  }
+  .hand.off { display:none; }
+  @keyframes swipe { 0%,100%{transform:translate(-80%,-50%)} 50%{transform:translate(40%,-50%)} }
+
+  .status { font-size:13.5px; font-weight:600; color:var(--ink-100); margin-bottom:8px; }
+  .status.on { color:var(--green-500); font-weight:700; }
+  .reveal-all {
+    font-size:13px; color:var(--blue-300); background:none; border:none; border-bottom:1px dashed rgba(138,157,247,.45);
+    padding:4px 0; cursor:pointer; opacity:0; transition:opacity .3s;
+  }
+  .reveal-all.show { opacity:1; }
+  .reveal-all.off { display:none; }
+
+  /* ══ 2. CARREGANDO TRANSIÇÃO ══ */
+  .view--load.on {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:60px var(--pad); text-align:center; min-height:360px;
+  }
+  .load-title { font-family:var(--font-display); font-size:26px; font-weight:700; text-transform:uppercase; margin-bottom:14px; }
+  .load-track { width:100%; max-width:280px; height:6px; background:var(--ink-800); border-radius:3px; overflow:hidden; border:1px solid rgba(2,41,196,.3); }
+  .load-fill { width:0%; height:100%; background:linear-gradient(90deg, #0229C4, #9FE870); border-radius:3px; transition:width .3s ease; }
+  .load-step { font-size:13px; color:var(--ink-300); margin-top:10px; }
+
+  /* ══ 3. TELA DE OFERTA ══ */
+  .view--offer.on { position:relative; z-index:2; }
+  .act {
+    margin:14px 16px 0; padding:12px 16px 10px;
+    border:1px solid rgba(2,41,196,.35); border-radius:8px; background:var(--ink-800);
+  }
+  .act .clock { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .act .clock-k { font-size:13px; font-weight:600; color:var(--ink-100); }
+  .act .clock-v { font-family:var(--font-accent); font-size:24px; font-weight:700; color:var(--green-500); letter-spacing:1px; line-height:1; }
+  .act .timer-track { width:100%; height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+  .act .timer-fill { width:100%; height:100%; background:linear-gradient(90deg, #0229C4, #9FE870); }
+
+  /* Media / Vídeo / Vturb */
+  .media {
+    position:relative; width:calc(100% - 32px); margin:14px 16px 0;
+    border-radius:8px; overflow:hidden; aspect-ratio:16/9;
+    border:1px solid rgba(2,41,196,.45); box-shadow:0 8px 26px rgba(2,41,196,.25);
+    background:#02091c;
+  }
+  .media.hidden { display:none; }
+  .media video { width:100%; height:100%; object-fit:cover; display:block; }
+  .media .tag {
+    position:absolute; top:12px; left:12px; z-index:3;
+    padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;
+    background:rgba(5,21,63,.85); border:1px solid rgba(2,41,196,.4); color:var(--white);
+  }
+  .media .play {
+    position:absolute; inset:0; margin:auto; width:60px; height:60px; z-index:4;
+    border-radius:50%; border:none; background:var(--green-500); color:var(--ink-900);
+    display:grid; place-items:center; cursor:pointer; box-shadow:0 0 0 10px rgba(159,232,112,.2);
+  }
+  .media .play.off { display:none; }
+  .media .play svg { width:26px; height:26px; margin-left:3px; }
+  .media .vbar {
+    position:absolute; bottom:0; left:0; right:0; z-index:3;
+    display:flex; align-items:center; gap:8px; padding:8px 12px;
+    background:linear-gradient(180deg, transparent, rgba(5,21,63,.95));
+  }
+  .media .toggle { background:none; border:none; color:#fff; cursor:pointer; width:28px; height:28px; display:grid; place-items:center; }
+  .media .toggle svg { width:18px; height:18px; }
+  .media .vbar-t { font-family:var(--font-accent); font-size:11px; color:var(--ink-100); }
+  .media .vbar-track { flex:1; height:3px; background:rgba(255,255,255,.2); border-radius:2px; overflow:hidden; }
+  .media .vbar-fill { width:0%; height:100%; background:var(--green-500); }
+
+  /* Body & Oferta */
+  .body { padding:18px 16px 22px; }
+  .combo {
+    background:radial-gradient(ellipse at 50% 0, rgba(2,41,196,.25), transparent 80%), var(--ink-800);
+    border:1px solid rgba(2,41,196,.4); border-radius:8px; padding:20px 16px 16px; margin-bottom:16px; text-align:center;
+  }
+  .combo-k { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--ink-300); }
+  .combo-line {
+    display:flex; align-items:baseline; justify-content:center; gap:10px;
+    font-family:var(--font-display); font-size:clamp(32px, 8.5cqw, 46px); font-weight:800;
+    line-height:1.05; margin:8px 0 10px;
+  }
+  .combo-a { color:var(--white); }
+  .combo-op { color:var(--blue-400); font-size:.8em; }
+  .combo-b { font-family:var(--font-accent); color:var(--green-500); text-shadow:0 0 20px rgba(159,232,112,.35); }
+  .bonus-note { font-size:13.5px; line-height:1.45; color:var(--ink-100); margin-bottom:14px; }
+
+  .cond { display:flex; align-items:center; justify-content:center; gap:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,.08); font-size:13px; color:var(--ink-100); }
+  .cond-i { display:flex; align-items:center; gap:5px; }
+  .cond-i svg { width:15px; height:15px; color:var(--green-500); }
+
+  /* Ação e CTA (Botão Preciso em #0229C4 - Sem arredondamento excessivo) */
+  .offer-action { padding:6px 16px 0; text-align:center; }
+  .cta {
+    position:relative; width:100%; min-height:60px; padding:16px 20px;
+    font-family:var(--font-ui); font-size:clamp(15px, 4cqw, 18px); font-weight:800; text-transform:uppercase;
+    letter-spacing:0.02em; color:var(--white); text-decoration:none;
+    background:var(--blue-600);
+    border:1px solid var(--blue-600); border-radius:6px;
+    box-shadow:var(--shadow-brand);
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    cursor:pointer; transition:transform .15s, background .15s, box-shadow .15s;
+  }
+  .cta:hover { background:var(--blue-500); transform:translateY(-1px); box-shadow:0 8px 20px -4px rgba(2,41,196,.6); }
+  .cta:active { transform:scale(0.98); }
+  .cta svg { width:20px; height:20px; flex-shrink:0; }
+  .cta.loading { opacity:.85; pointer-events:none; }
+  .cta.loading svg { animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .fineprint { font-size:12px; color:var(--ink-300); margin-top:12px; text-align:center; line-height:1.45; }
+  .fineprint strong { color:var(--white); }
+
+  /* ══ MODAIS NATIVOS (UPSCALE ENTERPRISE DESIGN) ══ */
+  .win {
+    position:fixed; inset:0; margin:auto; width:calc(100% - 24px); max-width:440px;
+    max-height:calc(100dvh - 32px); overflow:auto; color:var(--ink-900);
+    border:1px solid var(--gray-150); border-radius:10px; padding:24px;
+    background:var(--white);
+    box-shadow:0 8px 16px -8px rgba(5,21,63,.12), 0 24px 48px -20px rgba(5,21,63,.3);
+    text-align:center;
+  }
+  .win::backdrop { background:rgba(5,21,63,.6); backdrop-filter:blur(8px); }
+  .win-close {
+    position:absolute; top:12px; right:14px; width:32px; height:32px;
+    color:var(--gray-500); background:var(--gray-50); border:1px solid var(--gray-150);
+    border-radius:6px; font-size:20px; cursor:pointer; display:grid; place-items:center;
+    transition:all .15s;
+  }
+  .win-close:hover { background:var(--gray-150); color:var(--ink-900); }
+  .win-icon {
+    display:grid; place-items:center; width:48px; height:48px; margin:0 auto 14px;
+    border-radius:6px; background:var(--blue-50); border:1px solid var(--blue-100);
+    font-size:24px; color:var(--blue-600);
+  }
+  .win h2 { font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--ink-900); margin-bottom:8px; }
+  .win-prize { font-family:var(--font-display); font-size:26px; color:var(--blue-600); font-weight:800; margin:8px 0 14px; }
+  .win-copy { font-size:13.5px; line-height:1.5; color:var(--gray-500); }
+  .win-note { font-size:12px; color:var(--gray-400); margin-top:12px; line-height:1.4; }
+
+  /* Elementos específicos do Modal Pix */
+  .pix-badge-box {
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:4px 12px; background:var(--blue-50); border:1px solid var(--blue-100);
+    border-radius:4px; margin-bottom:14px; font-weight:700; font-size:12.5px; color:var(--blue-600);
+  }
+  /* MODAL PIX ESTILO SINCERO PRÊMIOS / UPSCALE HUB */
+  .pix-hourglass-box {
+    width:48px; height:48px; border-radius:6px; margin:0 auto 8px;
+    background:rgba(2,41,196,.15); border:1px solid rgba(2,41,196,.4);
+    display:grid; place-items:center;
+  }
+  .pix-scarcity-line {
+    padding:8px 0; margin-bottom:14px;
+    border-top:1px solid rgba(255,255,255,.08); border-bottom:1px solid rgba(255,255,255,.08);
+    font-size:13px; color:var(--ink-100);
+  }
+  .pix-steps-list {
+    display:flex; flex-direction:column; gap:10px; text-align:left; margin-bottom:14px;
+  }
+  .pix-step-item {
+    display:flex; align-items:flex-start; gap:10px; font-size:12.5px; color:var(--ink-100); line-height:1.4;
+  }
+  .pix-num-bullet {
+    width:22px; height:22px; border-radius:4px; background:var(--blue-600); color:#fff;
+    font-size:11.5px; font-weight:700; display:grid; place-items:center; flex-shrink:0; margin-top:1px;
+  }
+  .pix-step-desc { flex:1; }
+  .pix-inline-copy-wrap {
+    position:relative; width:100%; display:flex; align-items:center;
+    background:rgba(5,21,63,.8); border:1.5px solid rgba(2,41,196,.45); border-radius:6px;
+    padding:3px; margin:4px 0 8px;
+  }
+  .pix-inline-input {
+    flex:1; width:100%; padding:9px 12px; border:none; background:transparent;
+    font-family:var(--font-accent); font-size:11px; color:var(--white);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; outline:none;
+  }
+  .pix-inline-btn {
+    padding:8px 14px; border-radius:4px; border:none; background:var(--blue-600); color:#fff;
+    font-family:var(--font-ui); font-size:12px; font-weight:800; text-transform:uppercase;
+    cursor:pointer; flex-shrink:0; transition:all .15s;
+  }
+  .pix-inline-btn:hover { background:var(--blue-500); }
+  .pix-inline-btn.copied { background:var(--green-700); }
+  .btn-toggle-qr {
+    background:none; border:1px solid rgba(255,255,255,.15); border-radius:6px;
+    color:var(--ink-200); font-family:var(--font-ui); font-size:12px; font-weight:700;
+    padding:6px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+    transition:all .15s;
+  }
+  .btn-toggle-qr:hover { border-color:var(--blue-400); color:#fff; }
+  .pix-amber-box {
+    display:flex; align-items:flex-start; gap:10px; padding:10px 14px;
+    background:rgba(180,83,9,.25); border:1px solid rgba(245,158,11,.4); border-radius:6px;
+    text-align:left; margin-top:12px;
+  }
+
+  /* Confetes */
+  .cf {
+    position:fixed; z-index:9999; top:-20px; width:9px; height:9px; border-radius:2px;
+    pointer-events:none; animation:fall linear forwards;
+  }
+  @keyframes fall {
+    0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+    100%{ transform:translateY(100vh) rotate(var(--rot, 360deg)); opacity:0; }
+  }
+
+  @media(max-width:380px) {
+    #rp { padding:6px; }
+    .title { font-size:32px; }
+    .cta { font-size:15px; min-height:62px; }
+    .combo-line { font-size:28px; }
+  }
+</style>
+</head>
+
+<body>
+<div id="rp"
+     data-nome=""
+     data-premio="Booster 110X"
+     data-extra="90"
+     data-minimo=""
+     data-cta-url="https://sinceropremios.com/campanha/kit-vw19360-degrossi-ford-f250-azul?cupom=110XCHANCES&amp;afiliado=L3WLFOKBDL"
+     data-cta-label="ATIVAR MEU BOOSTER 110X"
+     data-timer-minutes="3"
+     data-video-src="https://i.imgur.com/zQHpvd5.mp4"
+     data-vturb-account-id=""
+     data-vturb-player-id=""
+     data-checkout-mode="pix_native"
+     data-threshold="22"
+     data-origens="https://oferta.vendedorsincero.pro,https://sinceropremios.com,https://oferta.vagnerpecuaria.site,https://sorteamos.com.br">
+
+  <!-- MODAL 1: BÔNUS REVELADO PELA RASPADINHA -->
+  <dialog class="win" id="win" aria-labelledby="win-title" aria-describedby="win-copy">
+    <button class="win-close" id="win-close" type="button" aria-label="Fechar e ver a oferta">×</button>
+    <div class="win-icon" aria-hidden="true" style="display:flex; align-items:center; justify-content:center;">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2 id="win-title">BÔNUS REVELADO!</h2>
+    <p class="win-copy" id="win-copy">Conheça sua condição especial:</p>
+    <p class="win-prize" id="win-prize"></p>
+    <button class="cta" id="win-continue" type="button">Ver oferta →</button>
+    <p class="win-note" id="win-countdown">Continuando para a oferta em 5 segundos…</p>
+    <p class="win-note">Ativação sujeita às regras da campanha.</p>
+  </dialog>
+
+  <!-- MODAL 2: CHECKOUT PIX NATIVO EM 1-CLIQUE (PADRÃO SINCERO PRÊMIOS / UPSCALE) -->
+  <dialog class="win" id="pix-modal" aria-labelledby="pix-title" style="max-width:440px; text-align:center;">
+    <button class="win-close" id="pix-close" type="button" aria-label="Fechar modal">×</button>
+    
+    <div class="pix-hourglass-box" style="display:flex; align-items:center; justify-content:center;">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#60A5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
+    </div>
+    <h2 id="pix-title" style="font-size:22px; font-weight:800; margin:4px 0 2px; color:var(--white);">Aguardando pagamento!</h2>
+    <p class="win-copy" style="font-size:13px; margin-bottom:10px; color:var(--ink-200);">Realize o pagamento para confirmar seu Booster</p>
+
+    <div class="pix-scarcity-line">
+      Você tem <strong id="pix-countdown" style="font-family:var(--font-accent); color:var(--green-500); font-size:16px;">10:00</strong> para pagar
+    </div>
+
+    <div class="pix-steps-list">
+      <div class="pix-step-item">
+        <span class="pix-num-bullet">1</span>
+        <span class="pix-step-desc">Copie o código PIX abaixo.</span>
+      </div>
+
+      <div class="pix-inline-copy-wrap">
+        <input type="text" id="pix-code-input" class="pix-inline-input" readonly value="" />
+        <button type="button" class="pix-inline-btn" id="pix-btn-copy">
+          <span id="pix-btn-copy-text">COPIAR</span>
+        </button>
+      </div>
+
+      <div class="pix-step-item">
+        <span class="pix-num-bullet">2</span>
+        <span class="pix-step-desc">Abra o app do seu banco e escolha a opção PIX, como se fosse fazer uma transferência.</span>
+      </div>
+
+      <div class="pix-step-item">
+        <span class="pix-num-bullet">3</span>
+        <span class="pix-step-desc">Selecione a opção PIX cópia e cola, cole a chave copiada e confirme o pagamento.</span>
+      </div>
+    </div>
+
+    <!-- Toggle QR Code Expansível -->
+    <div style="text-align:center; margin:10px 0 6px;">
+      <button type="button" class="btn-toggle-qr" id="btn-toggle-qr" onclick="toggleQRCode()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span id="toggle-qr-label">Mostrar QR Code</span>
+      </button>
+    </div>
+
+    <div id="pix-qr-expandable" style="display:none; text-align:center; padding:10px 0 6px;">
+      <img id="pix-qr-img" src="" alt="QR Code Pix" style="width:200px; height:200px; border-radius:6px; margin:0 auto; display:block; background:#fff; padding:6px; box-shadow:0 8px 24px rgba(0,0,0,.45);" />
+      <p style="font-size:11.5px; color:var(--ink-300); margin-top:6px;">Acesse o app do banco e escaneie o código acima.</p>
+    </div>
+
+    <!-- Alerta Âmbar de Escassez -->
+    <div class="pix-amber-box">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span style="font-size:11px; line-height:1.45; color:#FDE68A;">
+        Este pagamento só pode ser realizado dentro do tempo. Após este período, caso o pagamento não seja confirmado, o Booster volta a ficar disponível.
+      </span>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; color:var(--ink-200); margin-top:12px;">
+      <span class="pix-pulse-dot" style="width:7px; height:7px; border-radius:50%; background:var(--green-500); box-shadow:0 0 8px var(--green-500); display:inline-block;"></span>
+      <span id="pix-status-text">Aguardando liquidação no Banco Central...</span>
+    </div>
+  </dialog>
+
+  <!-- MODAL 3: CONFIRMAÇÃO DE PAGAMENTO & COMEMORAÇÃO -->
+  <dialog class="win" id="pix-paid-modal" aria-labelledby="paid-title">
+    <div class="win-icon" style="background:rgba(16,185,129,.25); border-color:#10B981; color:#10B981; display:flex; align-items:center; justify-content:center;">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2 id="paid-title" style="color:#34d399; font-size:26px;">PAGAMENTO CONFIRMADO!</h2>
+    <p class="win-prize" id="paid-prize-text" style="color:#63D8FF;">+110 Cotas Bônus Ativadas!</p>
+    <p class="win-copy" style="font-size:14.5px; line-height:1.5;">Suas cotas adicionais foram ativadas com sucesso e você já está concorrendo!</p>
+    <div style="margin:16px 0; padding:12px; background:rgba(255,255,255,.07); border-radius:6px; font-size:13px; color:#c7ddfa;">
+      Status: <strong style="color:#34d399;">Ativado no Sorteio</strong><br>
+      <span id="paid-order-reference">Transação Concluída</span>
+    </div>
+    <button class="cta" id="paid-close-btn" type="button" style="min-height:56px; font-size:16px;">Concluir e Ver Meus Números</button>
+  </dialog>
+
+  <!-- SHELL PRINCIPAL -->
+  <div class="shell" id="shell">
+    <span class="confetti" id="confetti"></span>
+
+    <div class="topbar">
+      <div class="tb-alert">
+        <span class="tb-dot"></span>
+        <span class="tb-txt" id="tb-txt">Vendedor Sincero · Booster 110X</span>
+      </div>
+      <span class="tb-tag" id="badge">Disponível</span>
+    </div>
+
+    <!-- ══ 1. SEÇÃO RASPADINHA ══ -->
+    <section class="view view--scratch on" id="v-scratch">
+      <span class="live-pill"><span class="lp-dot"></span><span class="lp-tx">Condição especial</span></span>
+
+      <p class="eyebrow" id="eyebrow">Você desbloqueou</p>
+      <h2 class="title" id="title">Raspe e revele<span>seu Booster.</span></h2>
+      <p class="intro" id="intro">Descubra o Booster especial desta campanha.</p>
+
+      <div class="ticket" id="ticket">
+        <div class="under">
+          <p class="under-k">Oferta Revelada</p>
+          <p class="under-v" id="under-v">Booster 110X</p>
+          <p class="under-s">Revele e veja os detalhes</p>
+        </div>
+        <canvas id="canvas"></canvas>
+        <div class="hand" id="hand">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M13.5 5.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V12h-1V3.5C9.5 2.67 8.83 2 8 2s-1.5.67-1.5 1.5V12H5.7l-.4-.4a1.5 1.5 0 0 0-2.1 0l-.7.7L7 17.8c.8 1.4 2.2 2.2 3.8 2.2h5.7c2.5 0 4.5-2 4.5-4.5V9.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V12h-1V7.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V12h-1V5.5z"/></svg>
+        </div>
+      </div>
+
+      <p class="status" id="status">Raspe para revelar sua surpresa</p>
+      <button class="reveal-all" id="reveal-all" type="button">Revelar sem raspar</button>
+    </section>
+
+    <!-- ══ 2. SEÇÃO CARREGAMENTO ══ -->
+    <section class="view view--load" id="v-load">
+      <h2 class="load-title" id="load-title">Revelando sua condição</h2>
+      <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
+      <p class="load-step" id="load-step">Carregando detalhes…</p>
+    </section>
+
+    <!-- ══ 3. SEÇÃO DA OFERTA (UPSELL) ══ -->
+    <section class="view view--offer" id="v-offer">
+      <div class="act" id="act">
+        <div class="clock">
+          <span class="clock-k" id="clock-k">Tempo restante</span>
+          <span class="clock-v" id="clock-v"><span id="d1">0</span><span id="d2">3</span>:<span id="d3">0</span><span id="d4">0</span></span>
+        </div>
+        <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+      </div>
+
+      <!-- PLAYER CONTAINER (VÍDEO / VTURB) -->
+      <div class="media hidden" id="media">
+        <video id="video" playsinline muted preload="metadata" disablepictureinpicture></video>
+        <span class="tag" id="tag">Para você</span>
+        <button class="play" id="play" type="button" aria-label="Assistir com som">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+        </button>
+        <div class="vbar">
+          <button class="toggle" id="toggle" type="button" aria-label="Pausar">
+            <svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="6.5" y="5" width="4" height="14" rx="1.4"/><rect x="13.5" y="5" width="4" height="14" rx="1.4"/>
+            </svg>
+            <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <span class="vbar-t" id="vtime">0:00</span>
+          <span class="vbar-track"><span class="vbar-fill" id="vfill"></span></span>
+          <span class="vbar-t vbar-left" id="vleft">-0:00</span>
+        </div>
+      </div>
+
+      <div class="offer-action">
+        <button class="cta" id="cta" type="button">
+          <span id="cta-label">ATIVAR MEU BOOSTER 110X</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <p class="fineprint"><strong id="checkout-note">Pagamento via Pix instantâneo · Cotas ativadas na hora.</strong></p>
+      </div>
+
+      <div class="body">
+        <div class="combo">
+          <span class="combo-k">Sua condição especial por</span>
+          <span class="combo-line" id="combo-line">
+            <b class="combo-a" id="premio">Booster 110X</b><b class="combo-op">·</b><b class="combo-b" id="valor">R$90</b>
+          </span>
+          <p class="bonus-note" id="bonus-note">Kit Bobzão Bitruck + Ford F-250. Aproveite enquanto esta tela estiver aberta.</p>
+          <div class="cond">
+            <span class="cond-i">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+              Condição Exclusiva
+            </span>
+            <span class="cond-i">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+              Pix Imediato
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var root = document.getElementById('rp');
+  var $ = function (id) { return document.getElementById(id); };
+  var attr = function (k, def) {
+    var v = (root.getAttribute('data-' + k) || '').trim();
+    if (!v || v.indexOf('{{') === 0) return def || '';
+    return v;
+  };
+
+  function param(chaves) {
+    try {
+      var q = new URLSearchParams(location.search);
+      for (var i = 0; i < chaves.length; i++) {
+        var v = q.get(chaves[i]);
+        if (v && v.trim()) return v.trim();
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  var CFG = {
+    nome:          attr('nome', ''),
+    premio:        attr('premio', 'Booster 110X'),
+    extra:         attr('extra', '90'),
+    minimo:        attr('minimo', ''),
+    ctaUrl:        attr('cta-url', '#'),
+    ctaLabel:      attr('cta-label', 'ATIVAR MEU BOOSTER 110X'),
+    minutos:       parseFloat(attr('timer-minutes', '3')) || 3,
+    videoSrc:      attr('video-src', ''),
+    vturbAccount:  attr('vturb-account-id', '') || param(['vturb_account']),
+    vturbPlayer:   attr('vturb-player-id', '') || param(['vturb', 'vturb_player']),
+    checkoutMode:  attr('checkout-mode', 'pix_native'),
+    threshold:     (parseFloat(attr('threshold', '22')) || 22) / 100,
+    foilStart:     '#021F96',
+    foilEnd:       '#3A5BE8',
+    scratchInstTop:'RASPE COM O DEDO',
+    scratchInstSub:'REVELE SUA OFERTA EXCLUSIVA',
+    pitchDelay:    0
+  };
+
+  function moeda(n) {
+    var num = parseFloat(String(n).replace(/[^\d.,]/g, '').replace(',', '.'));
+    if (!isFinite(num)) return String(n);
+    return 'R$' + num.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+  var valorFmt = moeda(CFG.extra);
+
+  window.toggleQRCode = function() {
+    var box = $('pix-qr-expandable');
+    var lbl = $('toggle-qr-label');
+    if (!box) return;
+    if (box.style.display === 'none' || !box.style.display) {
+      box.style.display = 'block';
+      if (lbl) lbl.textContent = 'Ocultar QR Code';
+    } else {
+      box.style.display = 'none';
+      if (lbl) lbl.textContent = 'Mostrar QR Code';
+    }
+  };
+
+  /* ═══ NOME DO COMPRADOR ═══ */
+  function primeiroNome(s) {
+    if (!s) return '';
+    var p = String(s).trim().split(/\s+/)[0];
+    if (!p || p.length < 2 || p.length > 24) return '';
+    if (!/^[\wÀ-ÿ'-]+$/.test(p) || /\d/.test(p)) return '';
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  }
+
+  var nome = primeiroNome(CFG.nome) ||
+             primeiroNome(param(['nome', 'name', 'first_name', 'cliente']));
+
+  function aplicarNome() {
+    var n = nome;
+    $('eyebrow').textContent    = n ? n + ', você desbloqueou' : 'Você desbloqueou';
+    $('tag').textContent        = n ? 'Para você, ' + n : 'Para você';
+    $('load-title').textContent = n ? 'Revelando sua condição, ' + n : 'Revelando sua condição';
+  }
+
+  function definirNome(bruto) {
+    var n = primeiroNome(bruto);
+    if (!n || n === nome) return false;
+    nome = n;
+    aplicarNome();
+    return true;
+  }
+
+  var ORIGENS_PAI = attr('origens', 'https://oferta.vendedorsincero.pro')
+                      .split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+  window.addEventListener('message', function (ev) {
+    var d = ev.data;
+    if (!d) return;
+    if (d.tipo === 'upscale:preview-config' && d.offer) {
+      aplicarConfiguracaoDinamica(d.offer);
+      return;
+    }
+    if (d.tipo === 'upscale:preview-screen' && d.screen) {
+      mostrarTelaPreview(d.screen);
+      return;
+    }
+    if (d.tipo === 'card:nome' || d.tipo === 'dx:nome') {
+      definirNome(d.nome || d.valor);
+    }
+  });
+
+  if (parent !== window) {
+    (function avisar(t) {
+      if (t > 4) return;
+      try { parent.postMessage({ tipo: 'card:pronto' }, '*'); } catch (e) {}
+      setTimeout(function () { avisar(t + 1); }, 300 * (t + 1));
+    })(0);
+  }
+
+  /* ═══ CONTEÚDO DINÂMICO ═══ */
+  $('premio').textContent  = CFG.premio;
+  $('valor').textContent   = valorFmt;
+  $('under-v').textContent = CFG.premio;
+  $('cta-label').textContent = CFG.ctaLabel;
+  aplicarNome();
+
+  /* ═══ CARREGAR CONFIGURAÇÃO REMOTA DA API (BLOCOS EDITÁVEIS) ═══ */
+  function aplicarConfiguracaoDinamica(offer) {
+    if (!offer) return;
+    if (offer.title) {
+      CFG.premio = offer.title;
+      $('premio').textContent = offer.title;
+      $('under-v').textContent = offer.title;
+    }
+    if (offer.subtitle) {
+      $('bonus-note').textContent = offer.subtitle;
+      $('tb-txt').textContent = offer.subtitle + ' · ' + (offer.title || 'Booster');
+    }
+    if (offer.price) {
+      CFG.extra = offer.price;
+      valorFmt = moeda(offer.price);
+      $('valor').textContent = valorFmt;
+    }
+    if (offer.legacy_checkout_url) {
+      CFG.ctaUrl = offer.legacy_checkout_url;
+    }
+    if (offer.checkout_mode) {
+      CFG.checkoutMode = offer.checkout_mode;
+    }
+    if (offer.vturb_player_id) {
+      CFG.vturbPlayer = offer.vturb_player_id;
+    }
+    if (offer.vturb_account_id) {
+      CFG.vturbAccount = offer.vturb_account_id;
+    }
+
+    var theme = offer.theme || {};
+    if (theme.primary_color) {
+      root.style.setProperty('--blue-600', theme.primary_color);
+      root.style.setProperty('--blue-500', theme.primary_color);
+    }
+    if (theme.accent_color) {
+      root.style.setProperty('--green-500', theme.accent_color);
+    }
+    if (theme.card_bg) {
+      root.style.setProperty('--ink-900', theme.card_bg);
+    }
+    if (theme.cta_label) {
+      CFG.ctaLabel = theme.cta_label;
+      $('cta-label').textContent = theme.cta_label;
+    }
+    if (theme.cta_subtext) {
+      $('checkout-note').textContent = theme.cta_subtext;
+    }
+    if (theme.eyebrow) {
+      $('eyebrow').textContent = theme.eyebrow;
+    }
+    if (theme.timer_minutes) {
+      CFG.minutos = parseFloat(theme.timer_minutes) || 3;
+    }
+    if (theme.scratch_threshold) {
+      CFG.threshold = (parseFloat(theme.scratch_threshold) || 22) / 100;
+    }
+    if (theme.foil_start) CFG.foilStart = theme.foil_start;
+    if (theme.foil_end) CFG.foilEnd = theme.foil_end;
+    if (theme.scratch_inst_top) CFG.scratchInstTop = theme.scratch_inst_top;
+    if (theme.scratch_inst_sub) CFG.scratchInstSub = theme.scratch_inst_sub;
+    if (theme.pitch_delay) CFG.pitchDelay = parseInt(theme.pitch_delay) || 0;
+
+    if (!revelado && !tocou) {
+      pintarCobertura();
+    }
+  }
+
+  function mostrarTelaPreview(screen) {
+    if (param(['preview']) !== '1') return;
+    ['v-scratch', 'v-load', 'v-offer'].forEach(function (id) {
+      var view = $(id);
+      if (view) view.classList.remove('on');
+    });
+    document.querySelectorAll('dialog[open]').forEach(function (dialog) {
+      try { dialog.close(); } catch (e) { dialog.removeAttribute('open'); }
+    });
+
+    if (screen === 'offer') {
+      $('v-offer').classList.add('on');
+    } else {
+      revelado = false;
+      tocou = false;
+      raspando = false;
+      if ($('canvas')) $('canvas').classList.remove('gone');
+      if ($('hand')) $('hand').classList.remove('off');
+      if ($('status')) {
+        $('status').classList.remove('on');
+        $('status').textContent = 'Raspe para revelar sua surpresa';
+      }
+      $('v-scratch').classList.add('on');
+      setTimeout(pintarCobertura, 40);
+    }
+  }
+
+  var qWorkspace = param(['workspace_id', '__workspace', 'workspace']);
+  var qOffer = param(['offer_id']);
+  var configUrl = 'api/config.php' + (qWorkspace ? '?workspace=' + encodeURIComponent(qWorkspace) : (qOffer ? '?offer_id=' + encodeURIComponent(qOffer) : ''));
+
+  fetch(configUrl)
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data && data.status === 'success' && data.offer) {
+        aplicarConfiguracaoDinamica(data.offer);
+      }
+    })
+    .catch(function (e) {
+      console.warn('Config local mantida:', e);
+    });
+
+  /* ═══ RASPADINHA EM CANVAS ═══ */
+  var ticket = $('ticket'), canvas = $('canvas');
+  var ctx = canvas.getContext('2d', { willReadFrequently: true });
+  var hand = $('hand'), status = $('status'), revealBtn = $('reveal-all');
+  var raspando = false, revelado = false, tocou = false, raio = 26, ultimo = null;
+
+  function pintarCobertura() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = ticket.clientWidth, h = ticket.clientHeight;
+    if (!w || !h) return;
+
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+
+    var fStart = CFG.foilStart || '#021F96';
+    var fEnd = CFG.foilEnd || '#3A5BE8';
+    var g = ctx.createLinearGradient(0, 0, w * .55, h);
+    g.addColorStop(0,   fStart);
+    g.addColorStop(.25, '#0229C4');
+    g.addColorStop(.50, fEnd);
+    g.addColorStop(.75, '#0229C4');
+    g.addColorStop(1,   fStart);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+
+    // Motivo decorativo de arcos concêntricos (Swirl oficial upScale)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.arc(w + 30, h + 30, 110, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(w + 20, h + 20, 65, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Escovado holográfico sutil
+    for (var y = 0; y < h; y += 2) {
+      ctx.fillStyle = 'rgba(' + (Math.random() > .5 ? '255,255,255' : '2,41,196') + ',' + (Math.random() * .08) + ')';
+      ctx.fillRect(0, y, w, 1);
+    }
+
+    // Texto de instrução
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var fs = Math.max(13, Math.min(w * .058, 22));
+    ctx.font = '800 ' + fs + 'px Urbanist, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.98)';
+    ctx.shadowColor = 'rgba(2,41,196,0.8)';
+    ctx.shadowBlur = 10;
+    ctx.fillText(CFG.scratchInstTop || 'RASPE COM O DEDO', 0, -6);
+
+    ctx.font = '600 ' + Math.max(10, fs * 0.55) + 'px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = 'rgba(159,232,112,.95)';
+    ctx.shadowBlur = 0;
+    ctx.fillText(CFG.scratchInstSub || 'REVELE SUA OFERTA EXCLUSIVA', 0, fs * 0.7);
+    ctx.restore();
+
+    raio = Math.max(20, Math.min(w, h) * .11);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+
+  function pos(e) {
+    var r = canvas.getBoundingClientRect();
+    var p = (e.touches && e.touches[0]) || e;
+    return { x: p.clientX - r.left, y: p.clientY - r.top };
+  }
+
+  function riscar(p) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    if (ultimo) {
+      ctx.lineWidth = raio * 2;
+      ctx.moveTo(ultimo.x, ultimo.y);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+    ctx.arc(p.x, p.y, raio, 0, Math.PI * 2);
+    ctx.fill();
+    ultimo = p;
+  }
+
+  function percentualRaspado() {
+    var w = canvas.width, h = canvas.height;
+    if (!w || !h) return 0;
+    try {
+      var dados = ctx.getImageData(0, 0, w, h).data;
+      var total = 0, vazios = 0;
+      for (var i = 3; i < dados.length; i += 32) {
+        total++;
+        if (dados[i] < 32) vazios++;
+      }
+      return total ? vazios / total : 0;
+    } catch (e) { return 0; }
+  }
+
+  function comecar(e) {
+    if (revelado) return;
+    raspando = true; ultimo = null;
+    if (!tocou) {
+      tocou = true;
+      hand.classList.add('off');
+      status.textContent = 'Continue raspando';
+    }
+    riscar(pos(e));
+    e.preventDefault();
+  }
+
+  function mover(e) {
+    if (!raspando || revelado) return;
+    riscar(pos(e));
+    e.preventDefault();
+  }
+
+  function parar() {
+    if (!raspando) return;
+    raspando = false; ultimo = null;
+    if (percentualRaspado() >= CFG.threshold) revelar();
+  }
+
+  ticket.addEventListener('pointerdown', comecar);
+  ticket.addEventListener('pointermove', mover);
+  window.addEventListener('pointerup', parar);
+  window.addEventListener('pointercancel', parar);
+
+  setTimeout(function () { revealBtn.classList.add('show'); }, 5000);
+  revealBtn.addEventListener('click', function () { revelar(); });
+
+  function revelar() {
+    if (revelado) return;
+    revelado = true;
+
+    canvas.classList.add('gone');
+    hand.classList.add('off');
+    revealBtn.classList.add('off');
+    status.textContent = 'Condição liberada!';
+    status.classList.add('on');
+    $('badge').textContent = 'Liberado';
+
+    $('win-prize').textContent = CFG.premio;
+    var modal = $('win');
+    modal.showModal();
+    soltarConfete();
+
+    var autoAvanco = setTimeout(seguir, 5000);
+    function seguir() { if (modal.open) modal.close(); }
+    $('win-continue').onclick = seguir;
+    $('win-close').onclick = seguir;
+
+    modal.addEventListener('close', function () {
+      clearTimeout(autoAvanco);
+      $('v-scratch').classList.remove('on');
+      carregando();
+    }, { once: true });
+  }
+
+  function carregando() {
+    $('v-load').classList.add('on');
+    var passos = [['Revelando os detalhes', 55], ['Confira sua condição', 100]];
+    var i = 0;
+    (function proximo() {
+      if (i >= passos.length) { setTimeout(mostrarOferta, 350); return; }
+      $('load-step').textContent = passos[i][0];
+      $('load-fill').style.width = passos[i][1] + '%';
+      i++;
+      setTimeout(proximo, 280);
+    })();
+  }
+
+  function mostrarOferta() {
+    $('v-load').classList.remove('on');
+    $('v-offer').classList.add('on');
+    iniciarTimer();
+    iniciarPlayer();
+  }
+
+  /* ═══ TIMER DE URGÊNCIA ═══ */
+  function iniciarTimer() {
+    var total = Math.max(1, Math.round(CFG.minutos * 60));
+    var resta = total;
+    var deadline = Date.now() + total * 1000;
+    var d1 = $('d1'), d2 = $('d2'), d3 = $('d3'), d4 = $('d4');
+
+    function pintar() {
+      var txt = ('0' + Math.floor(resta / 60)).slice(-2) + ('0' + (resta % 60)).slice(-2);
+      d1.textContent = txt[0]; d2.textContent = txt[1];
+      d3.textContent = txt[2]; d4.textContent = txt[3];
+      $('timer-fill').style.width = ((resta / total) * 100) + '%';
+    }
+
+    pintar();
+    var t = setInterval(function () {
+      resta = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      if (resta <= 0) {
+        resta = 0; pintar(); clearInterval(t);
+        $('clock-k').textContent = 'Últimos instantes';
+        return;
+      }
+      pintar();
+    }, 1000);
+  }
+
+  /* ═══ VÍDEO & VTURB EMBED DINÂMICO ═══ */
+  function iniciarPlayer() {
+    var media = $('media');
+
+    // 1. Prioridade: Se houver Vturb Player configurado
+    if (CFG.vturbPlayer) {
+      media.classList.remove('hidden');
+      media.innerHTML = ''; // Limpa player padrão
+      var vidBox = document.createElement('div');
+      vidBox.id = 'vid-' + CFG.vturbPlayer;
+      vidBox.style.cssText = 'position:relative;width:100%;height:100%;';
+      media.appendChild(vidBox);
+
+      var s = document.createElement('script');
+      s.async = true;
+      var acc = CFG.vturbAccount ? CFG.vturbAccount + '/' : '';
+      s.src = 'https://scripts.converteai.net/' + acc + 'players/' + CFG.vturbPlayer + '/player.js';
+      document.head.appendChild(s);
+      return;
+    }
+
+    // 2. Fallback: Vídeo Nativo
+    if (CFG.videoSrc) {
+      media.classList.remove('hidden');
+      var video = $('video'), play = $('play'), toggle = $('toggle');
+      video.src = CFG.videoSrc;
+
+      function mmss(t) {
+        if (!isFinite(t)) return '0:00';
+        return Math.floor(t / 60) + ':' + ('0' + Math.floor(t % 60)).slice(-2);
+      }
+
+      video.addEventListener('timeupdate', function () {
+        var d = video.duration;
+        if (!isFinite(d) || !d) return;
+        $('vfill').style.width = ((video.currentTime / d) * 100) + '%';
+        $('vtime').textContent = mmss(video.currentTime);
+        $('vleft').textContent = '-' + mmss(d - video.currentTime);
+      });
+
+      play.addEventListener('click', function () {
+        video.muted = false;
+        video.play().then(function() {
+          play.classList.add('off');
+        }).catch(function() {});
+      });
+
+      toggle.addEventListener('click', function () {
+        if (video.paused) video.play();
+        else video.pause();
+      });
+    }
+  }
+
+  /* ═══ CHECKOUT PIX NATIVO EM 1-CLIQUE ═══ */
+  var pollingInterval = null;
+  var currentTransactionId = null;
+
+  $('cta').addEventListener('click', function (ev) {
+    ev.preventDefault();
+
+    // Se estiver em modo de redirecionamento externo legado
+    if (CFG.checkoutMode === 'external_redirect' && CFG.ctaUrl && CFG.ctaUrl !== '#') {
+      window.top.location.href = CFG.ctaUrl;
+      return;
+    }
+
+    var ctaBtn = $('cta');
+    var originalLabel = $('cta-label').textContent;
+    ctaBtn.classList.add('loading');
+    $('cta-label').textContent = 'Gerando Pix Seguro…';
+
+    var payload = {
+      name:     nome || 'Cliente',
+      phone:    param(['telefone', 'phone', 'celular']),
+      cpf:      param(['cpf']),
+      order_id: param(['order_id', 'pedido_id', 'id']),
+      offer_id: param(['offer_id']),
+      workspace:param(['__workspace', 'workspace'])
+    };
+
+    fetch('api/pix-upsell.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      ctaBtn.classList.remove('loading');
+      $('cta-label').textContent = originalLabel;
+
+      if (data.status !== 'success' || !data.pix) {
+        alert('Não foi possível gerar a chave Pix no momento. Tente novamente.');
+        return;
+      }
+
+      // Preenche dados do Modal Pix
+      currentTransactionId = data.transaction_id;
+      $('pix-qr-img').src = data.pix.qr_base64;
+      $('pix-code-input').value = data.pix.copy_paste;
+      if ($('pix-price-tag')) $('pix-price-tag').textContent = moeda(data.pix.amount);
+      $('pix-modal').showModal();
+
+      // Inicia contagem regressiva de 10 minutos no modal (Padrão Sincero Prêmios)
+      iniciarContagemPix(10 * 60);
+
+      // Inicia Polling a cada 3 segundos
+      iniciarPollingPix(data.transaction_id);
+    })
+    .catch(function (err) {
+      ctaBtn.classList.remove('loading');
+      $('cta-label').textContent = originalLabel;
+      alert('Erro de conexão ao gerar o Pix. Verifique sua internet.');
+    });
+  });
+
+  // Copiar chave Pix inline
+  $('pix-btn-copy').addEventListener('click', function () {
+    var input = $('pix-code-input');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(function () {
+      var btn = $('pix-btn-copy');
+      var txt = $('pix-btn-copy-text');
+      btn.classList.add('copied');
+      txt.textContent = 'COPIADO!';
+      setTimeout(function () {
+        btn.classList.remove('copied');
+        txt.textContent = 'COPIAR';
+      }, 2500);
+    });
+  });
+
+  $('pix-close').addEventListener('click', function () {
+    if (pollingInterval) clearInterval(pollingInterval);
+    $('pix-modal').close();
+  });
+
+  function iniciarPollingPix(txId) {
+    if (pollingInterval) clearInterval(pollingInterval);
+
+    pollingInterval = setInterval(function () {
+      fetch('api/pix-status.php?tx_id=' + txId)
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (res.status === 'success' && res.paid) {
+            // PAGAMENTO DETECTADO!
+            clearInterval(pollingInterval);
+            $('pix-modal').close();
+
+            soltarConfete();
+            $('paid-order-reference').textContent = 'ID do Pedido: #' + txId;
+            $('pix-paid-modal').showModal();
+          } else if (res.transaction_status === 'expired') {
+            clearInterval(pollingInterval);
+            $('pix-status-text').textContent = 'Chave expirada. Gere novamente.';
+          }
+        })
+        .catch(function () {});
+    }, 3000);
+  }
+
+  function iniciarContagemPix(segundosTotal) {
+    var resta = segundosTotal;
+    var el = $('pix-countdown');
+    var timer = setInterval(function () {
+      resta--;
+      if (resta <= 0) {
+        clearInterval(timer);
+        el.textContent = '00:00';
+        return;
+      }
+      var m = ('0' + Math.floor(resta / 60)).slice(-2);
+      var s = ('0' + (resta % 60)).slice(-2);
+      el.textContent = m + ':' + s;
+    }, 1000);
+  }
+
+  $('paid-close-btn').addEventListener('click', function () {
+    $('pix-paid-modal').close();
+  });
+
+  /* ═══ EFEITO CONFETES ═══ */
+  function soltarConfete() {
+    var box = $('confetti');
+    var cores = ['#0229C4', '#9FE870', '#3A5BE8', '#B9C5FB', '#ffffff'];
+    for (var i = 0; i < 48; i++) {
+      var s = document.createElement('span');
+      s.className = 'cf';
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.background = cores[(Math.random() * cores.length) | 0];
+      s.style.setProperty('--rot', ((Math.random() * 800) - 400) + 'deg');
+      s.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+      s.style.animationDelay = (Math.random() * .3) + 's';
+      box.appendChild(s);
+    }
+    setTimeout(function () { box.innerHTML = ''; }, 3500);
+  }
+
+  /* ═══ RESIZE RESPONSIVO COM ELEMENTO PAI ═══ */
+  (function monitorarAltura() {
+    if (parent === window) return;
+    var ultima = 0;
+    function avisar() {
+      var h = Math.ceil(document.documentElement.getBoundingClientRect().height);
+      if (h && Math.abs(h - ultima) > 1) {
+        ultima = h;
+        parent.postMessage({ tipo: 'dx:altura', altura: h }, '*');
+      }
+    }
+    avisar();
+    window.addEventListener('load', avisar);
+    if (window.ResizeObserver) new ResizeObserver(avisar).observe(document.documentElement);
+    else setInterval(avisar, 500);
+    [100, 400, 1200, 2500].forEach(function (t) { setTimeout(avisar, t); });
+  })();
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { if (!tocou && !revelado) pintarCobertura(); });
+  } else {
+    pintarCobertura();
+  }
+  window.addEventListener('load', function () { if (!tocou && !revelado) pintarCobertura(); });
+
+  var rt;
+  window.addEventListener('resize', function () {
+    clearTimeout(rt);
+    rt = setTimeout(function () {
+      if (!revelado && !tocou) pintarCobertura();
+    }, 180);
+  });
+})();
+</script>
+</body>
+</html>

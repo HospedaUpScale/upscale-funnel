@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia de Integração – Sorteamos.com.br (Booster 110X)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050B1A;
+      --card-bg: #0B132B;
+      --border: #18254A;
+      --primary: #0229C4;
+      --primary-light: #3b82f6;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --success: #9FE870;
+      --code-bg: #030712;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(2, 41, 196, 0.15);
+      border: 1px solid rgba(2, 41, 196, 0.4);
+      color: #82a8ff;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .meta {
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFF;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 14.5px;
+      margin-bottom: 14px;
+    }
+    .code-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .code-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0F141F;
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .copy-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: #1D4ED8; }
+    pre {
+      padding: 18px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #E2E8F0;
+    }
+    .callout {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(37, 99, 235, 0.1);
+      border-left: 4px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      font-size: 13.5px;
+      color: #BFDBFE;
+    }
+    .callout svg { flex-shrink: 0; margin-top: 1px; color: var(--primary-light); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13.5px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--primary-light);
+      font-weight: 600;
+    }
+    td { color: var(--text-muted); }
+    /* TOP NAV HEADER */
+    .top-nav {
+      background: #0E131F;
+      border: 1px solid #232F42;
+      border-radius: 12px;
+      padding: 8px 14px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .nav-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #94A3B8;
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-link svg, .nav-brand svg { flex-shrink: 0; }
+    .nav-link:hover {
+      color: #FFF;
+      background: #1A2234;
+    }
+    .nav-link.active {
+      color: #60A5FA;
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- NAV HEADER -->
+    <nav class="top-nav">
+      <div class="nav-brand">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Booster 110X Hub</span>
+      </div>
+      <div class="nav-links">
+        <a href="../hub/index.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Simulador Hub</a>
+        <a href="GUIA_INTEGRACAO_SORTEAMOS.html" class="nav-link active"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Guia Sorteamos</a>
+        <a href="index.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Manual Técnico</a>
+        <a href="../teste/index.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Diagnóstico Iframe</a>
+      </div>
+    </nav>
+
+    <div class="header">
+      <span class="badge">Canal 1 • Oficial</span>
+      <h1>Integração da Raspadinha Booster 110X</h1>
+      <div class="meta">
+        <strong>Plataforma:</strong> Sorteamos.com.br &bull; <strong>Campanha:</strong> Vendedor Sincero &bull; <strong>Destino:</strong> Tela de Pagamento Aprovado
+      </div>
+    </div>
+
+    <!-- 1. Como Funciona -->
+    <div class="section-card">
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 1. Como Funciona</h2>
+      <p>O widget é incorporado via <code>&lt;iframe&gt;</code> na página de confirmação de pedido da Sorteamos. Os dados do comprador são passados diretamente na URL através de parâmetros simples (ex: <code>?nome={{customer.name}}</code>).</p>
+      <p>O card ajusta sua própria altura automaticamente sem gerar barras de rolagem duplas no celular, e o botão de compra redireciona a tela inteira para o checkout do Booster.</p>
+    </div>
+
+    <!-- 2. Código de Embed -->
+    <div class="section-card">
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> 2. Código de Incorporação (Embed Pronto)</h2>
+      <p>Cole o bloco abaixo na página de pedido concluído / pagamento aprovado:</p>
+
+      <div class="code-box">
+        <div class="code-top">
+          <span>Snippet HTML + JavaScript</span>
+          <button class="copy-btn" onclick="copiar()">Copiar Código</button>
+        </div>
+        <pre id="codigo-embed">&lt;!-- WIDGET BOOSTER 110X - VENDEDOR SINCERO --&gt;
+&lt;div id="wrapper-booster-110x" style="width:100%; max-width:680px; margin:20px auto; padding:0 10px;"&gt;
+  &lt;iframe 
+    id="iframe-booster-110x"
+    src="https://oferta.vagnerpecuaria.site/?nome={{customer.name}}"
+    style="width:100%; min-height:420px; border:none; overflow:hidden; display:block; background:transparent; transition:height 0.25s ease;"
+    scrolling="no"
+    loading="eager"
+    allow="clipboard-write"&gt;
+  &lt;/iframe&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+  // Redimensionamento automático de altura (dx:altura)
+  window.addEventListener('message', function(event) {
+    if (event.data && (event.data.tipo === 'dx:altura' || event.data.altura)) {
+      var frame = document.getElementById('iframe-booster-110x');
+      var h = event.data.altura;
+      if (frame && typeof h === 'number' && h > 50) {
+        frame.style.height = h + 'px';
+      }
+    }
+  });
+&lt;/script&gt;</pre>
+      </div>
+
+      <div class="callout">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.7.7 1.23 1.5 1.41 2.5"/></svg>
+        <span><strong>Nome do Comprador:</strong> Substitua <code>{{customer.name}}</code> pela variável ou tag de template utilizada pelo sistema da Sorteamos. Caso o cliente não tenha nome informado, o card se adapta automaticamente para um texto seguro.</span>
+      </div>
+    </div>
+
+    <!-- 3. Parâmetros de URL -->
+    <div class="section-card">
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg> 3. Parâmetros Aceitos na URL</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Parâmetro</th>
+            <th>Tipo</th>
+            <th>Descrição</th>
+            <th>Exemplo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>nome</code></td>
+            <td>Opcional</td>
+            <td>Nome do comprador para personalizar o topo e a raspadinha.</td>
+            <td><code>?nome=Isaias</code></td>
+          </tr>
+          <tr>
+            <td><code>checkout</code></td>
+            <td>Opcional</td>
+            <td>Link de checkout customizado (caso deseje passar parâmetros de pedido).</td>
+            <td><code>?checkout=https://sinceropremios.com/pay/...</code></td>
+          </tr>
+          <tr>
+            <td><code>utm_*</code></td>
+            <td>Opcional</td>
+            <td>Tags UTM de rastreamento mantidas no funil de conversão.</td>
+            <td><code>?utm_source=pos-compra</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 4. Segurança -->
+    <div class="section-card">
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 4. Segurança e Permissões de Iframe</h2>
+      <p>O servidor <code>oferta.vagnerpecuaria.site</code> já possui cabeçalhos liberados no <code>.htaccess</code> autorizando a incorporação dentro de <code>https://sinceropremios.com</code> e <code>https://sorteamos.com.br</code> com CORS liberado.</p>
+    </div>
+  </div>
+
+  <script>
+    function copiar() {
+      var text = document.getElementById('codigo-embed').innerText;
+      navigator.clipboard.writeText(text).then(function() {
+        alert('Código copiado para a área de transferência!');
+      });
+    }
+  </script>
+</body>
+</html>

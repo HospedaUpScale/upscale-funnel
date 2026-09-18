@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS workspaces (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    parent_id INT UNSIGNED NULL,
+    type ENUM('super_admin','partner_whitelabel','merchant') NOT NULL DEFAULT 'merchant',
+    name VARCHAR(150) NOT NULL,
+    slug VARCHAR(63) NOT NULL,
+    custom_domain VARCHAR(190) NULL,
+    document VARCHAR(20) NULL,
+    api_token_hash CHAR(64) NOT NULL,
+    admin_token_hash CHAR(64) NOT NULL,
+    gateway_provider VARCHAR(30) NOT NULL DEFAULT 'mock',
+    gateway_credentials JSON NULL,
+    split_recipient_id VARCHAR(100) NULL,
+    status ENUM('active','suspended') NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_workspaces_slug (slug),
+    UNIQUE KEY uk_workspaces_custom_domain (custom_domain),
+    CONSTRAINT fk_workspaces_parent FOREIGN KEY (parent_id) REFERENCES workspaces(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

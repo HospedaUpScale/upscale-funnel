@@ -1,0 +1,11 @@
+# Não enviar para o container
+.git
+.env
+_design_backup_*
+teste
+storage/database.sqlite
+storage/*.sqlite
+*.zip
+deploy/
+Dockerfile
+.dockerignore

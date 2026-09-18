@@ -1,0 +1,13 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Iconography" subtitle="Lucide outline set, inlined so it inherits colour — substitution, see readme" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"><style>html,body{margin:0;background:var(--surface-canvas)}body{padding:16px}.r{display:flex;gap:8px;flex-wrap:wrap}.chip{display:grid;place-items:center;width:38px;height:38px;border-radius:var(--radius-pill);background:var(--white);border:1px solid var(--border-subtle);color:var(--ink-900)}.chip svg{width:17px;height:17px;display:block}.cap{font:var(--type-caption);color:var(--text-subtle)}</style></head><body>
+<div class="r" id="set"></div>
+<div class="cap" style="margin-top:12px">Circular white chip, 38px, 17px glyph &middot; the source set is a thin-stroke custom outline family; Lucide v0.544.0 is the closest CDN match, inlined at stroke-width 1.75</div>
+<script>
+const NAMES=["wand-sparkles","command","search","mic","house","circle-help","paperclip","wallet","settings","clipboard-list","chart-pie","circle-dollar-sign","receipt","credit-card","trending-up","trending-down","arrow-up-right","arrow-down-left","arrow-left-right","bell","gift","download","plus","more-horizontal"];
+const BASE="https://cdn.jsdelivr.net/npm/lucide-static@0.544.0/icons/";
+const box=document.getElementById('set');
+NAMES.forEach(async (n)=>{
+  const el=document.createElement('span');el.className='chip';box.appendChild(el);
+  try{const t=await (await fetch(BASE+n+'.svg')).text();el.innerHTML=t.replace(/<!--[\s\S]*?-->/g,'').replace(/stroke-width="[^"]*"/,'stroke-width="1.75"');}catch(e){}
+});
+</script></body></html>

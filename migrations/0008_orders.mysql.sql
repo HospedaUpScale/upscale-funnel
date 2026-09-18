@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS orders (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    workspace_id INT UNSIGNED NOT NULL,
+    customer_id INT UNSIGNED NULL,
+    offer_id INT UNSIGNED NULL,
+    flow_type VARCHAR(30) NOT NULL DEFAULT 'post_pix_upsell',
+    status ENUM('pending','paid','abandoned','expired','refunded') NOT NULL DEFAULT 'pending',
+    external_order_id VARCHAR(100) NULL,
+    base_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    upsell_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    utm_source VARCHAR(100) NULL,
+    utm_medium VARCHAR(100) NULL,
+    utm_campaign VARCHAR(100) NULL,
+    paid_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_orders_workspace_created (workspace_id, created_at DESC),
+    CONSTRAINT fk_orders_workspace FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+    CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+    CONSTRAINT fk_orders_offer FOREIGN KEY (offer_id) REFERENCES upsell_offers(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

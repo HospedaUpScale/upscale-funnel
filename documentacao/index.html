@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentação de Integração - Raspadinha Booster 110X</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --surface: #151B26;
+      --surface-subtle: #1C2433;
+      --border: #283447;
+      --border-focus: #3B82F6;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --accent: #2563EB;
+      --accent-light: #60A5FA;
+      --success: #10B981;
+      --warning: #F59E0B;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* TOP NAV HEADER */
+    .top-nav {
+      background: #0E131F;
+      border: 1px solid #283447;
+      border-radius: 12px;
+      padding: 8px 14px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .nav-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #94A3B8;
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-link svg, .nav-brand svg, h2 svg { flex-shrink: 0; }
+    .nav-link:hover {
+      color: #FFF;
+      background: #1A2234;
+    }
+    .nav-link.active {
+      color: #60A5FA;
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.3);
+    }
+
+    header {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.3);
+      color: var(--accent-light);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .lead {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    /* Scenario Toggle */
+    .scenario-picker {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .scenario-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .toggle-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .toggle-btn {
+      background: var(--surface-subtle);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .toggle-btn.active {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
+    }
+    .toggle-btn strong { display: block; font-size: 15px; margin-bottom: 4px; }
+    .toggle-btn span { display: block; font-size: 12px; color: var(--text-muted); }
+
+    /* Sections */
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Code Blocks */
+    .code-container {
+      position: relative;
+      margin: 16px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .code-header {
+      background: #0D1117;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    pre {
+      background: #080B10;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #E2E8F0;
+    }
+    .copy-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: #1D4ED8; }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px;
+      background: var(--surface-subtle);
+      border-radius: 8px;
+    }
+    .checklist input[type="checkbox"] {
+      margin-top: 4px;
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+    }
+
+    .alert-box {
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin: 16px 0;
+      font-size: 13px;
+      display: flex;
+      gap: 12px;
+    }
+    .alert-box.info { background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); color: #93C5FD; }
+    .alert-box.warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #FCD34D; }
+
+    @media (max-width: 560px) {
+      .toggle-buttons { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- NAV HEADER -->
+    <nav class="top-nav">
+      <div class="nav-brand">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Booster 110X Hub</span>
+      </div>
+      <div class="nav-links">
+        <a href="../hub/index.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Simulador Hub</a>
+        <a href="GUIA_INTEGRACAO_SORTEAMOS.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Guia Sorteamos</a>
+        <a href="index.html" class="nav-link active"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Manual Técnico</a>
+        <a href="../teste/index.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Diagnóstico Iframe</a>
+      </div>
+    </nav>
+
+    <header>
+      <span class="badge">Guia Técnico</span>
+      <h1>Integração da Raspadinha Booster 110X</h1>
+      <p class="lead">Manual com os snippets, cabeçalhos Apache e instruções para publicar na Hostinger e embutir na rifa.</p>
+    </header>
+
+    <div class="scenario-picker">
+      <div class="scenario-title">Escolha o Cenário de Hospedagem:</div>
+      <div class="toggle-buttons">
+        <button class="toggle-btn active" id="btn-cenario-b">
+          <strong>Cenário Cross-Origin (Recomendado)</strong>
+          <span>Card em oferta.vendedorsincero.pro e Rifa em sinceropremios.com</span>
+        </button>
+        <button class="toggle-btn" id="btn-cenario-a">
+          <strong>Cenário Mesma Origem</strong>
+          <span>Card e Rifa hospedados no mesmo domínio exato</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Seção 1: O que subir na Hostinger -->
+    <section>
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> 1. Estrutura de Arquivos na Hostinger</h2>
+      <p>No painel da Hostinger (hPanel &rarr; Gerenciador de Arquivos), crie a pasta <code>/public_html/rasp2/</code> e envie os arquivos:</p>
+
+      <div class="code-container">
+        <div class="code-header"><span>Estrutura no Servidor</span></div>
+        <pre>public_html/
+└── rasp2/
+    ├── index.html       (O card consolidado da raspadinha)
+    ├── .htaccess        (Configuração de cabeçalhos sem restrição)
+    ├── teste/
+    │   └── index.html   (Ferramenta de diagnóstico)
+    └── integracao/
+        └── index.html   (Esta documentação)</pre>
+      </div>
+    </section>
+
+    <!-- Seção 2: .htaccess -->
+    <section>
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 2. Arquivo .htaccess</h2>
+      <p>Garante que a Hostinger não bloqueie a raspadinha dentro do iframe com o header <code>SAMEORIGIN</code>.</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>/public_html/rasp2/.htaccess</span>
+          <button class="copy-btn" onclick="copiarCodigo('code-htaccess')">Copiar</button>
+        </div>
+        <pre id="code-htaccess"><span id="htaccess-content">Header always unset X-Frame-Options
+Header unset X-Frame-Options
+Header always set Content-Security-Policy "frame-ancestors *;"
+Header always set Access-Control-Allow-Origin "*"</span></pre>
+      </div>
+    </section>
+
+    <!-- Seção 3: Código de Embed para a Rifa -->
+    <section>
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> 3. Bloco para Colar na Rifa (Página de Sucesso / Obrigado)</h2>
+      <p>Cole este bloco HTML + JavaScript no painel da rifa onde o comprador finaliza a compra:</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>embed-rifa.html</span>
+          <button class="copy-btn" onclick="copiarCodigo('code-embed')">Copiar</button>
+        </div>
+        <pre id="code-embed">&lt;div style="width:100%;max-width:680px;margin:0 auto;"&gt;
+  &lt;iframe
+    id="iframe-booster"
+    src="https://oferta.vendedorsincero.pro/rasp2/"
+    style="width:100%;min-height:420px;border:none;overflow:hidden;display:block;"
+    scrolling="no"&gt;
+  &lt;/iframe&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.tipo === 'dx:altura' && e.data.altura) {
+    var f = document.getElementById('iframe-booster');
+    if (f) f.style.height = e.data.altura + 'px';
+  }
+});
+&lt;/script&gt;</pre>
+      </div>
+    </section>
+
+    <!-- Seção 4: Checklist -->
+    <section>
+      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 17.01"/></svg> 4. Checklist de Publicação</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="c1"> <label for="c1">Subir <code>index.html</code> para <code>/public_html/rasp2/</code></label></li>
+        <li><input type="checkbox" id="c2"> <label for="c2">Subir <code>.htaccess</code> na mesma pasta</label></li>
+        <li><input type="checkbox" id="c3"> <label for="c3">Testar o acesso direto em <code>https://oferta.vendedorsincero.pro/rasp2/</code></label></li>
+        <li><input type="checkbox" id="c4"> <label for="c4">Colar o código do <code>embed-rifa.html</code> no painel da rifa</label></li>
+        <li><input type="checkbox" id="c5"> <label for="c5">Verificar no celular se o iframe ajusta a altura automaticamente sem barra de rolagem interna</label></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    const btnA = document.getElementById('btn-cenario-a');
+    const btnB = document.getElementById('btn-cenario-b');
+    const htContent = document.getElementById('htaccess-content');
+
+    btnA.addEventListener('click', () => {
+      btnA.classList.add('active');
+      btnB.classList.remove('active');
+      htContent.textContent = "Header always unset X-Frame-Options\nHeader unset X-Frame-Options\nHeader always set Content-Security-Policy \"frame-ancestors 'self';\"\nHeader always set Access-Control-Allow-Origin \"*\"";
+    });
+
+    btnB.addEventListener('click', () => {
+      btnB.classList.add('active');
+      btnA.classList.remove('active');
+      htContent.textContent = "Header always unset X-Frame-Options\nHeader unset X-Frame-Options\nHeader always set Content-Security-Policy \"frame-ancestors *;\"\nHeader always set Access-Control-Allow-Origin \"*\"";
+    });
+
+    function copiarCodigo(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Código copiado com sucesso!');
+      });
+    }
+  </script>
+</body>
+</html>

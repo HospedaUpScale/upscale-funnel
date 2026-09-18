@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS upsell_offers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id INTEGER NOT NULL,
+    campaign_id INTEGER NULL,
+    type TEXT NOT NULL DEFAULT 'post_pix_scratch' CHECK(type IN ('pre_bump','post_pix_scratch','vsl_scratch','double_scratch')),
+    title TEXT NOT NULL,
+    subtitle TEXT NULL,
+    price NUMERIC(10,2) NOT NULL DEFAULT 0,
+    quota_count INTEGER NULL,
+    vturb_account_id TEXT NULL,
+    vturb_player_id TEXT NULL,
+    legacy_checkout_url TEXT NULL,
+    checkout_mode TEXT NOT NULL DEFAULT 'pix_native' CHECK(checkout_mode IN ('pix_native','external_redirect')),
+    theme_config TEXT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL
+);

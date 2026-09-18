@@ -1,0 +1,26 @@
+# ==============================================================================
+# .htaccess - API DX Hub Emulador /api/ (Hostinger / Apache)
+# ==============================================================================
+
+# Desativa reescritas herdadas do WordPress e isola a API
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Se o arquivo ou pasta física existir, serve direto (ex: view.php)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Qualquer outra rota (/api/upsell, /api/health, /upscale1/api/...) vai para index.php
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+DirectoryIndex index.php
+
+<IfModule mod_headers.c>
+    Header always unset X-Frame-Options
+    Header unset X-Frame-Options
+    Header always set Content-Security-Policy "frame-ancestors *;"
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-Api-Token, Token, X-Admin-Token, X-Debug-Workspace, X-Workspace"
+</IfModule>

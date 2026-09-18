@@ -1,0 +1,41 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Data — charts and tables" subtitle="Cashflow bars, expense donut with legend, wallet area chart, transactions table" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>window.FYNIX_ASSET_BASE="../../"</script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0;background:var(--surface-canvas)}#root{padding:18px}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:grid;gap:12px}.lbl{font:var(--type-eyebrow);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-subtle)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { BarChart, ChartLegend, DonutChart, CategoryLegend, AreaChart, Sparkline, DataTable, TransactionCell, Amount, Badge, Card } = window.UpscaleHubDesignSystem_b4eac1;
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>({label:m,income:3200+((i*911)%4200),expense:2200+((i*577)%3600)}));
+const cols=[{key:'t',label:'Transaction Name',sortable:true,render:r=><TransactionCell icon={r.icon} title={r.t} meta={r.cat} tone={r.tone}/>},
+{key:'acct',label:'Account',sortable:true},{key:'date',label:'Date & Time',sortable:true},
+{key:'amt',label:'Amount',align:'right',sortable:true,render:r=><Amount value={r.amt}/>},
+{key:'st',label:'Status',align:'right',render:r=><Badge tone={r.st==='Completed'?'success':'warning'}>{r.st}</Badge>}];
+const rows=[{t:'Dividend Payout',cat:'Investments',icon:'trending-up',tone:'income',acct:'Platinum Plus Visa',date:'2024-09-25',amt:'+$200.00',st:'Completed'},
+{t:'Grocery Shopping',cat:'Food & Dining',icon:'shopping-basket',tone:'expense',acct:'Platinum Plus Visa',date:'2024-09-24',amt:'-$184.20',st:'Completed'},
+{t:'Online Subscription',cat:'Services',icon:'repeat',tone:'expense',acct:'Freedom Mastercard',date:'2024-09-18',amt:'-$12.99',st:'Pending'}];
+function Demo(){return(
+<div className="col">
+  <div style={{display:'grid',gridTemplateColumns:'1.6fr 1fr',gap:12}}>
+    <Card title="Cashflow" action={<ChartLegend items={[{label:'Income',color:'var(--chart-1)'},{label:'Expense',color:'var(--chart-2)'}]}/>}>
+      <BarChart data={months} height={120} formatTick={v=>(v/1000).toFixed(0)+'K'}/>
+    </Card>
+    <Card title="Statistic">
+      <div style={{display:'flex',gap:14,alignItems:'center'}}>
+        <DonutChart size={110} thickness={16} label="Total Expense" value="$3,500"
+          segments={[{value:2100,color:'var(--chart-1)'},{value:525,color:'var(--chart-2)'},{value:420,color:'var(--chart-4)'},{value:455,color:'var(--chart-5)'}]}/>
+        <CategoryLegend style={{flex:1}} items={[{pct:'60%',label:'Rent & Living',value:'$2,100',color:'var(--chart-1)',pctColor:'var(--white)'},
+          {pct:'15%',label:'Investment',value:'$525',color:'var(--chart-2)'},{pct:'12%',label:'Education',value:'$420',color:'var(--chart-4)'}]}/>
+      </div>
+    </Card>
+  </div>
+  <Card title="Recent Transactions" action={<Sparkline points={[3,6,4,9,7,12,10,14]}/>} padding={0} bodyStyle={{padding:0}} style={{paddingTop:14}}>
+    <div style={{padding:'0 14px 4px'}}><span className="lbl">selectable rows · hover tint · status cells</span></div>
+    <DataTable columns={cols} rows={rows} selectable selected={[1]} dense/>
+  </Card>
+</div>);}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

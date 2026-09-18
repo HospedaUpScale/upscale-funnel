@@ -1,0 +1,35 @@
+<!-- @dsCard group="Components" viewport="700x380" name="Navigation — sidebar and top bar" subtitle="Grouped sidebar with account switcher, collapsed rail, sticky page header" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>window.FYNIX_ASSET_BASE="../../"</script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0;background:var(--surface-canvas)}#root{padding:18px}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:grid;gap:12px}.lbl{font:var(--type-eyebrow);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-subtle)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { SidebarNav, AccountSwitcher, TopBar, Button, UpgradeCard } = window.UpscaleHubDesignSystem_b4eac1;
+const sections=[{title:'Main Menu',items:[{id:'dash',label:'Dashboard',icon:'house'},{id:'ai',label:'AI Fynix',icon:'wand-sparkles',badge:'New'},{id:'tx',label:'Transactions',icon:'receipt'},{id:'wallet',label:'My Wallet',icon:'wallet'},{id:'inv',label:'Invoices',icon:'clipboard-list'},{id:'rep',label:'Reports',icon:'chart-pie'}]},
+{title:'Preference',items:[{id:'set',label:'Settings',icon:'settings'},{id:'help',label:'Help Center',icon:'circle-help'}]}];
+function Demo(){const [a,setA]=React.useState('dash');return(
+<div style={{display:'flex',gap:14,alignItems:'stretch',height:344}}>
+  <div style={{border:'1px solid var(--border-subtle)',borderRadius:'var(--radius-lg)',overflow:'hidden',background:'var(--surface-canvas)'}}>
+    <SidebarNav style={{height:'100%',borderRight:'none'}} sections={sections} active={a} onNavigate={setA}
+      header={<AccountSwitcher/>} footer={<UpgradeCard/>}/>
+  </div>
+  <div style={{border:'1px solid var(--border-subtle)',borderRadius:'var(--radius-lg)',overflow:'hidden',background:'var(--surface-canvas)'}}>
+    <SidebarNav style={{height:'100%',borderRight:'none'}} collapsed sections={sections} active={a} onNavigate={setA}/>
+  </div>
+  <div style={{flex:1,minWidth:0,display:'grid',gap:12,alignContent:'start'}}>
+    <div style={{border:'1px solid var(--border-subtle)',borderRadius:'var(--radius-lg)',overflow:'hidden',background:'var(--white)'}}>
+      <TopBar sticky={false} title="Home" subtitle="Track finances easily with AI insights and recommendations." searchWidth={220}/>
+    </div>
+    <div style={{border:'1px solid var(--border-subtle)',borderRadius:'var(--radius-lg)',overflow:'hidden',background:'var(--white)'}}>
+      <TopBar sticky={false} title="AI Fynix Assistant" subtitle="Get smart financial insights, forecasts, and tips." searchWidth={180}
+        actions={<><Button size="sm" variant="ghost" icon="download">Export</Button><Button size="sm" variant="soft" icon="sparkles">Get Plus</Button></>}/>
+    </div>
+    <div style={{maxWidth:232}}><AccountSwitcher name="Arlene A." role="Business Account"/></div>
+  </div>
+</div>);}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

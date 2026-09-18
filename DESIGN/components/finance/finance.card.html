@@ -1,0 +1,40 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Finance & AI — wallet, exchange, assistant" subtitle="Card rows, quick actions, currency exchange, AI composer and prompt tiles" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>window.FYNIX_ASSET_BASE="../../"</script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0;background:var(--surface-canvas)}#root{padding:18px}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:grid;gap:12px}.lbl{font:var(--type-eyebrow);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-subtle)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { CreditCardItem, ActionTile, ExchangePanel, SuggestionCard, AssistantComposer, AssistantOrb, Card } = window.UpscaleHubDesignSystem_b4eac1;
+function Demo(){const [sel,setSel]=React.useState(0);return(
+<div style={{display:'grid',gridTemplateColumns:'240px 230px 1fr',gap:12,alignItems:'start'}}>
+  <Card title="Your Cards">
+    <div className="col" style={{gap:8}}>
+      {[['Personal','VISA','8744','green'],['Business','VISA','5641','gray'],['Business','GB','9007','ink']].map((c,i)=>
+        <CreditCardItem key={i} label={c[0]} brand={c[1]} last4={c[2]} tone={c[3]} selected={sel===i} onSelect={()=>setSel(i)}/>)}
+      <div className="row" style={{gap:8,marginTop:2}}>
+        <ActionTile icon="plus" label="Top Up"/><ActionTile icon="circle-dollar-sign" label="Transfer"/><ActionTile icon="credit-card" label="Payment"/>
+      </div>
+    </div>
+  </Card>
+  <Card title="Exchange"><ExchangePanel/></Card>
+  <div className="col">
+    <Card>
+      <div style={{display:'grid',justifyItems:'center',gap:8,paddingBottom:6}}>
+        <AssistantOrb size={56}/>
+        <span style={{font:'var(--type-caption)',color:'var(--text-muted)'}}>Good to see you!</span>
+        <span style={{font:'var(--type-card-title)'}}>How Can I Assist You With Your Finances?</span>
+      </div>
+      <AssistantComposer chips={['Show me my cash flow','Plan my monthly budget']}/>
+    </Card>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <SuggestionCard icon="activity" title="Track Cash Flow" body="View income, spending, and savings in real time with AI insights."/>
+      <SuggestionCard icon="shield-alert" title="Detect Unusual Transactions" body="Get instant alerts on suspicious charges or duplicate payments."/>
+    </div>
+  </div>
+</div>);}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>
