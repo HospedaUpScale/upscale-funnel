@@ -1,7 +1,8 @@
 FROM php:8.3-fpm-alpine
 
-# Extensões PHP necessárias
-RUN docker-php-ext-install pdo pdo_mysql opcache
+# Extensões PHP necessárias (MySQL, SQLite e OPcache)
+RUN apk add --no-cache sqlite-dev nginx \
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite opcache
 
 # Configuração OPcache para alta performance
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
@@ -20,9 +21,6 @@ RUN echo "pm = dynamic" > /usr/local/etc/php-fpm.d/zz-performance.conf \
     && echo "pm.max_spare_servers = 20" >> /usr/local/etc/php-fpm.d/zz-performance.conf \
     && echo "pm.max_requests = 1000" >> /usr/local/etc/php-fpm.d/zz-performance.conf
 
-# Instala Nginx
-RUN apk add --no-cache nginx
-
 # Copia configuração do Nginx
 COPY deploy/nginx.conf /etc/nginx/http.d/default.conf
 
@@ -31,14 +29,15 @@ COPY . /var/www/html
 WORKDIR /var/www/html
 
 # Permissões
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs 2>/dev/null || true
 RUN mkdir -p /var/www/html/storage /var/www/html/api/logs \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs \
+    && chmod -R 775 /var/www/html/storage /var/www/html/api/logs
 
-# Script de inicialização
+# Script de inicialização (limpa quebras de linha CRLF do Windows)
 COPY deploy/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 
 EXPOSE 80
 
 CMD ["/start.sh"]
+
