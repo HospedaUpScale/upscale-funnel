@@ -6,6 +6,6 @@ teste
 storage/database.sqlite
 storage/*.sqlite
 *.zip
-deploy/
 Dockerfile
 .dockerignore
+
