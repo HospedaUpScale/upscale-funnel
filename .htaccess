@@ -7,6 +7,10 @@
     RewriteEngine On
     RewriteRule ^(?:config|migrations|scripts|src|storage)(?:/|$) - [F,L,NC]
     RewriteRule ^f/([a-z0-9-]+)/?$ funnel.php?slug=$1 [L,QSA,NC]
+
+    # Repassa o header Authorization ao PHP (Hostinger/CGI o remove por padrao e o Hub perde a sessao)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 </IfModule>
 
 DirectoryIndex funnel.php index.html

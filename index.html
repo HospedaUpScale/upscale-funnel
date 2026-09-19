@@ -88,7 +88,7 @@
   .shell {
     position:relative; overflow:hidden;
     background:var(--gradient-ink);
-    border:1.5px solid rgba(2,41,196,.45);
+    border:1.5px solid var(--shell-border, rgba(2,41,196,.45));
     border-radius:10px;
     box-shadow:var(--shadow-glow), 0 24px 60px rgba(5,21,63,.6), inset 0 1px 0 rgba(255,255,255,.12);
   }
@@ -124,7 +124,7 @@
   .tb-tag {
     flex-shrink:0; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
     padding:4px 10px; border-radius:4px;
-    background:var(--green-500); color:var(--ink-900);
+    background:var(--badge-bg, var(--green-500)); color:var(--badge-text, var(--ink-900));
   }
 
   .view { display:none; }
@@ -154,7 +154,7 @@
   }
   .title span {
     display:block;
-    background:linear-gradient(100deg, #FFFFFF, #B9C5FB 80%);
+    background:linear-gradient(100deg, var(--title-from, #FFFFFF), var(--title-to, #B9C5FB) 80%);
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
     filter:drop-shadow(0 0 16px rgba(2,41,196,.5));
   }
@@ -291,14 +291,14 @@
   .cta {
     position:relative; width:100%; min-height:60px; padding:16px 20px;
     font-family:var(--font-ui); font-size:clamp(15px, 4cqw, 18px); font-weight:800; text-transform:uppercase;
-    letter-spacing:0.02em; color:var(--white); text-decoration:none;
-    background:var(--blue-600);
-    border:1px solid var(--blue-600); border-radius:6px;
+    letter-spacing:0.02em; color:var(--cta-text, var(--white)); text-decoration:none;
+    background:var(--cta-bg, var(--blue-600));
+    border:1px solid var(--cta-bg, var(--blue-600)); border-radius:6px;
     box-shadow:var(--shadow-brand);
     display:flex; align-items:center; justify-content:center; gap:10px;
     cursor:pointer; transition:transform .15s, background .15s, box-shadow .15s;
   }
-  .cta:hover { background:var(--blue-500); transform:translateY(-1px); box-shadow:0 8px 20px -4px rgba(2,41,196,.6); }
+  .cta:hover { background:var(--cta-bg-hover, var(--blue-500)); transform:translateY(-1px); box-shadow:0 8px 20px -4px rgba(2,41,196,.6); }
   .cta:active { transform:scale(0.98); }
   .cta svg { width:20px; height:20px; flex-shrink:0; }
   .cta.loading { opacity:.85; pointer-events:none; }
@@ -751,6 +751,55 @@
   aplicarNome();
 
   /* ═══ CARREGAR CONFIGURAÇÃO REMOTA DA API (BLOCOS EDITÁVEIS) ═══ */
+  // ── Tema de cores (Hub → widget). Valor vazio remove a variável e volta ao padrão/derivado.
+  function corValida(v) { return typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v.trim()) ? v.trim() : ''; }
+  function hexRgb(hex) {
+    var h = corValida(hex).slice(1);
+    if (!h) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  function misturar(hex, alvo, pct) {
+    var a = hexRgb(hex), b = hexRgb(alvo);
+    if (!a || !b) return '';
+    var out = a.map(function (c, i) { return Math.round(c + (b[i] - c) * pct); });
+    return '#' + out.map(function (c) { return ('0' + c.toString(16)).slice(-2); }).join('');
+  }
+  function definirVar(nome, valor) {
+    if (valor) root.style.setProperty(nome, valor); else root.style.removeProperty(nome);
+  }
+  function aplicarCores(t) {
+    var primary = corValida(t.primary_color);
+    definirVar('--blue-600', primary);
+    definirVar('--blue-500', primary);
+    var prgb = hexRgb(primary);
+    definirVar('--shell-border', corValida(t.border_color) || (prgb ? 'rgba(' + prgb.join(',') + ',.45)' : ''));
+    definirVar('--shadow-glow', prgb ? '0 0 35px rgba(' + prgb.join(',') + ',.35)' : '');
+    definirVar('--shadow-brand', prgb ? '0 10px 24px -12px rgba(' + prgb.join(',') + ',.55)' : '');
+
+    definirVar('--green-500', corValida(t.accent_color));
+
+    var bg = corValida(t.card_bg), bgAlt = corValida(t.card_bg_alt);
+    definirVar('--ink-900', bg);
+    definirVar('--ink-800', bgAlt);
+    if (bg || bgAlt) {
+      var base = bg || '#05153F', alt = bgAlt || '#071C52';
+      definirVar('--gradient-ink', 'linear-gradient(155deg, ' + alt + ' 0%, ' + base + ' 65%, ' + misturar(base, '#000000', .35) + ' 100%)');
+    } else {
+      definirVar('--gradient-ink', '');
+    }
+
+    definirVar('--title-from', corValida(t.title_from));
+    definirVar('--title-to', corValida(t.title_to));
+    definirVar('--ink-100', corValida(t.text_color));
+
+    var cta = corValida(t.cta_bg);
+    definirVar('--cta-bg', cta);
+    definirVar('--cta-bg-hover', cta ? misturar(cta, '#FFFFFF', .14) : '');
+    definirVar('--cta-text', corValida(t.cta_text));
+    definirVar('--badge-bg', corValida(t.badge_bg));
+    definirVar('--badge-text', corValida(t.badge_text));
+  }
+
   function aplicarConfiguracaoDinamica(offer) {
     if (!offer) return;
     if (offer.title) {
@@ -781,16 +830,7 @@
     }
 
     var theme = offer.theme || {};
-    if (theme.primary_color) {
-      root.style.setProperty('--blue-600', theme.primary_color);
-      root.style.setProperty('--blue-500', theme.primary_color);
-    }
-    if (theme.accent_color) {
-      root.style.setProperty('--green-500', theme.accent_color);
-    }
-    if (theme.card_bg) {
-      root.style.setProperty('--ink-900', theme.card_bg);
-    }
+    aplicarCores(theme);
     if (theme.cta_label) {
       CFG.ctaLabel = theme.cta_label;
       $('cta-label').textContent = theme.cta_label;

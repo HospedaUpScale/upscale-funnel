@@ -3,6 +3,7 @@
 require_once __DIR__ . '/bootstrap.php';
 
 use App\Http\JsonResponse;
+use App\Support\OfferTheme;
 
 // 1. Identificar workspace / oferta
 $targetWsId = null;
@@ -79,28 +80,7 @@ if (!empty($offer['theme_config'])) {
     }
 }
 
-$defaultTheme = [
-    'primary_color'       => '#0229C4',
-    'accent_color'        => '#9FE870',
-    'card_bg'             => '#05153F',
-    'cta_bg'              => '#0229C4',
-    'foil_start'          => '#021F96',
-    'foil_end'            => '#3A5BE8',
-    'eyebrow'             => 'OFERTA EXCLUSIVA DESBLOQUEADA',
-    'greeting_pattern'    => 'Parabéns, {nome}! Você desbloqueou uma chance única.',
-    'scratch_inst_top'    => 'RASPE COM O DEDO',
-    'scratch_inst_sub'    => 'REVELE SUA OFERTA EXCLUSIVA',
-    'cta_label'           => 'ATIVAR MEU BOOSTER 110X',
-    'cta_subtext'         => 'Liberação imediata via Pix em 1 clique',
-    'modal_win_title'     => 'PARABÉNS! VOCÊ DESBLOQUEOU',
-    'anchor_price'        => 180.00,
-    'timer_minutes'       => 3,
-    'scratch_threshold'   => 22,
-    'pitch_delay'         => 0,
-    'video_src'           => '',
-];
-
-$mergedTheme = array_merge($defaultTheme, $themeConfig);
+$mergedTheme = OfferTheme::merge($themeConfig);
 
 header('Cache-Control: no-cache, no-store, must-revalidate');
 JsonResponse::send([

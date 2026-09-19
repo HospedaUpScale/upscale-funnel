@@ -254,11 +254,11 @@
     }
     .nav-item-btn {
       width: 100%;
-      height: 36px;
+      min-height: 36px;
       background: transparent;
       border: 1px solid transparent;
       border-radius: var(--radius-md);
-      padding: 0 10px;
+      padding: 8px 10px;
       font-family: var(--font-ui);
       font-size: 13px;
       font-weight: 500;
@@ -294,9 +294,9 @@
       min-width: 0;
       flex: 1 1 auto;
       text-align: left;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      line-height: 1.25;
+      word-break: break-word;
     }
     .nav-item-badge {
       flex: 0 0 auto !important;
@@ -1120,6 +1120,10 @@
 
     /* DIALOG MODALS */
     dialog.win {
+      margin: auto !important;
+      width: calc(100% - 32px);
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
       border: 1px solid var(--gray-150) !important;
       border-radius: var(--radius-xl) !important;
       padding: 24px !important;
@@ -1338,7 +1342,7 @@
     .account-sub,.account-chevron,.sidebar-section-title,.status-uptime { color:#8a96bd; }
     .sidebar-section-title { padding:18px 10px 7px; font-size:9.5px; letter-spacing:.12em; }
     .nav-list { gap:4px; }
-    .nav-item-btn { height:40px; padding:0 11px; color:#c6cee7; border-radius:10px; font-size:12.5px; }
+    .nav-item-btn { min-height:40px; padding:8px 11px; color:#c6cee7; border-radius:10px; font-size:12.5px; }
     .nav-item-btn:hover { color:#fff; background:rgba(255,255,255,.07); }
     .nav-item-btn.active { color:#05153f; background:#fff; border-color:#fff; box-shadow:0 8px 20px -16px rgba(0,0,0,.8); }
     .nav-item-btn.active svg { color:#0229c4; }
@@ -1495,7 +1499,8 @@
     .empty-inline { padding:24px; text-align:center; color:var(--gray-400); font-size:11px; }
     @media (max-width:1180px) { .integration-grid{grid-template-columns:repeat(3,1fr)} .integration-hero{grid-template-columns:1fr} .visual-editor-shell{grid-template-columns:1fr}.editor-preview-column{position:relative;top:auto}.preview-canvas{min-height:650px}.domain-layout{grid-template-columns:1fr}.funnel-builder{grid-template-columns:220px minmax(0,1fr)}.funnel-workspace{grid-template-columns:1fr}.html-editor-wrap{border-right:0;border-bottom:1px solid #e6e9f0} }
     @media (max-width:760px) {
-      .integration-grid,.integration-catalog{grid-template-columns:1fr}
+      .integration-grid{grid-template-columns:repeat(2,1fr)}
+      .integration-catalog{grid-template-columns:1fr}
       .flow-rail{grid-template-columns:1fr 1fr}
       .top-subheading{display:none}
       .content-container{padding:16px;overflow:hidden}
@@ -1751,6 +1756,37 @@
       background: rgba(229, 72, 77, 0.16) !important;
       color: #c92a2f !important;
     }
+
+    /* Login: seletor Master / Cliente */
+    .login-tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; margin:0 0 22px; background:#eef1f8; border-radius:12px; }
+    .login-tab { display:flex; align-items:center; justify-content:center; gap:7px; height:40px; border:0; border-radius:9px; background:transparent; color:#5b6787; font:700 13px var(--font-ui); cursor:pointer; transition:all .15s ease; }
+    .login-tab:hover { color:#05153F; }
+    .login-tab.active { background:#fff; color:#0229C4; box-shadow:0 4px 12px -6px rgba(5,21,63,.35); }
+    .login-tab svg { width:15px; height:15px; }
+
+    /* Editor de cores */
+    .color-presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+    .color-preset { display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 12px 0 8px; border:1px solid var(--gray-150); border-radius:999px; background:#fff; font:700 11.5px var(--font-ui); color:var(--ink-900); cursor:pointer; transition:var(--transition-control); }
+    .color-preset:hover { border-color:var(--blue-200); background:var(--blue-50); }
+    .color-preset-swatch { display:inline-flex; width:34px; height:18px; border-radius:6px; overflow:hidden; border:1px solid rgba(15,23,42,.12); }
+    .color-preset-swatch i { flex:1; }
+    .color-group { padding-top:14px; margin-top:14px; border-top:1px solid var(--gray-150); }
+    .color-group-title { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--gray-400); margin-bottom:10px; }
+    .color-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .color-field { min-width:0; }
+    .color-field label { display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:11.5px; font-weight:600; color:var(--gray-500); margin-bottom:4px; }
+    .color-auto-btn { border:0; background:transparent; color:var(--blue-600); font:700 10px var(--font-ui); cursor:pointer; padding:0; white-space:nowrap; }
+    .color-auto-btn:hover { text-decoration:underline; }
+    .color-hint { font-size:10.5px; color:var(--gray-400); margin-top:3px; }
+    @media (max-width:760px) { .color-grid { grid-template-columns:1fr; } }
+
+    /* Acessos de clientes */
+    .access-list { display:grid; gap:8px; margin:12px 0 16px; }
+    .access-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--gray-150); border-radius:var(--radius-md); background:var(--gray-50); font-size:12.5px; }
+    .access-row strong { display:block; font-size:12.5px; }
+    .access-row span { color:var(--gray-400); font-size:11px; }
+    .access-result { padding:12px; background:var(--blue-50); border:1px solid var(--blue-100); border-radius:var(--radius-md); margin-bottom:16px; font-size:12px; line-height:1.7; }
+    .access-result code { background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; }
   </style>
 </head>
 <body>
@@ -1771,22 +1807,31 @@
           <path fill="#0229C4" d="M628.4,82.7v85.6h-22.6v-69.2l-69.2,69.2-16-16,63.4-63.4,5.9-5.9h-69.2v-22.6h85.2c2,0,4,.3,5.9.8.8.2,1.5.5,2.3.8,5.9,2.3,10.7,7,12.9,13,.3.7.5,1.5.8,2.3.5,1.8.7,3.6.8,5.5Z"></path>
         </g>
       </svg>
-      <span class="login-badge"><span class="pulse-online" style="width:6px; height:6px;"></span> Acesso Administrativo</span>
+      <span class="login-badge"><span class="pulse-online" style="width:6px; height:6px;"></span> <span id="login-badge-text">Acesso Master</span></span>
     </div>
 
-    <h2 class="login-title">Entrar no upScale Hub</h2>
-    <p class="login-subtitle">Gestão unificada de rifas, booster de upsell e checkout Pix.</p>
+    <div class="login-tabs" role="tablist" aria-label="Tipo de acesso">
+      <button type="button" class="login-tab active" id="login-tab-master" role="tab" aria-selected="true" onclick="selecionarTipoLogin('master')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg> Master
+      </button>
+      <button type="button" class="login-tab" id="login-tab-client" role="tab" aria-selected="false" onclick="selecionarTipoLogin('client')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Cliente
+      </button>
+    </div>
+
+    <h2 class="login-title" id="login-title">Entrar como Master</h2>
+    <p class="login-subtitle" id="login-subtitle">Administração global da rede upScale: parceiros, clientes e faturamento.</p>
 
     <div class="login-error" id="login-error-msg"></div>
 
     <form id="form-login" onsubmit="fazerLogin(event)">
       <div class="login-field">
-        <label for="login-username">Usuário ou E-mail</label>
+        <label for="login-username" id="login-username-label">Usuário ou E-mail</label>
         <div class="login-input-wrap">
           <span class="login-input-icon">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </span>
-          <input type="text" id="login-username" class="login-input" placeholder="admin" value="admin" autocomplete="username" required />
+          <input type="text" id="login-username" class="login-input" placeholder="admin" autocomplete="username" required />
         </div>
       </div>
 
@@ -1796,7 +1841,7 @@
           <span class="login-input-icon">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </span>
-          <input type="password" id="login-password" class="login-input" placeholder="••••••••" value="admin123" autocomplete="current-password" required />
+          <input type="password" id="login-password" class="login-input" placeholder="••••••••" autocomplete="current-password" required />
           <button type="button" class="login-btn-toggle-pw" onclick="toggleMostrarSenha()" title="Mostrar/Ocultar senha">
             <svg id="login-eye-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
@@ -1809,7 +1854,7 @@
       </button>
 
       <!-- Cartão Informativo de Credenciais Padrão -->
-      <div class="login-hint-card">
+      <div class="login-hint-card" id="login-hint-card" style="display:none;">
         <div class="login-hint-info">
           <strong>Acesso Padrão:</strong><br>
           Usuário: <code>admin</code> | Senha: <code>admin123</code>
@@ -2000,7 +2045,7 @@
     <div class="content-container">
 
       <div class="conn-error-banner" id="conn-error-banner">
-        <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Não foi possível falar com a API agora. Os dados abaixo podem estar desatualizados.</span>
+        <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="conn-error-text">Não foi possível falar com a API agora. Os dados abaixo podem estar desatualizados.</span></span>
         <button class="btn-pill-secondary" onclick="atualizarTudo()">Tentar novamente</button>
       </div>
 
@@ -2422,35 +2467,11 @@
                   <span>Bloco 4: Paleta de Cores & Película Raspável</span>
                 </div>
               </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div>
-                  <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Cor Primária do Card</label>
-                  <div class="color-row">
-                    <input type="color" class="color-picker-input" id="pick-color-primary" value="#0229C4" oninput="document.getElementById('camp-color-primary').value = this.value" />
-                    <input type="text" class="field-control" style="flex:1; font-family:var(--font-mono);" id="camp-color-primary" value="#0229C4" oninput="document.getElementById('pick-color-primary').value = this.value" />
-                  </div>
-                </div>
-                <div>
-                  <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Cor de Destaque / Sucesso</label>
-                  <div class="color-row">
-                    <input type="color" class="color-picker-input" id="pick-color-accent" value="#9FE870" oninput="document.getElementById('camp-color-accent').value = this.value" />
-                    <input type="text" class="field-control" style="flex:1; font-family:var(--font-mono);" id="camp-color-accent" value="#9FE870" oninput="document.getElementById('pick-color-accent').value = this.value" />
-                  </div>
-                </div>
-                <div>
-                  <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Película Início (Degradê)</label>
-                  <div class="color-row">
-                    <input type="color" class="color-picker-input" id="pick-foil-start" value="#021F96" oninput="document.getElementById('camp-foil-start').value = this.value" />
-                    <input type="text" class="field-control" style="flex:1; font-family:var(--font-mono);" id="camp-foil-start" value="#021F96" oninput="document.getElementById('pick-foil-start').value = this.value" />
-                  </div>
-                </div>
-                <div>
-                  <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Película Fim (Degradê)</label>
-                  <div class="color-row">
-                    <input type="color" class="color-picker-input" id="pick-foil-end" value="#3A5BE8" oninput="document.getElementById('camp-foil-end').value = this.value" />
-                    <input type="text" class="field-control" style="flex:1; font-family:var(--font-mono);" id="camp-foil-end" value="#3A5BE8" oninput="document.getElementById('pick-foil-end').value = this.value" />
-                  </div>
-                </div>
+              <p style="font-size:11.5px; color:var(--gray-400); margin-bottom:10px;">Comece por uma paleta pronta e ajuste cada cor abaixo. O preview ao lado atualiza na hora.</p>
+              <div class="color-presets" id="color-presets"></div>
+              <div id="color-groups"></div>
+              <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                <button type="button" class="btn-pill-secondary" onclick="aplicarPaleta(0)">Restaurar cores padrão</button>
               </div>
             </div>
 
@@ -2558,7 +2579,10 @@
         <div class="card">
           <div class="card-title">
             <span>Rifas e Campanhas Conectadas a esta Parceria</span>
-            <button class="btn-pill" onclick="abrirModalNovaSubconta()">+ Nova Subconta de Cliente</button>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-pill-secondary" onclick="abrirModalAcessos()">Gerenciar acessos</button>
+              <button class="btn-pill" onclick="abrirModalNovaSubconta()">+ Nova Subconta de Cliente</button>
+            </div>
           </div>
           <div style="overflow-x:auto;">
             <table>
@@ -2814,10 +2838,78 @@ window.addEventListener('message', function(e) {
     return localStorage.getItem('upscale_admin_token') || '';
   }
 
-  function verificarSessao() {
-    var token = getAdminToken();
+  var loginType = 'master';
+  var accessibleWorkspaces = [];
+  var sessionHandled = false;
+  var LOGIN_BTN_HTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Acessar Painel';
+
+  function isLocalHost() {
+    return ['localhost', '127.0.0.1', '[::1]', '::1'].indexOf(window.location.hostname) !== -1;
+  }
+
+  function limparSessaoLocal() {
+    localStorage.removeItem('upscale_admin_token');
+    localStorage.removeItem('upscale_user');
+    localStorage.removeItem('upscale_login_type');
+  }
+
+  function mostrarLogin(msg) {
     var overlay = document.getElementById('hub-login-screen');
-    if (!token) {
+    if (overlay) overlay.classList.remove('hidden');
+    var errEl = document.getElementById('login-error-msg');
+    if (errEl && msg) {
+      errEl.textContent = msg;
+      errEl.classList.add('show');
+    }
+  }
+
+  function sessaoExpirada() {
+    if (sessionHandled) return;
+    sessionHandled = true;
+    limparSessaoLocal();
+    mostrarLogin('Sua sessão expirou ou o acesso foi revogado. Entre novamente.');
+  }
+
+  // Chamada única para a API: injeta o token, sempre devolve JSON e explica a falha quando o servidor não responde JSON.
+  function apiFetch(url, options) {
+    options = options || {};
+    var token = getAdminToken();
+    var headers = Object.assign({}, options.headers || {});
+    if (token && !options.noAuth) {
+      headers['Authorization'] = 'Bearer ' + token;
+      headers['X-Admin-Token'] = token;
+    }
+    if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+    var init = Object.assign({}, options, { headers: headers, cache: 'no-store' });
+    delete init.noAuth;
+
+    return fetch(url, init).then(function(res) {
+      return res.text().then(function(text) {
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+        if (res.status === 401 && token && !options.noAuth) sessaoExpirada();
+        if (!data || typeof data !== 'object') {
+          var err = new Error('o servidor respondeu HTTP ' + res.status + ' sem um JSON válido (' + (res.status >= 500 ? 'erro interno — veja api/logs/api-errors.log no servidor' : 'endpoint indisponível') + ').');
+          err.invalid = true;
+          err.httpStatus = res.status;
+          throw err;
+        }
+        data.__http = res.status;
+        return data;
+      });
+    });
+  }
+
+  function mensagemErroApi(err, acao) {
+    var prefixo = acao ? 'Erro ao ' + acao + ': ' : 'Erro: ';
+    if (err && err.invalid) return prefixo + err.message;
+    if (err && err.name === 'TypeError') return 'Sem conexão com o servidor. Verifique sua internet e tente novamente.';
+    return prefixo + ((err && err.message) || 'falha inesperada.');
+  }
+
+  function verificarSessao() {
+    var overlay = document.getElementById('hub-login-screen');
+    if (!getAdminToken()) {
       if (overlay) overlay.classList.remove('hidden');
       return false;
     }
@@ -2838,6 +2930,36 @@ window.addEventListener('message', function(e) {
     pw.type = isPw ? 'text' : 'password';
   }
 
+  function selecionarTipoLogin(type) {
+    loginType = (type === 'client') ? 'client' : 'master';
+    var isClient = loginType === 'client';
+    document.getElementById('login-tab-master').classList.toggle('active', !isClient);
+    document.getElementById('login-tab-client').classList.toggle('active', isClient);
+    document.getElementById('login-tab-master').setAttribute('aria-selected', String(!isClient));
+    document.getElementById('login-tab-client').setAttribute('aria-selected', String(isClient));
+    document.getElementById('login-badge-text').textContent = isClient ? 'Acesso do Cliente' : 'Acesso Master';
+    document.getElementById('login-title').textContent = isClient ? 'Entrar na sua conta' : 'Entrar como Master';
+    document.getElementById('login-subtitle').textContent = isClient
+      ? 'Gerencie sua rifa, oferta e vendas com o e-mail e a senha enviados pela sua agência.'
+      : 'Administração global da rede upScale: parceiros, clientes e faturamento.';
+    document.getElementById('login-username-label').textContent = isClient ? 'E-mail' : 'Usuário ou E-mail';
+
+    var user = document.getElementById('login-username');
+    user.type = isClient ? 'email' : 'text';
+    user.placeholder = isClient ? 'voce@empresa.com' : 'admin';
+    user.value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-password').type = 'password';
+
+    var errEl = document.getElementById('login-error-msg');
+    if (errEl) errEl.classList.remove('show');
+
+    var showHint = !isClient && isLocalHost();
+    var hint = document.getElementById('login-hint-card');
+    if (hint) hint.style.display = showHint ? 'flex' : 'none';
+    if (showHint) preencherCredenciaisPadrao();
+  }
+
   function fazerLogin(ev) {
     if (ev) ev.preventDefault();
     var u = document.getElementById('login-username').value.trim();
@@ -2848,7 +2970,7 @@ window.addEventListener('message', function(e) {
     if (errEl) errEl.classList.remove('show');
     if (!u || !p) {
       if (errEl) {
-        errEl.textContent = 'Por favor, preencha o usuário e a senha.';
+        errEl.textContent = 'Por favor, preencha ' + (loginType === 'client' ? 'o e-mail' : 'o usuário') + ' e a senha.';
         errEl.classList.add('show');
       }
       return;
@@ -2857,52 +2979,83 @@ window.addEventListener('message', function(e) {
     btn.disabled = true;
     btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" class="spin-icon"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Acessando...';
 
-    fetch('../api/admin/login.php', {
+    apiFetch('../api/admin/login.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: u, password: p })
+      noAuth: true,
+      body: JSON.stringify({ type: loginType, username: u, password: p })
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(function(data) {
       btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Acessar Painel';
+      btn.innerHTML = LOGIN_BTN_HTML;
 
       if (data.status === 'success' && data.token) {
-        localStorage.setItem('upscale_admin_token', data.token);
-        if (data.user) localStorage.setItem('upscale_user', JSON.stringify(data.user));
-        var overlay = document.getElementById('hub-login-screen');
-        if (overlay) overlay.classList.add('hidden');
-        showToast('Login realizado com sucesso! Bem-vindo.', 'success');
-        atualizarTudo();
-      } else {
-        if (errEl) {
-          errEl.textContent = data.message || 'Credenciais inválidas. Verifique o usuário e a senha.';
-          errEl.classList.add('show');
-        }
+        iniciarSessao(data, loginType);
+      } else if (errEl) {
+        errEl.textContent = data.message || 'Credenciais inválidas. Verifique os dados e tente novamente.';
+        errEl.classList.add('show');
       }
     })
-    .catch(err => {
+    .catch(function(err) {
       btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Acessar Painel';
+      btn.innerHTML = LOGIN_BTN_HTML;
       if (errEl) {
-        errEl.textContent = 'Erro ao conectar à API. Verifique a conexão com o servidor.';
+        errEl.textContent = (err && err.invalid)
+          ? 'O servidor não respondeu corretamente: ' + err.message
+          : 'Erro ao conectar à API. Verifique a conexão com o servidor.';
         errEl.classList.add('show');
       }
     });
   }
 
-  function fazerLogout() {
-    if (!confirm('Deseja realmente sair do painel administrativo?')) return;
-    localStorage.removeItem('upscale_admin_token');
-    localStorage.removeItem('upscale_user');
+  function iniciarSessao(data, tipo) {
+    localStorage.setItem('upscale_admin_token', data.token);
+    localStorage.setItem('upscale_login_type', data.login_type || tipo || 'master');
+    if (data.user) localStorage.setItem('upscale_user', JSON.stringify(data.user));
+    sessionHandled = false;
+    if (data.workspace && data.workspace.id) currentWsId = data.workspace.id;
+
     var overlay = document.getElementById('hub-login-screen');
-    if (overlay) overlay.classList.remove('hidden');
-    showToast('Sessão encerrada com sucesso.', 'success');
+    if (overlay) overlay.classList.add('hidden');
+    document.getElementById('login-password').value = '';
+    showToast('Login realizado com sucesso! Bem-vindo.', 'success');
+    navigate('dash', document.querySelector('.nav-item-btn'));
+    atualizarTudo();
+  }
+
+  function fazerLogout(silencioso) {
+    if (!silencioso && !confirm('Deseja realmente sair do painel?')) return;
+    var token = getAdminToken();
+    if (token) {
+      fetch('../api/admin/logout.php', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: '{}'
+      }).catch(function() {});
+    }
+    limparSessaoLocal();
+    sessionHandled = false;
+    accessibleWorkspaces = [];
+    selecionarTipoLogin(loginType);
+    mostrarLogin();
+    if (!silencioso) showToast('Sessão encerrada com sucesso.', 'success');
+  }
+
+  function trocarConta() {
+    fecharModalAuth();
+    fazerLogout(true);
   }
 
   function abrirModalAuth() {
     var modal = document.getElementById('modal-auth');
-    document.getElementById('custom-token-input').value = getAdminToken();
+    var txt = function(id) { var el = document.getElementById(id); return el ? el.textContent : ''; };
+    document.getElementById('auth-current-name').textContent = txt('account-name-text') || '—';
+    document.getElementById('auth-current-role').textContent = txt('account-sub-text') || '—';
+    document.getElementById('auth-current-avatar').textContent = txt('account-avatar-text') || '--';
+    var tag = document.getElementById('role-tag');
+    var authTag = document.getElementById('auth-current-tag');
+    authTag.textContent = tag ? tag.textContent : '';
+    authTag.className = tag ? tag.className : 'role-tag';
+    document.getElementById('custom-token-input').value = '';
     if (modal.showModal) modal.showModal();
     else modal.style.display = 'block';
   }
@@ -2913,18 +3066,23 @@ window.addEventListener('message', function(e) {
     else modal.style.display = 'none';
   }
 
-  function definirTokenRapido(t) {
-    localStorage.setItem('upscale_admin_token', t);
-    fecharModalAuth();
-    atualizarTudo();
-  }
-
   function salvarTokenManual() {
     var t = document.getElementById('custom-token-input').value.trim();
     if (!t) return;
-    localStorage.setItem('upscale_admin_token', t);
-    fecharModalAuth();
-    atualizarTudo();
+    apiFetch('../api/admin/login.php', {
+      method: 'POST',
+      noAuth: true,
+      body: JSON.stringify({ token: t })
+    })
+    .then(function(data) {
+      if (data.status === 'success' && data.token) {
+        fecharModalAuth();
+        iniciarSessao(data, data.login_type);
+      } else {
+        showToast(data.message || 'Token inválido.', 'error');
+      }
+    })
+    .catch(function(err) { showToast(mensagemErroApi(err, 'validar o token'), 'error'); });
   }
 
   function showToast(message, type = 'success') {
@@ -3022,20 +3180,16 @@ window.addEventListener('message', function(e) {
   }
 
   function carregarStatusAutenticacao() {
-    var token = getAdminToken();
-    fetch('../api/admin/auth-status.php', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(r => r.json())
+    apiFetch('../api/admin/auth-status.php')
     .then(data => {
       if (data.status !== 'success') {
-        var overlay = document.getElementById('hub-login-screen');
-        if (overlay) overlay.classList.remove('hidden');
+        mostrarLogin();
         return;
       }
 
       var auth = data.auth;
       currentRole = auth.role;
+      accessibleWorkspaces = auth.accessible_workspaces || [];
 
       // 1. Atualizar Badge no Topbar e Account Switcher na Sidebar
       var badgeTag = document.getElementById('role-tag');
@@ -3135,12 +3289,18 @@ window.addEventListener('message', function(e) {
     })
     .catch(e => {
       console.error('Erro ao verificar auth:', e);
-      mostrarErroConexao();
+      mostrarErroConexao(e);
     });
   }
 
-  function mostrarErroConexao() {
+  function mostrarErroConexao(err) {
     document.getElementById('conn-error-banner').classList.add('show');
+    var connTxt = document.getElementById('conn-error-text');
+    if (connTxt) {
+      connTxt.textContent = (err && err.invalid)
+        ? 'Não foi possível falar com a API: ' + err.message
+        : 'Não foi possível falar com a API agora. Os dados abaixo podem estar desatualizados.';
+    }
 
     ['kpi-recovered','kpi-paid-orders','kpi-aov','kpi-conversion'].forEach(id => {
       var el = document.getElementById(id);
@@ -3171,11 +3331,7 @@ window.addEventListener('message', function(e) {
   }
 
   function carregarMetricas() {
-    var token = getAdminToken();
-    fetch('../api/admin/metrics.php?workspace_id=' + currentWsId, {
-      headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(r => r.json())
+    apiFetch('../api/admin/metrics.php?workspace_id=' + currentWsId)
     .then(data => {
       if (data.status !== 'success') { mostrarErroConexao(); return; }
       document.getElementById('conn-error-banner').classList.remove('show');
@@ -3187,7 +3343,7 @@ window.addEventListener('message', function(e) {
       document.getElementById('kpi-paid-orders').textContent = m.paid_orders;
       document.getElementById('kpi-total-orders').textContent = 'de ' + m.total_orders + ' gerados na API';
       document.getElementById('kpi-aov').textContent = m.average_ticket.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      document.getElementById('kpi-conversion').textContent = m.conversion_rate + '%';
+      document.getElementById('kpi-conversion').textContent = Math.min(100, m.conversion_rate) + '%';
 
       // Funil
       if (m.funnel) {
@@ -3208,7 +3364,7 @@ window.addEventListener('message', function(e) {
       renderizarTabelaFull(allOrdersData);
       renderizarGraficoBarras(m.paid_orders, m.total_orders);
     })
-    .catch(e => { console.error(e); mostrarErroConexao(); });
+    .catch(e => { console.error(e); mostrarErroConexao(e); });
   }
 
   function renderizarTabelaDash(orders) {
@@ -3351,12 +3507,145 @@ window.addEventListener('message', function(e) {
         scratch_threshold: parseInt(document.getElementById('camp-thresh').value) || 22,
         pitch_delay: parseInt(document.getElementById('camp-pitch-delay').value) || 0,
         video_src: document.getElementById('camp-video-src').value.trim(),
-        primary_color: document.getElementById('camp-color-primary').value.trim(),
-        accent_color: document.getElementById('camp-color-accent').value.trim(),
-        foil_start: document.getElementById('camp-foil-start').value.trim(),
-        foil_end: document.getElementById('camp-foil-end').value.trim()
+        ...coletarCores()
       }
     };
+  }
+
+  // ============================================================================
+  // PALETA DE CORES DA OFERTA
+  // ============================================================================
+  var COLOR_GROUPS = [
+    { title: 'Marca', fields: [
+      { key: 'primary_color', label: 'Cor primária', def: '#0229C4', hint: 'Borda, brilho e elementos de marca.' },
+      { key: 'accent_color', label: 'Destaque / sucesso', def: '#9FE870', hint: 'Cronômetro, valores e detalhes positivos.' }
+    ] },
+    { title: 'Fundo do card', fields: [
+      { key: 'card_bg', label: 'Fundo (base)', def: '#05153F' },
+      { key: 'card_bg_alt', label: 'Fundo (brilho superior)', def: '#071C52' }
+    ] },
+    { title: 'Textos', fields: [
+      { key: 'title_from', label: 'Título — início', def: '#FFFFFF' },
+      { key: 'title_to', label: 'Título — fim', def: '#B9C5FB' },
+      { key: 'text_color', label: 'Texto de apoio', def: '#DADEEC' }
+    ] },
+    { title: 'Botão principal', fields: [
+      { key: 'cta_bg', label: 'Fundo do botão', def: '', auto: 'primary_color', hint: 'Automática = usa a cor primária.' },
+      { key: 'cta_text', label: 'Texto do botão', def: '#FFFFFF' }
+    ] },
+    { title: 'Selo e borda', fields: [
+      { key: 'badge_bg', label: 'Selo "Disponível" — fundo', def: '', auto: 'accent_color' },
+      { key: 'badge_text', label: 'Selo — texto', def: '', auto: 'card_bg' },
+      { key: 'border_color', label: 'Borda do card', def: '', auto: 'primary_color' }
+    ] },
+    { title: 'Película raspável', fields: [
+      { key: 'foil_start', label: 'Início (degradê)', def: '#021F96' },
+      { key: 'foil_end', label: 'Fim (degradê)', def: '#3A5BE8' }
+    ] }
+  ];
+
+  var COLOR_FIELDS = [];
+  var COLOR_FIELD_MAP = {};
+  COLOR_GROUPS.forEach(function(g) { g.fields.forEach(function(f) { COLOR_FIELDS.push(f); COLOR_FIELD_MAP[f.key] = f; }); });
+
+  var COLOR_PRESETS = [
+    { name: 'upScale Azul', colors: {} },
+    { name: 'Esmeralda', colors: { primary_color: '#059669', accent_color: '#FDE047', card_bg: '#04211A', card_bg_alt: '#063B2E', title_to: '#A7F3D0', text_color: '#D1FAE5', foil_start: '#065F46', foil_end: '#34D399' } },
+    { name: 'Roxo Neon', colors: { primary_color: '#7C3AED', accent_color: '#F0ABFC', card_bg: '#150A2E', card_bg_alt: '#2A1263', title_to: '#E9D5FF', text_color: '#EDE9FE', foil_start: '#5B21B6', foil_end: '#A78BFA' } },
+    { name: 'Fogo', colors: { primary_color: '#DC2626', accent_color: '#FBBF24', card_bg: '#1F0707', card_bg_alt: '#3B0D0D', title_to: '#FECACA', text_color: '#FEE2E2', foil_start: '#991B1B', foil_end: '#F87171' } },
+    { name: 'Ouro Premium', colors: { primary_color: '#B45309', accent_color: '#FCD34D', card_bg: '#120E05', card_bg_alt: '#2A1F08', title_to: '#FDE68A', text_color: '#FEF3C7', foil_start: '#92400E', foil_end: '#FBBF24' } },
+    { name: 'Preto & Lime', colors: { primary_color: '#374151', accent_color: '#A3E635', card_bg: '#000000', card_bg_alt: '#111111', title_to: '#D9F99D', text_color: '#E5E7EB', cta_bg: '#A3E635', cta_text: '#0A0A0A', foil_start: '#1F2937', foil_end: '#6B7280' } }
+  ];
+
+  function normalizarHex(v) {
+    v = String(v || '').trim();
+    if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+    return /^#[0-9a-f]{6}$/i.test(v) ? v.toUpperCase() : '';
+  }
+
+  function corResolvida(field) {
+    var input = document.getElementById('camp-color-' + field.key);
+    var v = input ? normalizarHex(input.value) : '';
+    if (v) return v;
+    if (field.auto && COLOR_FIELD_MAP[field.auto]) return corResolvida(COLOR_FIELD_MAP[field.auto]);
+    return field.def || '#000000';
+  }
+
+  function atualizarSeletoresCor() {
+    COLOR_FIELDS.forEach(function(f) {
+      var pick = document.getElementById('pick-color-' + f.key);
+      if (pick) pick.value = corResolvida(f).toLowerCase();
+    });
+  }
+
+  function sincronizarCorSeletor(key, value) {
+    document.getElementById('camp-color-' + key).value = String(value).toUpperCase();
+    atualizarSeletoresCor();
+  }
+
+  function limparCorAuto(key) {
+    document.getElementById('camp-color-' + key).value = '';
+    atualizarSeletoresCor();
+    atualizarPreviewOferta(true);
+  }
+
+  function renderizarCamposCor() {
+    var presets = document.getElementById('color-presets');
+    var groups = document.getElementById('color-groups');
+    if (!presets || !groups) return;
+
+    presets.innerHTML = COLOR_PRESETS.map(function(p, i) {
+      var c = Object.assign({ primary_color: '#0229C4', accent_color: '#9FE870', card_bg: '#05153F' }, p.colors);
+      return '<button type="button" class="color-preset" onclick="aplicarPaleta(' + i + ')" title="Aplicar paleta ' + escapeHtml(p.name) + '">' +
+        '<span class="color-preset-swatch"><i style="background:' + c.primary_color + '"></i><i style="background:' + c.accent_color + '"></i><i style="background:' + c.card_bg + '"></i></span>' +
+        escapeHtml(p.name) + '</button>';
+    }).join('');
+
+    groups.innerHTML = COLOR_GROUPS.map(function(g) {
+      return '<div class="color-group"><div class="color-group-title">' + escapeHtml(g.title) + '</div><div class="color-grid">' +
+        g.fields.map(function(f) {
+          return '<div class="color-field"><label><span>' + escapeHtml(f.label) + '</span>' +
+            (f.auto ? '<button type="button" class="color-auto-btn" onclick="limparCorAuto(\'' + f.key + '\')">Automática</button>' : '') + '</label>' +
+            '<div class="color-row">' +
+            '<input type="color" class="color-picker-input" id="pick-color-' + f.key + '" value="' + (f.def || '#000000').toLowerCase() + '" oninput="sincronizarCorSeletor(\'' + f.key + '\', this.value)" />' +
+            '<input type="text" class="field-control" style="flex:1; min-width:0; font-family:var(--font-mono);" id="camp-color-' + f.key + '" value="' + f.def + '" placeholder="' + (f.auto ? 'Automática' : f.def) + '" maxlength="7" oninput="atualizarSeletoresCor()" />' +
+            '</div>' + (f.hint ? '<div class="color-hint">' + escapeHtml(f.hint) + '</div>' : '') + '</div>';
+        }).join('') + '</div></div>';
+    }).join('');
+    atualizarSeletoresCor();
+  }
+
+  function coletarCores() {
+    var out = {};
+    COLOR_FIELDS.forEach(function(f) {
+      var input = document.getElementById('camp-color-' + f.key);
+      out[f.key] = input ? normalizarHex(input.value) : '';
+    });
+    return out;
+  }
+
+  function carregarCoresNoEditor(theme) {
+    theme = theme || {};
+    COLOR_FIELDS.forEach(function(f) {
+      var input = document.getElementById('camp-color-' + f.key);
+      if (!input) return;
+      var v = normalizarHex(theme[f.key]);
+      input.value = v || (f.auto ? '' : f.def);
+    });
+    atualizarSeletoresCor();
+  }
+
+  function aplicarPaleta(index) {
+    var preset = COLOR_PRESETS[index];
+    if (!preset) return;
+    COLOR_FIELDS.forEach(function(f) {
+      var input = document.getElementById('camp-color-' + f.key);
+      if (!input) return;
+      input.value = Object.prototype.hasOwnProperty.call(preset.colors, f.key) ? preset.colors[f.key] : (f.auto ? '' : f.def);
+    });
+    atualizarSeletoresCor();
+    atualizarPreviewOferta(true);
+    showToast('Paleta "' + preset.name + '" aplicada. Clique em Salvar para publicar.', 'success');
   }
 
   function marcarEditorAlterado() {
@@ -3413,12 +3702,8 @@ window.addEventListener('message', function(e) {
   }
 
   function carregarConfiguracaoOferta() {
-    var token = getAdminToken();
     var ws = currentWsId || 2;
-    fetch('../api/admin/offer.php?workspace_id=' + ws, {
-      headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(r => r.json())
+    apiFetch('../api/admin/offer.php?workspace_id=' + ws)
     .then(data => {
       if (data.status !== 'success' || !data.offer) return;
       var off = data.offer;
@@ -3447,19 +3732,7 @@ window.addEventListener('message', function(e) {
       document.getElementById('camp-video-src').value = th.video_src || '';
 
       // Bloco 4: Cores
-      var pCol = th.primary_color || '#0229C4';
-      var aCol = th.accent_color || '#9FE870';
-      var fStart = th.foil_start || '#021F96';
-      var fEnd = th.foil_end || '#3A5BE8';
-
-      document.getElementById('camp-color-primary').value = pCol;
-      document.getElementById('pick-color-primary').value = pCol;
-      document.getElementById('camp-color-accent').value = aCol;
-      document.getElementById('pick-color-accent').value = aCol;
-      document.getElementById('camp-foil-start').value = fStart;
-      document.getElementById('pick-foil-start').value = fStart;
-      document.getElementById('camp-foil-end').value = fEnd;
-      document.getElementById('pick-foil-end').value = fEnd;
+      carregarCoresNoEditor(th);
 
       // Bloco 5: Checkout & Links
       document.getElementById('camp-checkout-mode').value = off.checkout_mode || 'pix_native';
@@ -3472,22 +3745,16 @@ window.addEventListener('message', function(e) {
   }
 
   function salvarConfiguracaoOferta() {
-    var token = getAdminToken();
     var btn = document.getElementById('btn-save-offer');
     btn.disabled = true;
     btn.textContent = 'Salvando Alterações...';
 
     var payload = coletarPayloadOferta();
 
-    fetch('../api/admin/offer.php', {
+    apiFetch('../api/admin/offer.php', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
       body: JSON.stringify(payload)
     })
-    .then(r => r.json())
     .then(data => {
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar Todas as Alterações da Oferta';
@@ -3504,7 +3771,7 @@ window.addEventListener('message', function(e) {
     .catch(err => {
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar Todas as Alterações da Oferta';
-      showToast('Erro de conexão ao salvar configurações.', 'error');
+      showToast(mensagemErroApi(err, 'salvar a oferta'), 'error');
     });
   }
 
@@ -3515,12 +3782,8 @@ window.addEventListener('message', function(e) {
   var selectedCampaignId = null;
 
   function carregarCampanhas() {
-    var token = getAdminToken();
     var targetWs = currentWsId || 2;
-    fetch('../api/admin/campaigns.php?workspace_id=' + targetWs, {
-      headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(r => r.json())
+    apiFetch('../api/admin/campaigns.php?workspace_id=' + targetWs)
     .then(data => {
       if (data.status !== 'success') return;
       allCampaignsData = data.campaigns || [];
@@ -3672,21 +3935,15 @@ window.addEventListener('message', function(e) {
   }
 
   function publicarAcao(campId) {
-    var token = getAdminToken();
     var targetWs = currentWsId || 2;
-    fetch('../api/admin/campaigns.php?workspace_id=' + targetWs, {
+    apiFetch('../api/admin/campaigns.php?workspace_id=' + targetWs, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
       body: JSON.stringify({
         action: 'publish',
         campaign_id: campId,
         workspace_id: targetWs
       })
     })
-    .then(r => r.json())
     .then(data => {
       if (data.status === 'success') {
         showToast('Ação de rifa publicada com sucesso! O Booster está no ar.', 'success');
@@ -3698,7 +3955,7 @@ window.addEventListener('message', function(e) {
     })
     .catch(e => {
       console.error(e);
-      showToast('Erro de conexão ao publicar ação.', 'error');
+      showToast(mensagemErroApi(e, 'publicar a ação'), 'error');
     });
   }
 
@@ -3723,24 +3980,18 @@ window.addEventListener('message', function(e) {
 
   function confirmarFinalizarAcao() {
     if (!pendingFinalizeCampId) return;
-    var token = getAdminToken();
     var targetWs = currentWsId || 2;
     var btn = document.getElementById('btn-confirm-finalize');
     btn.disabled = true;
 
-    fetch('../api/admin/campaigns.php?workspace_id=' + targetWs, {
+    apiFetch('../api/admin/campaigns.php?workspace_id=' + targetWs, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
       body: JSON.stringify({
         action: 'finalize',
         campaign_id: pendingFinalizeCampId,
         workspace_id: targetWs
       })
     })
-    .then(r => r.json())
     .then(data => {
       btn.disabled = false;
       fecharModalFinalizarAcao();
@@ -3755,7 +4006,7 @@ window.addEventListener('message', function(e) {
     .catch(e => {
       btn.disabled = false;
       console.error(e);
-      showToast('Erro de conexão ao finalizar ação.', 'error');
+      showToast(mensagemErroApi(e, 'finalizar a ação'), 'error');
     });
   }
 
@@ -3773,7 +4024,6 @@ window.addEventListener('message', function(e) {
 
   function salvarNovaAcao(event) {
     event.preventDefault();
-    var token = getAdminToken();
     var targetWs = currentWsId || 2;
     var btn = document.getElementById('btn-submit-action');
     btn.disabled = true;
@@ -3787,15 +4037,10 @@ window.addEventListener('message', function(e) {
       status: document.getElementById('new-action-status').value
     };
 
-    fetch('../api/admin/campaigns.php?workspace_id=' + targetWs, {
+    apiFetch('../api/admin/campaigns.php?workspace_id=' + targetWs, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
       body: JSON.stringify(payload)
     })
-    .then(r => r.json())
     .then(data => {
       btn.disabled = false;
       if (data.status === 'success') {
@@ -3810,16 +4055,12 @@ window.addEventListener('message', function(e) {
     .catch(e => {
       btn.disabled = false;
       console.error(e);
-      showToast('Erro de conexão ao criar ação.', 'error');
+      showToast(mensagemErroApi(e, 'criar a ação'), 'error');
     });
   }
 
   function carregarParceiro() {
-    var token = getAdminToken();
-    fetch('../api/admin/partner-metrics.php', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(r => r.json())
+    apiFetch('../api/admin/partner-metrics.php')
     .then(data => {
       if (data.status !== 'success') return;
       var p = data.summary;
@@ -3847,11 +4088,7 @@ window.addEventListener('message', function(e) {
   }
 
   function carregarLogs() {
-    var token = getAdminToken();
-    fetch('../api/admin/logs.php?workspace_id=' + currentWsId, {
-      headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(r => r.json())
+    apiFetch('../api/admin/logs.php?workspace_id=' + currentWsId)
     .then(data => {
       var tbody = document.getElementById('logs-table-body');
       if (!data.logs || !data.logs.length) {
@@ -3899,12 +4136,10 @@ window.addEventListener('message', function(e) {
   }
 
   function verificarIntegracoes() {
-    var token = getAdminToken();
-    var headers = { 'Authorization': 'Bearer ' + token };
     var checks = [
-      fetch('../api/admin/campaigns.php?workspace_id=' + currentWsId, { headers: headers }).then(function(r) { return r.ok ? r.json() : Promise.reject(); }),
-      fetch('../api/admin/metrics.php?workspace_id=' + currentWsId, { headers: headers }).then(function(r) { return r.ok ? r.json() : Promise.reject(); }),
-      fetch('../api/admin/logs.php?workspace_id=' + currentWsId, { headers: headers }).then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+      apiFetch('../api/admin/campaigns.php?workspace_id=' + currentWsId),
+      apiFetch('../api/admin/metrics.php?workspace_id=' + currentWsId),
+      apiFetch('../api/admin/logs.php?workspace_id=' + currentWsId)
     ];
 
     atualizarSaudeIntegracao('campaigns', 'warn', 'Verificando campanhas');
@@ -3914,8 +4149,8 @@ window.addEventListener('message', function(e) {
 
     Promise.allSettled(checks).then(function(results) {
       var ready = 1; // Widget embed operacional
-      if (results[0].status === 'fulfilled' && results[0].value && results[0].value.status === 'success' && results[0].value.data && results[0].value.data.length > 0) {
-        atualizarSaudeIntegracao('campaigns', 'ok', 'Campanhas ativas (' + results[0].value.data.length + ')'); ready++;
+      if (results[0].status === 'fulfilled' && results[0].value && results[0].value.status === 'success' && results[0].value.campaigns && results[0].value.campaigns.length > 0) {
+        atualizarSaudeIntegracao('campaigns', 'ok', 'Campanhas ativas (' + results[0].value.campaigns.length + ')'); ready++;
       } else {
         atualizarSaudeIntegracao('campaigns', 'warn', 'Aguardando integração');
       }
@@ -3932,7 +4167,7 @@ window.addEventListener('message', function(e) {
       }
 
       if (results[2].status === 'fulfilled' && results[2].value && results[2].value.status === 'success') {
-        var logs = results[2].value.data || [];
+        var logs = results[2].value.logs || [];
         if (logs.length > 0) {
           atualizarSaudeIntegracao('webhook', 'ok', 'Webhooks recebidos (' + logs.length + ')'); ready++;
         } else {
@@ -3952,8 +4187,98 @@ window.addEventListener('message', function(e) {
     });
   }
 
+  // ============================================================================
+  // ACESSOS (LOGIN) DE CLIENTES
+  // ============================================================================
+  function abrirModalAcessos(preselectId) {
+    var sel = document.getElementById('access-workspace');
+    var list = accessibleWorkspaces || [];
+    sel.innerHTML = list.map(function(w) {
+      var prefix = w.type === 'partner_whitelabel' ? '[Parceiro] ' : '[Cliente] ';
+      return '<option value="' + w.id + '">' + escapeHtml(prefix + w.name + (w.slug ? ' (' + w.slug + ')' : '')) + '</option>';
+    }).join('');
+    var wanted = preselectId || currentWsId;
+    if (wanted && sel.querySelector('option[value="' + wanted + '"]')) sel.value = String(wanted);
+    document.getElementById('form-acesso').reset();
+    document.getElementById('access-result').style.display = 'none';
+    document.getElementById('modal-acessos').showModal();
+    carregarAcessos();
+  }
+
+  function fecharModalAcessos() {
+    document.getElementById('modal-acessos').close();
+  }
+
+  function carregarAcessos() {
+    var wsId = document.getElementById('access-workspace').value;
+    var box = document.getElementById('access-list');
+    if (!wsId) { box.innerHTML = '<div class="empty-inline">Nenhum workspace disponível.</div>'; return; }
+    box.innerHTML = '<div class="empty-inline">Carregando acessos…</div>';
+    apiFetch('../api/admin/users.php?workspace_id=' + encodeURIComponent(wsId))
+      .then(function(data) {
+        if (data.status !== 'success') throw new Error(data.message || 'Falha ao carregar acessos.');
+        if (!data.users.length) {
+          box.innerHTML = '<div class="empty-inline">Nenhum acesso criado para este cliente ainda.</div>';
+          return;
+        }
+        box.innerHTML = data.users.map(function(u) {
+          return '<div class="access-row"><div><strong>' + escapeHtml(u.email) + '</strong><span>' + escapeHtml(u.name || '') + '</span></div>' +
+            '<button type="button" class="btn-pill-secondary" onclick="removerAcesso(' + Number(u.id) + ')">Remover</button></div>';
+        }).join('');
+      })
+      .catch(function(e) { box.innerHTML = '<div class="empty-inline">' + escapeHtml(mensagemErroApi(e)) + '</div>'; });
+  }
+
+  function salvarAcesso(ev) {
+    ev.preventDefault();
+    var wsId = document.getElementById('access-workspace').value;
+    var email = document.getElementById('access-email').value.trim();
+    var typed = document.getElementById('access-password').value;
+    var btn = document.getElementById('btn-submit-access');
+    btn.disabled = true;
+
+    apiFetch('../api/admin/users.php', {
+      method: 'POST',
+      body: JSON.stringify({ workspace_id: Number(wsId), email: email, password: typed })
+    })
+    .then(function(data) {
+      btn.disabled = false;
+      if (data.status !== 'success') {
+        showToast('Erro ao salvar acesso: ' + (data.message || 'Falha'), 'error');
+        return;
+      }
+      var pass = data.access.password || typed || '(a senha que você informou)';
+      var box = document.getElementById('access-result');
+      box.innerHTML = '<strong>' + escapeHtml(data.message) + '</strong><br>E-mail: <code>' + escapeHtml(data.access.email) + '</code><br>Senha: <code>' + escapeHtml(pass) + '</code><br><small>Envie estes dados ao cliente. A senha gerada só aparece agora.</small>';
+      box.style.display = 'block';
+      document.getElementById('form-acesso').reset();
+      carregarAcessos();
+      showToast(data.message, 'success');
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      showToast(mensagemErroApi(e, 'salvar o acesso'), 'error');
+    });
+  }
+
+  function removerAcesso(userId) {
+    if (!confirm('Remover este acesso? O cliente não conseguirá mais entrar.')) return;
+    var wsId = document.getElementById('access-workspace').value;
+    apiFetch('../api/admin/users.php', {
+      method: 'POST',
+      body: JSON.stringify({ workspace_id: Number(wsId), action: 'revoke', user_id: userId })
+    })
+    .then(function(data) {
+      if (data.status !== 'success') { showToast('Erro ao remover acesso: ' + (data.message || 'Falha'), 'error'); return; }
+      showToast('Acesso removido.', 'success');
+      carregarAcessos();
+    })
+    .catch(function(e) { showToast(mensagemErroApi(e, 'remover o acesso'), 'error'); });
+  }
+
   function abrirModalNovaSubconta() {
     document.getElementById('sub-result').style.display = 'none';
+    document.getElementById('res-access-box').style.display = 'none';
     document.getElementById('form-subconta').reset();
     document.getElementById('modal-subconta').showModal();
   }
@@ -3964,7 +4289,6 @@ window.addEventListener('message', function(e) {
 
   function salvarNovaSubconta(e) {
     e.preventDefault();
-    var token = getAdminToken();
     var btn = document.getElementById('btn-submit-sub');
     btn.disabled = true;
     btn.textContent = 'Criando Subconta...';
@@ -3977,17 +4301,14 @@ window.addEventListener('message', function(e) {
       custom_domain: document.getElementById('sub-domain').value.trim() || null,
       price: parseFloat(document.getElementById('sub-price').value) || 90.00,
       quota_count: parseInt(document.getElementById('sub-quotas').value) || 110,
+      admin_email: document.getElementById('sub-email').value.trim(),
+      admin_password: document.getElementById('sub-password').value
     };
 
-    fetch('../api/admin/workspaces.php', {
+    apiFetch('../api/admin/workspaces.php', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
       body: JSON.stringify(payload)
     })
-    .then(r => r.json())
     .then(data => {
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
@@ -3995,6 +4316,14 @@ window.addEventListener('message', function(e) {
       if (data.status === 'success') {
         document.getElementById('res-api-token').textContent = data.workspace.api_token;
         document.getElementById('res-admin-token').textContent = data.workspace.admin_token;
+        var accessBox = document.getElementById('res-access-box');
+        if (data.access && data.access.email) {
+          document.getElementById('res-access-email').textContent = 'E-mail: ' + data.access.email;
+          document.getElementById('res-access-password').textContent = 'Senha: ' + (data.access.password || payload.admin_password || '(definida por você)');
+          accessBox.style.display = 'inline';
+        } else {
+          accessBox.style.display = 'none';
+        }
         document.getElementById('sub-result').style.display = 'block';
         showToast('Subconta criada com sucesso!', 'success');
         atualizarTudo();
@@ -4005,20 +4334,14 @@ window.addEventListener('message', function(e) {
     .catch(err => {
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
-      showToast('Erro de conexão ao criar subconta.', 'error');
+      showToast(mensagemErroApi(err, 'criar a subconta'), 'error');
     });
   }
 
   function sitesApi(url, options) {
-    options = options || {};
-    options.headers = Object.assign({
-      'Authorization': 'Bearer ' + getAdminToken()
-    }, options.headers || {});
-    return fetch(url, options).then(function(response) {
-      return response.json().then(function(data) {
-        if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Falha na operação.');
-        return data;
-      });
+    return apiFetch(url, options).then(function(data) {
+      if (data.status !== 'success') throw new Error(data.message || 'Falha na operação.');
+      return data;
     });
   }
 
@@ -4243,6 +4566,8 @@ window.addEventListener('message', function(e) {
     var currentPath = loc.pathname.replace(/\/hub\/?.*$/, '');
     var gwUrl = loc.protocol + '//' + host + currentPath + '/api';
     document.getElementById('gw-base-url').value = gwUrl;
+    selecionarTipoLogin(localStorage.getItem('upscale_login_type') === 'client' ? 'client' : 'master');
+    renderizarCamposCor();
     iniciarEditorVisual();
     var initialView = window.location.hash.replace('#', '');
     if (document.getElementById('view-' + initialView)) navigate(initialView);
@@ -4267,58 +4592,69 @@ window.addEventListener('message', function(e) {
     </div>
     <button type="button" class="modal-close-btn" onclick="fecharModalAuth()" aria-label="Fechar modal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
+  <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--gray-50); border:1px solid var(--gray-150); border-radius:var(--radius-md); margin-bottom:14px;">
+    <div class="account-avatar" style="flex-shrink:0;"><span id="auth-current-avatar">--</span></div>
+    <div style="min-width:0; flex:1;">
+      <div id="auth-current-name" style="font-size:13px; font-weight:700; color:var(--ink-900);">—</div>
+      <div id="auth-current-role" style="font-size:11.5px; color:var(--gray-400);">—</div>
+    </div>
+    <span class="role-tag" id="auth-current-tag">—</span>
+  </div>
+
   <p style="font-size:12.5px; color:var(--gray-400); margin-bottom:16px;">
-    Cada parceiro gerencia apenas suas subcontas de clientes, e cada cliente acessa estritamente sua própria rifa. A upScale possui acesso global a todos.
+    Cada cliente entra com o próprio e-mail e senha e enxerga somente a sua rifa. O acesso Master é separado e vê toda a rede.
   </p>
 
-  <!-- Botões de Acesso Rápido para Demonstração e Testes -->
-  <div style="display:none; font-size:10.5px; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">
-    Acesso Rápido por Nível de Permissão:
-  </div>
-  <div style="display:none; gap:8px; margin-bottom:16px;">
-    <!-- Nível 1: Master -->
-    <button type="button" class="quick-auth-card" onclick="definirTokenRapido('')">
-      <div style="color:var(--blue-600); flex-shrink:0;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg></div>
-      <div style="text-align:left; flex:1; min-width:0;">
-        <div style="font-size:13px; font-weight:700; color:var(--ink-900);">upScale Master (Super Admin)</div>
-        <div style="font-size:11px; color:var(--gray-400); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Acesso total irrestrito: vê todos os parceiros, subcontas e volume global</div>
-      </div>
-      <span class="role-tag" style="font-size:9px;">GLOBAL</span>
-    </button>
-
-    <!-- Nível 2: Parceiro -->
-    <button type="button" class="quick-auth-card" onclick="definirTokenRapido('')">
-      <div style="color:var(--ink-800); flex-shrink:0;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4l-2.6-2.6a1 1 0 0 0-1.4 0l-1.4 1.4"/><path d="m13 7-2-2a1 1 0 0 0-1.4 0L5.3 9.3a1 1 0 0 0 0 1.4l2.6 2.6a1 1 0 0 0 1.4 0l1.4-1.4"/><path d="m18 11 3 3"/><path d="m3 13 3-3"/></svg></div>
-      <div style="text-align:left; flex:1; min-width:0;">
-        <div style="font-size:13px; font-weight:700; color:var(--ink-900);">Parceiro White-Label (Play55)</div>
-        <div style="font-size:11px; color:var(--gray-400); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Acesso individual: gerencia apenas suas subcontas e comissão de 5%</div>
-      </div>
-      <span class="role-tag partner" style="font-size:9px;">PARCEIRO</span>
-    </button>
-
-    <!-- Nível 3: Subconta Cliente -->
-    <button type="button" class="quick-auth-card" onclick="definirTokenRapido('')">
-      <div style="color:var(--green-700); flex-shrink:0;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
-      <div style="text-align:left; flex:1; min-width:0;">
-        <div style="font-size:13px; font-weight:700; color:var(--ink-900);">Subconta de Cliente (Vendedor Sincero)</div>
-        <div style="font-size:11px; color:var(--gray-400); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Acesso individual: gerencia sua rifa, cotas e 85% de repasse líquido</div>
-      </div>
-      <span class="role-tag merchant" style="font-size:9px;">SUBCONTA</span>
-    </button>
+  <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+    <button type="button" class="btn-pill" onclick="trocarConta()">Trocar de conta</button>
+    <button type="button" class="btn-pill-secondary" onclick="fecharModalAuth(); fazerLogout();">Sair</button>
   </div>
 
-  <!-- Ou inserir Token Manual -->
-  <div style="margin-bottom:16px;">
-    <label style="font-size:11.5px; font-weight:600; color:var(--gray-500); display:block; margin-bottom:5px;">Ou insira qualquer Admin Token individual:</label>
-    <div style="display:flex; gap:8px;">
+  <details style="margin-bottom:16px;">
+    <summary style="cursor:pointer; font-size:12px; font-weight:600; color:var(--gray-500);">Avançado: entrar com token de acesso</summary>
+    <div style="display:flex; gap:8px; margin-top:8px;">
       <input type="password" id="custom-token-input" class="field-control" style="flex:1; border-radius:var(--radius-control); font-family:var(--font-mono);" placeholder="Cole a chave admin da subconta..." />
       <button type="button" class="btn-pill" onclick="salvarTokenManual()">Entrar</button>
     </div>
-  </div>
+  </details>
 
   <div style="display:flex; justify-content:flex-end;">
     <button type="button" class="btn-pill-secondary" onclick="fecharModalAuth()">Fechar</button>
   </div>
+</dialog>
+
+<!-- MODAL DE ACESSOS (LOGIN) DE CLIENTES E PARCEIROS -->
+<dialog class="win" id="modal-acessos" style="max-width:560px; text-align:left; border:1px solid var(--gray-150); border-radius:var(--radius-xl); padding:24px; background:var(--white); color:var(--ink-900); box-shadow:var(--shadow-dropdown);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h2 style="font-family:var(--font-ui); font-size:17px; font-weight:700; color:var(--ink-900); margin:0;">Acessos de clientes</h2>
+    <button type="button" class="modal-close-btn" onclick="fecharModalAcessos()" aria-label="Fechar modal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <p style="font-size:12.5px; color:var(--gray-400); margin-bottom:14px;">
+    Cada cliente entra na aba <strong>Cliente</strong> do login com o próprio e-mail e senha, e enxerga somente a sua rifa.
+  </p>
+
+  <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Cliente / workspace</label>
+  <select id="access-workspace" class="ws-select" style="width:100%; border:1px solid var(--gray-150); border-radius:var(--radius-control); height:var(--control-height); padding:0 10px; margin-top:4px;" onchange="carregarAcessos()"></select>
+
+  <div class="access-list" id="access-list"><div class="empty-inline">Selecione um cliente.</div></div>
+
+  <form id="form-acesso" onsubmit="salvarAcesso(event)">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+      <div>
+        <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">E-mail de acesso *</label>
+        <input type="email" id="access-email" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="cliente@empresa.com" autocomplete="off" required />
+      </div>
+      <div>
+        <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Senha (vazio = gerar)</label>
+        <input type="text" id="access-password" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="mín. 8 caracteres" autocomplete="off" />
+      </div>
+    </div>
+    <div class="access-result" id="access-result" style="display:none;"></div>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button type="button" class="btn-pill-secondary" onclick="fecharModalAcessos()">Fechar</button>
+      <button type="submit" class="btn-pill" id="btn-submit-access">Criar / redefinir acesso</button>
+    </div>
+  </form>
 </dialog>
 
 <!-- MODAL PARA CRIAÇÃO DE NOVA SUBCONTA DE CLIENTE -->
@@ -4355,6 +4691,19 @@ window.addEventListener('message', function(e) {
           <input type="number" id="sub-quotas" class="field-control" style="width:100%; border-radius:var(--radius-control);" value="110" />
         </div>
       </div>
+      <div style="padding-top:12px; border-top:1px solid var(--gray-150);">
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--gray-400); margin-bottom:8px;">Login do cliente (opcional)</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">E-mail de acesso</label>
+            <input type="email" id="sub-email" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="cliente@empresa.com" autocomplete="off" />
+          </div>
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Senha (vazio = gerar)</label>
+            <input type="text" id="sub-password" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="mín. 8 caracteres" autocomplete="off" />
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="sub-result" style="display:none; padding:12px; background:var(--blue-50); border:1px solid var(--blue-100); border-radius:var(--radius-md); margin-bottom:16px;">
@@ -4364,6 +4713,11 @@ window.addEventListener('message', function(e) {
         <code id="res-api-token" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; color:var(--blue-600); display:block; margin:2px 0 6px;"></code>
         • <strong>Admin Token (Acesso Individual do Cliente):</strong><br>
         <code id="res-admin-token" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; color:var(--green-700); display:block; margin:2px 0 6px;"></code>
+        <span id="res-access-box" style="display:none;">
+        • <strong>Login do Cliente (e-mail / senha):</strong><br>
+        <code id="res-access-email" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; display:block; margin:2px 0 4px;"></code>
+        <code id="res-access-password" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; display:block; margin:0 0 6px;"></code>
+        </span>
         • <strong>Regra de Split Vinculada:</strong> 10% upScale SaaS / 5% Parceiro / 85% Cliente.
       </div>
     </div>

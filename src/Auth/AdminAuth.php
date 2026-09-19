@@ -2,6 +2,7 @@
 
 namespace App\Auth;
 
+use App\Database\Connection;
 use App\Repositories\WorkspaceRepository;
 use App\Tenancy\Workspace;
 
@@ -36,6 +37,23 @@ class AdminAuth
                 'role' => ($ws->type === 'partner_whitelabel') ? 'partner_admin' : 'merchant_admin',
                 'workspace' => $ws
             ];
+        }
+
+        // 3. Sessão de login de cliente (e-mail + senha)
+        try {
+            $session = (new AuthSessionRepository(Connection::make()))->find($token);
+        } catch (\Throwable $e) {
+            $session = null;
+        }
+        if ($session) {
+            $ws = $this->workspaceRepo->findById((int) $session['workspace_id']);
+            if ($ws && $ws->status === 'active') {
+                return [
+                    'role' => ($ws->type === 'partner_whitelabel') ? 'partner_admin' : 'merchant_admin',
+                    'workspace' => $ws,
+                    'user_id' => (int) $session['user_id'],
+                ];
+            }
         }
 
         return null;

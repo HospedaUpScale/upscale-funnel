@@ -37,7 +37,7 @@ class Env
                 $value = substr($value, 1, -1);
             }
 
-            if (!array_key_exists($key, $_SERVER) && !array_key_exists($key, $_ENV)) {
+            if (getenv($key) === false && !array_key_exists($key, $_SERVER) && !array_key_exists($key, $_ENV)) {
                 putenv("{$key}={$value}");
                 $_ENV[$key] = $value;
                 $_SERVER[$key] = $value;

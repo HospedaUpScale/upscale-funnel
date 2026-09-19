@@ -4,6 +4,7 @@ require_once __DIR__ . '/../bootstrap.php';
 
 use App\Auth\AdminAuth;
 use App\Http\JsonResponse;
+use App\Support\OfferTheme;
 
 $token = AdminAuth::extractBearerToken();
 $adminAuth = new AdminAuth($wsRepo, $config['super_admin_token'] ?? '');
@@ -18,7 +19,7 @@ $targetWsId = (int)($request->get('workspace_id') ?? ($request->all()['workspace
 
 if ($targetWsId === 0) {
     // Se passou 0, pega o primeiro workspace elegível
-    $targetWsId = $auth['workspace'] ? $auth['workspace']->id : 2;
+    $targetWsId = ($auth && $auth['workspace']) ? $auth['workspace']->id : 2;
 }
 
 if ($auth && $auth['role'] !== 'super_admin') {
@@ -63,29 +64,7 @@ if ($request->method() === 'GET') {
         }
     }
 
-    // Default theme config merging
-    $defaultTheme = [
-        'primary_color'       => '#0229C4',
-        'accent_color'        => '#9FE870',
-        'card_bg'             => '#05153F',
-        'cta_bg'              => '#0229C4',
-        'foil_start'          => '#021F96',
-        'foil_end'            => '#3A5BE8',
-        'eyebrow'             => 'OFERTA EXCLUSIVA DESBLOQUEADA',
-        'greeting_pattern'    => 'Parabéns, {nome}! Você desbloqueou uma chance única.',
-        'scratch_inst_top'    => 'RASPE COM O DEDO',
-        'scratch_inst_sub'    => 'REVELE SUA OFERTA EXCLUSIVA',
-        'cta_label'           => 'ATIVAR MEU BOOSTER 110X',
-        'cta_subtext'         => 'Liberação imediata via Pix em 1 clique',
-        'modal_win_title'     => 'PARABÉNS! VOCÊ DESBLOQUEOU',
-        'anchor_price'        => 180.00,
-        'timer_minutes'       => 3,
-        'scratch_threshold'   => 22,
-        'pitch_delay'         => 0,
-        'video_src'           => '',
-    ];
-
-    $mergedTheme = array_merge($defaultTheme, $themeConfig);
+    $mergedTheme = OfferTheme::merge($themeConfig);
 
     JsonResponse::send([
         'status' => 'success',
@@ -118,34 +97,21 @@ if ($request->method() === 'POST') {
     $legacyCheckoutUrl = trim($input['legacy_checkout_url'] ?? '');
     $checkoutMode = ($input['checkout_mode'] ?? 'pix_native') === 'external_redirect' ? 'external_redirect' : 'pix_native';
 
-    // Monta o theme_config com todos os blocos editáveis
-    $theme = [
-        'primary_color'       => $input['theme']['primary_color'] ?? $input['primary_color'] ?? '#0229C4',
-        'accent_color'        => $input['theme']['accent_color'] ?? $input['accent_color'] ?? '#9FE870',
-        'card_bg'             => $input['theme']['card_bg'] ?? $input['card_bg'] ?? '#05153F',
-        'cta_bg'              => $input['theme']['cta_bg'] ?? $input['cta_bg'] ?? '#0229C4',
-        'foil_start'          => $input['theme']['foil_start'] ?? $input['foil_start'] ?? '#021F96',
-        'foil_end'            => $input['theme']['foil_end'] ?? $input['foil_end'] ?? '#3A5BE8',
-        'eyebrow'             => $input['theme']['eyebrow'] ?? $input['eyebrow'] ?? 'OFERTA EXCLUSIVA DESBLOQUEADA',
-        'greeting_pattern'    => $input['theme']['greeting_pattern'] ?? $input['greeting_pattern'] ?? 'Parabéns, {nome}! Você desbloqueou uma chance única.',
-        'scratch_inst_top'    => $input['theme']['scratch_inst_top'] ?? $input['scratch_inst_top'] ?? 'RASPE COM O DEDO',
-        'scratch_inst_sub'    => $input['theme']['scratch_inst_sub'] ?? $input['scratch_inst_sub'] ?? 'REVELE SUA OFERTA EXCLUSIVA',
-        'cta_label'           => $input['theme']['cta_label'] ?? $input['cta_label'] ?? ($title ? "ATIVAR MEU {$title}" : 'ATIVAR MEU BOOSTER 110X'),
-        'cta_subtext'         => $input['theme']['cta_subtext'] ?? $input['cta_subtext'] ?? 'Liberação imediata via Pix em 1 clique',
-        'modal_win_title'     => $input['theme']['modal_win_title'] ?? $input['modal_win_title'] ?? 'PARABÉNS! VOCÊ DESBLOQUEOU',
-        'anchor_price'        => (float)($input['theme']['anchor_price'] ?? $input['anchor_price'] ?? ($price * 2)),
-        'timer_minutes'       => (float)($input['theme']['timer_minutes'] ?? $input['timer_minutes'] ?? 3),
-        'scratch_threshold'   => (int)($input['theme']['scratch_threshold'] ?? $input['scratch_threshold'] ?? 22),
-        'pitch_delay'         => (int)($input['theme']['pitch_delay'] ?? $input['pitch_delay'] ?? 0),
-        'video_src'           => trim($input['theme']['video_src'] ?? $input['video_src'] ?? ''),
-    ];
-
-    $themeJson = json_encode($theme, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-    // Verifica se já existe oferta ativa para o workspace
-    $stmt = $pdo->prepare("SELECT id FROM upsell_offers WHERE workspace_id = ? AND is_active = 1 LIMIT 1");
+    // Oferta ativa atual (mantém valores salvos que o payload não enviou)
+    $stmt = $pdo->prepare("SELECT id, theme_config FROM upsell_offers WHERE workspace_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1");
     $stmt->execute([$targetWsId]);
     $existing = $stmt->fetch();
+
+    $storedTheme = [];
+    if ($existing && !empty($existing['theme_config'])) {
+        $decodedStored = is_string($existing['theme_config']) ? json_decode($existing['theme_config'], true) : $existing['theme_config'];
+        if (is_array($decodedStored)) {
+            $storedTheme = $decodedStored;
+        }
+    }
+
+    $theme = OfferTheme::fromInput($input, $storedTheme, $title, $price);
+    $themeJson = json_encode($theme, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     if ($existing) {
         $updateStmt = $pdo->prepare("

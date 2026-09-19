@@ -24,7 +24,7 @@ if (!$auth && ($config['app_env'] ?? 'production') !== 'local') {
 $targetWsId = (int)($request->get('workspace_id') ?? ($request->all()['workspace_id'] ?? ($auth['workspace']->id ?? 2)));
 
 if ($targetWsId === 0) {
-    $targetWsId = $auth['workspace'] ? $auth['workspace']->id : 2;
+    $targetWsId = ($auth && $auth['workspace']) ? $auth['workspace']->id : 2;
 }
 
 if ($auth && $auth['role'] !== 'super_admin') {

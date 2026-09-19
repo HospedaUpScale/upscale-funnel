@@ -108,6 +108,22 @@ if ($request->method() === 'POST') {
         JsonResponse::error('Slug already in use', 409);
     }
 
+    // Login opcional do cliente (e-mail + senha), validado antes de criar qualquer coisa
+    $adminEmail = strtolower(trim((string) ($input['admin_email'] ?? '')));
+    $adminPassword = (string) ($input['admin_password'] ?? '');
+    $userRepo = new \App\Repositories\UserRepository($pdo);
+    if ($adminEmail !== '') {
+        if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+            JsonResponse::error('Informe um e-mail válido para o login do cliente.', 400);
+        }
+        if ($adminPassword !== '' && strlen($adminPassword) < 8) {
+            JsonResponse::error('A senha do cliente precisa ter pelo menos 8 caracteres.', 400);
+        }
+        if ($userRepo->findByEmail($adminEmail) && $auth && $auth['role'] === 'partner_admin') {
+            JsonResponse::error('Este e-mail já está em uso em outro workspace. Use outro e-mail.', 409);
+        }
+    }
+
     // Generate random secure tokens
     $rawApiToken = bin2hex(random_bytes(20));
     $rawAdminToken = bin2hex(random_bytes(20));
@@ -124,6 +140,8 @@ if ($request->method() === 'POST') {
         $type = $input['type'] ?? ($parentId ? 'merchant' : 'partner_whitelabel');
     }
 
+    $pdo->beginTransaction();
+    try {
     $created = $wsRepo->create([
         'parent_id'        => $parentId,
         'type'             => $type,
@@ -166,6 +184,24 @@ if ($request->method() === 'POST') {
         $splitStmt->execute([$parentId, $created->id]);
     }
 
+    $access = null;
+    if ($adminEmail !== '') {
+        $accessRole = $created->type === 'partner_whitelabel' ? 'partner_admin' : 'merchant_admin';
+        $r = $userRepo->upsertForWorkspace($created->id, $accessRole, $adminEmail, $adminPassword, $created->name);
+        $access = [
+            'email'    => $r['email'],
+            'password' => $r['password'] ?? ($adminPassword !== '' ? $adminPassword : null),
+        ];
+    }
+
+    $pdo->commit();
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+
     JsonResponse::send([
         'status'    => 'success',
         'message'   => 'Workspace criado com sucesso!',
@@ -176,7 +212,8 @@ if ($request->method() === 'POST') {
             'custom_domain' => $created->customDomain,
             'api_token'     => $rawApiToken,     // SHOWN ONLY ONCE!
             'admin_token'   => $rawAdminToken,   // SHOWN ONLY ONCE!
-        ]
+        ],
+        'access' => $access,
     ], 201);
 }
 

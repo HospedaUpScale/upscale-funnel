@@ -12,6 +12,7 @@ api/logs/*.log
 
 # Testes
 teste/
+scratch/
 
 # OS
 Thumbs.db
