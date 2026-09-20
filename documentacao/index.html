@@ -3,389 +3,275 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Documentação de Integração - Raspadinha Booster 110X</title>
+  <title>Manual da VPS | Booster 110X</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0B0E14;
-      --surface: #151B26;
-      --surface-subtle: #1C2433;
-      --border: #283447;
-      --border-focus: #3B82F6;
-      --text: #F1F5F9;
-      --text-muted: #94A3B8;
-      --accent: #2563EB;
-      --accent-light: #60A5FA;
-      --success: #10B981;
-      --warning: #F59E0B;
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --border: #dfe7f1;
+      --text: #172033;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #eaf2ff;
+      --success: #16803c;
+      --warning: #a16207;
+      --code: #0f172a;
+      --shadow: 0 12px 32px rgba(15, 23, 42, .07);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      line-height: 1.6;
+    * { box-sizing: border-box; }
+    html { max-width: 100%; overflow-x: hidden; scroll-behavior: smooth; }
+    body { max-width: 100%; margin: 0; overflow-x: hidden; background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+    code { font-size: .88em; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 20px 0 48px; }
+    .topbar {
+      position: sticky; top: 12px; z-index: 20; display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; min-height: 58px; padding: 9px 12px 9px 16px; background: rgba(255,255,255,.94);
+      border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); backdrop-filter: blur(12px);
     }
-    .container {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 40px 20px;
+    .brand { display: flex; align-items: center; gap: 10px; min-width: max-content; font-size: 14px; font-weight: 800; text-decoration: none; }
+    .brand-mark { display: grid; place-items: center; width: 32px; height: 32px; color: #fff; background: var(--accent); border-radius: 9px; }
+    .nav { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav a { white-space: nowrap; padding: 8px 11px; border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; }
+    .nav a:hover, .nav a.active { color: var(--accent); background: var(--accent-soft); }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, .55fr); gap: 22px; min-width: 0; margin: 24px 0; }
+    .hero-main, .status-card { border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+    .hero-main { padding: 30px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    h1 { max-width: 700px; margin: 0 0 10px; overflow-wrap: anywhere; font-size: clamp(28px, 4vw, 44px); line-height: 1.08; letter-spacing: -.04em; }
+    .lead { max-width: 720px; margin: 0; color: var(--muted); font-size: 15px; }
+    .status-card { display: flex; flex-direction: column; justify-content: center; padding: 24px; }
+    .status-title { margin-bottom: 14px; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .status-row { display: flex; align-items: center; gap: 9px; padding: 8px 0; font-size: 13px; font-weight: 700; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px #dcfce7; }
+    .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; align-items: start; }
+    .toc { position: sticky; top: 94px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+    .toc strong { display: block; margin-bottom: 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .toc a { display: block; padding: 7px 9px; border-radius: 7px; color: var(--muted); font-size: 12px; font-weight: 650; text-decoration: none; }
+    .toc a:hover { color: var(--accent); background: var(--accent-soft); }
+    main { min-width: 0; }
+    section { scroll-margin-top: 94px; margin-bottom: 18px; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+    h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 19px; letter-spacing: -.02em; }
+    .step { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 auto; color: #fff; background: var(--accent); border-radius: 8px; font-size: 12px; }
+    p { margin: 8px 0; color: var(--muted); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+    .mini-card { padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); }
+    .mini-card strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    .mini-card span { color: var(--muted); font-size: 12px; }
+    .code-box { max-width: 100%; overflow: hidden; margin: 14px 0 4px; border: 1px solid #26334a; border-radius: 11px; background: var(--code); }
+    .code-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px 8px 14px; color: #94a3b8; background: #111c31; border-bottom: 1px solid #26334a; font-size: 11px; }
+    pre { margin: 0; padding: 15px; overflow-x: auto; color: #e2e8f0; font-size: 12px; line-height: 1.65; }
+    .copy { min-height: 30px; padding: 5px 10px; border: 0; border-radius: 7px; color: #fff; background: #2563eb; cursor: pointer; font: 700 11px 'Plus Jakarta Sans', sans-serif; }
+    .copy:hover { background: #1d4ed8; }
+    .notice { margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--accent); border-radius: 8px; color: #475569; background: var(--accent-soft); font-size: 13px; }
+    .notice.warning { border-color: #f59e0b; background: #fffbeb; }
+    .checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-soft); color: #475569; font-size: 12px; }
+    .checklist input { margin-top: 2px; accent-color: var(--accent); }
+    footer { padding: 10px 0; color: var(--muted); font-size: 12px; text-align: center; }
+    @media (max-width: 820px) {
+      .shell { width: min(calc(100% - 20px), 720px); padding-top: 10px; }
+      .topbar { top: 8px; align-items: flex-start; flex-direction: column; gap: 5px; }
+      .nav { width: 100%; }
+      .hero { grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 14px 0; }
+      .hero > *, .layout, main, section { min-width: 0; max-width: 100%; }
+      .hero-main { padding: 22px; }
+      .status-card { padding: 16px 20px; }
+      .status-card .status-title { margin-bottom: 4px; }
+      .status-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .status-row { min-width: 0; font-size: 12px; }
+      .layout { grid-template-columns: 1fr; }
+      .toc { display: none; }
     }
-
-    /* TOP NAV HEADER */
-    .top-nav {
-      background: #0E131F;
-      border: 1px solid #283447;
-      border-radius: 12px;
-      padding: 8px 14px;
-      margin-bottom: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .nav-brand {
-      font-size: 13px;
-      font-weight: 700;
-      color: #FFF;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .nav-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: #94A3B8;
-      text-decoration: none;
-      font-size: 12.5px;
-      font-weight: 600;
-      padding: 6px 12px;
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-    .nav-link svg, .nav-brand svg, h2 svg { flex-shrink: 0; }
-    .nav-link:hover {
-      color: #FFF;
-      background: #1A2234;
-    }
-    .nav-link.active {
-      color: #60A5FA;
-      background: rgba(37, 99, 235, 0.15);
-      border: 1px solid rgba(37, 99, 235, 0.3);
-    }
-
-    header {
-      margin-bottom: 32px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--border);
-    }
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: rgba(37, 99, 235, 0.15);
-      border: 1px solid rgba(37, 99, 235, 0.3);
-      color: var(--accent-light);
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-    h1 {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      letter-spacing: -0.5px;
-    }
-    .lead {
-      color: var(--text-muted);
-      font-size: 16px;
-    }
-
-    /* Scenario Toggle */
-    .scenario-picker {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      margin-bottom: 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .scenario-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .toggle-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .toggle-btn {
-      background: var(--surface-subtle);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 16px;
-      color: var(--text);
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.2s;
-    }
-    .toggle-btn.active {
-      background: rgba(37, 99, 235, 0.12);
-      border-color: var(--accent);
-      box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
-    }
-    .toggle-btn strong { display: block; font-size: 15px; margin-bottom: 4px; }
-    .toggle-btn span { display: block; font-size: 12px; color: var(--text-muted); }
-
-    /* Sections */
-    section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-    h2 {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* Code Blocks */
-    .code-container {
-      position: relative;
-      margin: 16px 0;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    .code-header {
-      background: #0D1117;
-      padding: 8px 14px;
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-    pre {
-      background: #080B10;
-      padding: 16px;
-      overflow-x: auto;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      color: #E2E8F0;
-    }
-    .copy-btn {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .copy-btn:hover { background: #1D4ED8; }
-
-    /* Checklist */
-    .checklist {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .checklist li {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 10px;
-      background: var(--surface-subtle);
-      border-radius: 8px;
-    }
-    .checklist input[type="checkbox"] {
-      margin-top: 4px;
-      accent-color: var(--accent);
-      width: 16px;
-      height: 16px;
-    }
-
-    .alert-box {
-      padding: 14px 18px;
-      border-radius: 10px;
-      margin: 16px 0;
-      font-size: 13px;
-      display: flex;
-      gap: 12px;
-    }
-    .alert-box.info { background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); color: #93C5FD; }
-    .alert-box.warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #FCD34D; }
-
     @media (max-width: 560px) {
-      .toggle-buttons { grid-template-columns: 1fr; }
+      .brand-mark { width: 28px; height: 28px; }
+      .hero-main, section { padding: 18px; }
+      h1 { font-size: 29px; }
+      .grid, .checklist { grid-template-columns: 1fr; }
+      .status-list { grid-template-columns: 1fr; }
+      pre { font-size: 11px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- NAV HEADER -->
-    <nav class="top-nav">
-      <div class="nav-brand">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        <span>Booster 110X Hub</span>
-      </div>
-      <div class="nav-links">
-        <a href="../hub/index.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Simulador Hub</a>
-        <a href="GUIA_INTEGRACAO_SORTEAMOS.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Guia Sorteamos</a>
-        <a href="index.html" class="nav-link active"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Manual Técnico</a>
-        <a href="../teste/index.html" class="nav-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Diagnóstico Iframe</a>
+  <div class="shell">
+    <nav class="topbar" aria-label="Navegação principal">
+      <a class="brand" href="../hub/index.html"><span class="brand-mark">B</span><span>Booster 110X</span></a>
+      <div class="nav">
+        <a href="../hub/index.html">Painel</a>
+        <a href="../hub/index.html#simulator">Simulador</a>
+        <a href="../hub/index.html#integrations">Integrações</a>
+        <a href="GUIA_INTEGRACAO_SORTEAMOS.html">Guia Sorteamos</a>
+        <a href="index.html" class="active" aria-current="page">Manual da VPS</a>
       </div>
     </nav>
 
-    <header>
-      <span class="badge">Guia Técnico</span>
-      <h1>Integração da Raspadinha Booster 110X</h1>
-      <p class="lead">Manual com os snippets, cabeçalhos Apache e instruções para publicar na Hostinger e embutir na rifa.</p>
+    <header class="hero">
+      <div class="hero-main">
+        <span class="eyebrow">Infraestrutura atual · VPS</span>
+        <h1>Implantação e integração na VPS</h1>
+        <p class="lead">Referência operacional do ambiente Docker com Nginx e PHP-FPM, incluindo atualização, variáveis, proxy HTTPS e incorporação segura da oferta.</p>
+      </div>
+      <aside class="status-card" aria-label="Resumo da arquitetura">
+        <span class="status-title">Stack da aplicação</span>
+        <div class="status-list">
+          <div class="status-row"><span class="dot"></span> Docker / Alpine</div>
+          <div class="status-row"><span class="dot"></span> Nginx + PHP 8.3</div>
+          <div class="status-row"><span class="dot"></span> MySQL ou SQLite</div>
+        </div>
+      </aside>
     </header>
 
-    <div class="scenario-picker">
-      <div class="scenario-title">Escolha o Cenário de Hospedagem:</div>
-      <div class="toggle-buttons">
-        <button class="toggle-btn active" id="btn-cenario-b">
-          <strong>Cenário Cross-Origin (Recomendado)</strong>
-          <span>Card em oferta.vendedorsincero.pro e Rifa em sinceropremios.com</span>
-        </button>
-        <button class="toggle-btn" id="btn-cenario-a">
-          <strong>Cenário Mesma Origem</strong>
-          <span>Card e Rifa hospedados no mesmo domínio exato</span>
-        </button>
-      </div>
-    </div>
+    <div class="layout">
+      <aside class="toc" aria-label="Nesta página">
+        <strong>Nesta página</strong>
+        <a href="#arquitetura">1. Arquitetura</a>
+        <a href="#ambiente">2. Ambiente</a>
+        <a href="#deploy">3. Deploy</a>
+        <a href="#proxy">4. Domínio e HTTPS</a>
+        <a href="#iframe">5. Iframe</a>
+        <a href="#validacao">6. Validação</a>
+      </aside>
 
-    <!-- Seção 1: O que subir na Hostinger -->
-    <section>
-      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> 1. Estrutura de Arquivos na Hostinger</h2>
-      <p>No painel da Hostinger (hPanel &rarr; Gerenciador de Arquivos), crie a pasta <code>/public_html/rasp2/</code> e envie os arquivos:</p>
+      <main>
+        <section id="arquitetura">
+          <h2><span class="step">1</span> Arquitetura da VPS</h2>
+          <p>O projeto já contém a imagem de produção. O container serve a aplicação na porta <code>80</code>, executa as migrações no primeiro início e mantém Nginx e PHP-FPM no mesmo serviço.</p>
+          <div class="grid">
+            <div class="mini-card"><strong><code>Dockerfile</code></strong><span>Imagem PHP 8.3, extensões e arquivos da aplicação.</span></div>
+            <div class="mini-card"><strong><code>deploy/nginx.conf</code></strong><span>Rotas do painel, APIs, arquivos estáticos e PHP.</span></div>
+            <div class="mini-card"><strong><code>deploy/start.sh</code></strong><span>Permissões, migrações e inicialização dos processos.</span></div>
+          </div>
+          <div class="notice">A publicação acontece pela imagem Docker; não é necessário criar pastas públicas manualmente nem usar <code>.htaccess</code>.</div>
+        </section>
 
-      <div class="code-container">
-        <div class="code-header"><span>Estrutura no Servidor</span></div>
-        <pre>public_html/
-└── rasp2/
-    ├── index.html       (O card consolidado da raspadinha)
-    ├── .htaccess        (Configuração de cabeçalhos sem restrição)
-    ├── teste/
-    │   └── index.html   (Ferramenta de diagnóstico)
-    └── integracao/
-        └── index.html   (Esta documentação)</pre>
-      </div>
-    </section>
+        <section id="ambiente">
+          <h2><span class="step">2</span> Variáveis de ambiente</h2>
+          <p>Crie o arquivo <code>.env</code> na VPS a partir de <code>.env.example</code>. Não envie esse arquivo ao repositório.</p>
+          <div class="code-box">
+            <div class="code-head"><span>.env — produção</span><button class="copy" data-copy="env-code">Copiar</button></div>
+            <pre id="env-code">APP_ENV=production
+BASE_DOMAIN=oferta.seudominio.com.br
+CARD_BASE_URL=https://oferta.seudominio.com.br
+DEFAULT_WORKSPACE_SLUG=sincero
 
-    <!-- Seção 2: .htaccess -->
-    <section>
-      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 2. Arquivo .htaccess</h2>
-      <p>Garante que a Hostinger não bloqueie a raspadinha dentro do iframe com o header <code>SAMEORIGIN</code>.</p>
+ADMIN_USER=admin
+ADMIN_EMAIL=admin@seudominio.com.br
+ADMIN_PASSWORD=troque-por-uma-senha-forte
+SUPER_ADMIN_TOKEN=gere-um-token-longo-e-aleatorio
+ENFORCE_API_TOKEN=true
 
-      <div class="code-container">
-        <div class="code-header">
-          <span>/public_html/rasp2/.htaccess</span>
-          <button class="copy-btn" onclick="copiarCodigo('code-htaccess')">Copiar</button>
-        </div>
-        <pre id="code-htaccess"><span id="htaccess-content">Header always unset X-Frame-Options
-Header unset X-Frame-Options
-Header always set Content-Security-Policy "frame-ancestors *;"
-Header always set Access-Control-Allow-Origin "*"</span></pre>
-      </div>
-    </section>
+DB_DRIVER=mysql
+DB_HOST=host-do-banco
+DB_PORT=3306
+DB_DATABASE=upscale
+DB_USERNAME=upscale
+DB_PASSWORD=senha-do-banco</pre>
+          </div>
+          <div class="notice warning">Troque obrigatoriamente <code>ADMIN_PASSWORD</code>, <code>SUPER_ADMIN_TOKEN</code> e a senha do banco antes de publicar.</div>
+        </section>
 
-    <!-- Seção 3: Código de Embed para a Rifa -->
-    <section>
-      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> 3. Bloco para Colar na Rifa (Página de Sucesso / Obrigado)</h2>
-      <p>Cole este bloco HTML + JavaScript no painel da rifa onde o comprador finaliza a compra:</p>
+        <section id="deploy">
+          <h2><span class="step">3</span> Publicação e atualização</h2>
+          <p>Exemplo para uma VPS onde o proxy público encaminha para a porta local <code>8080</code>. O volume preserva SQLite, sessões e estado de migração entre recriações.</p>
+          <div class="code-box">
+            <div class="code-head"><span>Shell Linux na VPS</span><button class="copy" data-copy="deploy-code">Copiar</button></div>
+            <pre id="deploy-code">git pull
+docker build -t booster-110x .
+docker stop booster-110x 2&gt;/dev/null || true
+docker rm booster-110x 2&gt;/dev/null || true
+docker run -d \
+  --name booster-110x \
+  --restart unless-stopped \
+  --env-file .env \
+  -p 127.0.0.1:8080:80 \
+  -v "$(pwd)/storage:/var/www/html/storage" \
+  booster-110x</pre>
+          </div>
+          <p>Se o MySQL estiver em outro container, conecte ambos à mesma rede Docker e use o nome do serviço em <code>DB_HOST</code>.</p>
+        </section>
 
-      <div class="code-container">
-        <div class="code-header">
-          <span>embed-rifa.html</span>
-          <button class="copy-btn" onclick="copiarCodigo('code-embed')">Copiar</button>
-        </div>
-        <pre id="code-embed">&lt;div style="width:100%;max-width:680px;margin:0 auto;"&gt;
+        <section id="proxy">
+          <h2><span class="step">4</span> Domínio, proxy e HTTPS</h2>
+          <p>Aponte o DNS do subdomínio para a VPS. No Nginx do host, encaminhe HTTPS para o container e mantenha os cabeçalhos de proxy.</p>
+          <div class="code-box">
+            <div class="code-head"><span>/etc/nginx/sites-available/booster-110x</span><button class="copy" data-copy="proxy-code">Copiar</button></div>
+            <pre id="proxy-code">server {
+  listen 80;
+  server_name oferta.seudominio.com.br;
+
+  location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}</pre>
+          </div>
+          <div class="notice">Depois de validar o DNS, emita o certificado TLS com a ferramenta adotada na VPS, como Certbot ou Caddy. O endereço final do card deve responder somente por HTTPS.</div>
+        </section>
+
+        <section id="iframe">
+          <h2><span class="step">5</span> Integração por iframe</h2>
+          <p>Use a raiz da aplicação e informe o workspace. O listener ajusta a altura automaticamente e elimina a rolagem interna do iframe.</p>
+          <div class="code-box">
+            <div class="code-head"><span>Bloco para a página de obrigado</span><button class="copy" data-copy="iframe-code">Copiar</button></div>
+            <pre id="iframe-code">&lt;div style="width:100%;max-width:680px;margin:0 auto"&gt;
   &lt;iframe
-    id="iframe-booster"
-    src="https://oferta.vendedorsincero.pro/rasp2/"
-    style="width:100%;min-height:420px;border:none;overflow:hidden;display:block;"
-    scrolling="no"&gt;
-  &lt;/iframe&gt;
+    id="booster-110x"
+    src="https://oferta.seudominio.com.br/?workspace_id=2&amp;nome={{nome}}"
+    title="Oferta Booster 110X"
+    style="width:100%;height:460px;border:0;display:block"
+    scrolling="no"
+    loading="eager"&gt;&lt;/iframe&gt;
 &lt;/div&gt;
 
 &lt;script&gt;
-window.addEventListener('message', function(e) {
-  if (e.data && e.data.tipo === 'dx:altura' && e.data.altura) {
-    var f = document.getElementById('iframe-booster');
-    if (f) f.style.height = e.data.altura + 'px';
+window.addEventListener('message', function (event) {
+  if (event.origin !== 'https://oferta.seudominio.com.br') return;
+  if (event.data &amp;&amp; event.data.tipo === 'dx:altura') {
+    document.getElementById('booster-110x').style.height = event.data.altura + 'px';
   }
 });
 &lt;/script&gt;</pre>
-      </div>
-    </section>
+          </div>
+          <div class="notice warning">O Nginx interno ainda usa <code>frame-ancestors *</code>. Em produção, substitua o curinga pelos domínios exatos das plataformas que podem incorporar o card.</div>
+        </section>
 
-    <!-- Seção 4: Checklist -->
-    <section>
-      <h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 17.01"/></svg> 4. Checklist de Publicação</h2>
-      <ul class="checklist">
-        <li><input type="checkbox" id="c1"> <label for="c1">Subir <code>index.html</code> para <code>/public_html/rasp2/</code></label></li>
-        <li><input type="checkbox" id="c2"> <label for="c2">Subir <code>.htaccess</code> na mesma pasta</label></li>
-        <li><input type="checkbox" id="c3"> <label for="c3">Testar o acesso direto em <code>https://oferta.vendedorsincero.pro/rasp2/</code></label></li>
-        <li><input type="checkbox" id="c4"> <label for="c4">Colar o código do <code>embed-rifa.html</code> no painel da rifa</label></li>
-        <li><input type="checkbox" id="c5"> <label for="c5">Verificar no celular se o iframe ajusta a altura automaticamente sem barra de rolagem interna</label></li>
-      </ul>
-    </section>
+        <section id="validacao">
+          <h2><span class="step">6</span> Checklist de validação</h2>
+          <ul class="checklist">
+            <li><input type="checkbox" id="check-1"><label for="check-1">Container aparece como ativo em <code>docker ps</code>.</label></li>
+            <li><input type="checkbox" id="check-2"><label for="check-2"><code>/api/index.php?format=json</code> retorna JSON válido.</label></li>
+            <li><input type="checkbox" id="check-3"><label for="check-3"><code>/hub/</code> abre com HTTPS e autenticação.</label></li>
+            <li><input type="checkbox" id="check-4"><label for="check-4">Oferta abre com o <code>workspace_id</code> correto.</label></li>
+            <li><input type="checkbox" id="check-5"><label for="check-5">Iframe não cria rolagem interna no celular.</label></li>
+            <li><input type="checkbox" id="check-6"><label for="check-6">Volume <code>storage</code> e banco têm backup recorrente.</label></li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <footer>Booster 110X · Manual operacional da VPS</footer>
   </div>
 
   <script>
-    const btnA = document.getElementById('btn-cenario-a');
-    const btnB = document.getElementById('btn-cenario-b');
-    const htContent = document.getElementById('htaccess-content');
-
-    btnA.addEventListener('click', () => {
-      btnA.classList.add('active');
-      btnB.classList.remove('active');
-      htContent.textContent = "Header always unset X-Frame-Options\nHeader unset X-Frame-Options\nHeader always set Content-Security-Policy \"frame-ancestors 'self';\"\nHeader always set Access-Control-Allow-Origin \"*\"";
-    });
-
-    btnB.addEventListener('click', () => {
-      btnB.classList.add('active');
-      btnA.classList.remove('active');
-      htContent.textContent = "Header always unset X-Frame-Options\nHeader unset X-Frame-Options\nHeader always set Content-Security-Policy \"frame-ancestors *;\"\nHeader always set Access-Control-Allow-Origin \"*\"";
-    });
-
-    function copiarCodigo(id) {
-      const text = document.getElementById(id).innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Código copiado com sucesso!');
+    document.querySelectorAll('[data-copy]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var target = document.getElementById(button.dataset.copy);
+        navigator.clipboard.writeText(target.innerText).then(function () {
+          button.textContent = 'Copiado';
+          window.setTimeout(function () { button.textContent = 'Copiar'; }, 1400);
+        });
       });
-    }
+    });
   </script>
 </body>
 </html>

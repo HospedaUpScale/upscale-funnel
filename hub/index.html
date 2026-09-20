@@ -1317,94 +1317,126 @@
 
     /* Layout 2026 — operação orientada a integrações */
     :root {
-      --sidebar-width: 248px;
-      --topbar-height: 76px;
-      --page-padding: clamp(18px, 2.4vw, 34px);
-      --grid-gutter: 18px;
+      --sidebar-width: 232px;
+      --topbar-height: 60px;
+      --page-padding: clamp(14px, 1.5vw, 20px);
+      --grid-gutter: 12px;
       --radius-card: 16px;
       --radius-panel: 18px;
       --radius-control: 10px;
       --shadow-card: 0 1px 2px rgba(5,21,63,.035), 0 14px 34px -24px rgba(5,21,63,.28);
     }
-    body { background:#f3f5f9; color:#05153f; }
+    body { background:#f7f8fb; color:#05153f; }
     .sidebar {
-      padding:20px 14px 16px;
-      background:#05153f;
-      border-right:0;
-      box-shadow:12px 0 34px -30px rgba(5,21,63,.75);
+      padding:14px 10px 12px;
+      background:#fff;
+      border-right:1px solid #e6e9f0;
+      box-shadow:none;
     }
-    .sidebar-brand { padding:0 8px 18px; }
-    .brand-logo-svg { height:28px; filter:brightness(0) invert(1); }
-    .brand-network-tag { color:#b9c5fb; background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.1); }
-    .account-switcher-card { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.1); box-shadow:none; padding:10px; }
-    .account-switcher-card:hover { background:rgba(255,255,255,.11); border-color:rgba(159,232,112,.45); }
-    .account-name,.status-engine-name { color:#fff; }
-    .account-sub,.account-chevron,.sidebar-section-title,.status-uptime { color:#8a96bd; }
-    .sidebar-section-title { padding:18px 10px 7px; font-size:9.5px; letter-spacing:.12em; }
-    .nav-list { gap:4px; }
-    .nav-item-btn { min-height:40px; padding:8px 11px; color:#c6cee7; border-radius:10px; font-size:12.5px; }
-    .nav-item-btn:hover { color:#fff; background:rgba(255,255,255,.07); }
-    .nav-item-btn.active { color:#05153f; background:#fff; border-color:#fff; box-shadow:0 8px 20px -16px rgba(0,0,0,.8); }
+    .sidebar-brand { padding:0 8px 12px; }
+    .brand-logo-svg { height:25px; filter:none; }
+    .brand-network-tag { color:var(--blue-600); background:var(--blue-50); border-color:var(--blue-100); }
+    .account-switcher-card { background:#f8f9fc; border-color:#e6e9f0; box-shadow:none; padding:7px 9px; margin-bottom:6px; }
+    .account-switcher-card:hover { background:#fff; border-color:var(--blue-200); }
+    .account-name,.status-engine-name { color:var(--ink-900); }
+    .account-sub,.account-chevron,.sidebar-section-title,.status-uptime { color:var(--gray-400); }
+    .sidebar-section-title { padding:12px 10px 5px; font-size:8.5px; letter-spacing:.11em; }
+    .nav-list { gap:2px; }
+    .nav-item-btn { min-height:34px; padding:6px 10px; color:var(--gray-500); border-radius:9px; font-size:11.5px; }
+    .nav-item-btn:hover { color:var(--ink-900); background:#f7f8fb; }
+    .nav-item-btn.active { color:var(--blue-600); background:var(--blue-50); border-color:var(--blue-100); box-shadow:none; }
     .nav-item-btn.active svg { color:#0229c4; }
-    .sidebar-footer { border-color:rgba(255,255,255,.1); }
-    .engine-status-chip { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.1); }
-    .top-bar { height:auto; min-height:var(--topbar-height); padding:11px var(--page-padding); background:rgba(255,255,255,.82)!important; box-shadow:none; }
-    .top-breadcrumb { margin-bottom:3px; }
-    .top-heading { font-size:20px; }
-    .top-subheading { max-width:680px; }
+    .sidebar-footer { border-color:#e6e9f0; }
+    .engine-status-chip { background:#f8f9fc; border-color:#e6e9f0; }
+    .top-bar { height:auto; min-height:var(--topbar-height); padding:6px var(--page-padding); background:rgba(255,255,255,.9)!important; box-shadow:none; }
+    .top-breadcrumb { margin-bottom:1px; font-size:9.5px; }
+    .top-heading { font-size:17px; }
+    .top-subheading { max-width:680px; font-size:11.5px; }
     .content-container { width:100%; max-width:1540px; margin:0 auto; padding:var(--page-padding); }
     .view-pane { animation:viewEnter .22s cubic-bezier(.32,.72,0,1); }
     @keyframes viewEnter { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
     .card,.kpi-tile,.block-card,.action-hero-card { border-color:#e6e9f0; border-radius:var(--radius-card); box-shadow:var(--shadow-card); }
-    .card { padding:20px; }
-    .card-title { font-size:15px; letter-spacing:-.012em; }
-    .card-hero-brand { border-radius:var(--radius-card); padding:22px; min-height:148px; background:linear-gradient(135deg,#0229c4 0%,#0f39d6 55%,#05153f 100%); box-shadow:0 18px 38px -24px rgba(2,41,196,.75); }
-    .kpi-tile { padding:18px; min-height:148px; }
-    .kpi-num { font-size:26px; }
+    .card { padding:16px; }
+    .card-title { font-size:14px; letter-spacing:-.012em; margin-bottom:8px; }
+    .card-hero-brand { border-radius:var(--radius-card); padding:16px; min-height:118px; background:linear-gradient(135deg,#0229c4 0%,#0f39d6 55%,#05153f 100%); box-shadow:0 18px 38px -24px rgba(2,41,196,.75); }
+    .hero-amount { font-size:28px; margin:6px 0; }
+    .hero-splits-pill { padding:5px 9px; font-size:10.5px; }
+    .kpi-tile { padding:14px; min-height:118px; }
+    .kpi-num { font-size:24px; margin:5px 0 1px; }
+    .kpi-header { font-size:10px; }
+    .kpi-foot { font-size:11px; }
     .grid-metrics-top { gap:var(--grid-gutter); }
     .grid-2 { gap:var(--grid-gutter); }
     table { border-collapse:separate; border-spacing:0; }
-    thead th { background:#f7f8fb; color:#64708e; font-size:10px; letter-spacing:.055em; }
+    thead th { background:#f7f8fb; color:#64708e; font-size:9.5px; letter-spacing:.055em; padding:8px 11px; }
+    tbody td { padding:9px 11px; font-size:12px; }
     tbody tr:hover td { background:#f8f9fc; }
-    .field-control { border-radius:10px; min-height:40px; background:#fff; }
-    .btn-pill,.btn-pill-secondary,.btn-top-action { min-height:38px; border-radius:10px; }
-    .integration-overview { margin:0 0 18px; padding:18px 20px; background:#fff; border:1px solid #e6e9f0; border-radius:16px; box-shadow:var(--shadow-card); }
-    .integration-overview-head { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:14px; }
-    .integration-overview-title { display:flex; align-items:center; gap:10px; font-weight:800; font-size:14px; color:var(--ink-900); }
-    .integration-overview-title svg { color:var(--blue-600); }
-    .integration-overview-sub { font-size:11.5px; color:var(--gray-400); margin-top:2px; }
-    .integration-grid { display:grid; grid-template-columns:repeat(5,minmax(130px,1fr)); gap:10px; }
-    .integration-mini { padding:12px; border:1px solid #e8ebf2; border-radius:12px; background:#fafbfc; cursor:pointer; transition:all .14s ease; text-align:left; }
-    .integration-mini:hover { transform:translateY(-1px); border-color:var(--blue-200); background:#fff; box-shadow:0 10px 22px -18px rgba(5,21,63,.4); }
-    .integration-mini-top { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; }
-    .integration-mini-name { font-size:11.5px; font-weight:750; color:var(--ink-900); }
+    .field-control { border-radius:10px; min-height:36px; background:#fff; }
+    .btn-pill,.btn-pill-secondary,.btn-top-action { min-height:34px; border-radius:9px; }
+    .integration-overview { display:flex; align-items:center; gap:12px; margin:0 0 12px; padding:10px 13px; background:#fff; border:1px solid #e6e9f0; border-radius:13px; box-shadow:var(--shadow-card); }
+    .integration-overview-icon { width:30px; height:30px; display:grid; place-items:center; flex:0 0 auto; color:var(--blue-600); background:var(--blue-50); border-radius:9px; }
+    .integration-overview-copy { min-width:0; flex:1; }
+    .integration-overview-title { font-weight:750; font-size:12.5px; color:var(--ink-900); }
+    .integration-overview-sub { font-size:10.5px; color:var(--gray-400); margin-top:1px; }
+    .integration-overview-status { display:flex; align-items:center; gap:7px; color:var(--gray-500); font-size:11px; white-space:nowrap; }
     .health-dot { width:8px; height:8px; border-radius:50%; background:var(--gray-300); box-shadow:0 0 0 3px rgba(148,163,184,.12); }
     .health-dot.ok { background:#39a852; box-shadow:0 0 0 3px rgba(57,168,82,.12); }
     .health-dot.warn { background:#e8a33d; box-shadow:0 0 0 3px rgba(232,163,61,.13); }
     .health-dot.error { background:#e5484d; box-shadow:0 0 0 3px rgba(229,72,77,.12); }
-    .integration-mini-state { color:var(--gray-400); font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .integration-hero { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(300px,.75fr); gap:18px; margin-bottom:18px; }
-    .integration-flow { padding:24px; border-radius:18px; color:#fff; background:linear-gradient(145deg,#071c52,#0229c4); overflow:hidden; position:relative; }
-    .integration-flow::after { content:""; position:absolute; width:260px; height:260px; right:-100px; top:-120px; border:52px solid rgba(255,255,255,.06); border-radius:50%; }
-    .integration-flow h2 { font-size:22px; letter-spacing:-.03em; margin-bottom:6px; color:#fff; }
-    .integration-flow p { color:#dce2fd; font-size:12.5px; max-width:560px; }
-    .flow-rail { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:24px; position:relative; z-index:1; }
-    .flow-step { padding:12px 10px; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.12); border-radius:12px; }
-    .flow-step b { display:block; font-size:11px; margin-bottom:3px; }
-    .flow-step span { font-size:9.5px; color:#b9c5fb; }
-    .integration-summary { display:flex; flex-direction:column; justify-content:space-between; padding:22px; background:#fff; border:1px solid #e6e9f0; border-radius:18px; box-shadow:var(--shadow-card); }
-    .integration-score { font-family:var(--font-mono); font-size:42px; line-height:1; color:var(--blue-600); font-weight:700; margin:16px 0 6px; }
-    .integration-catalog { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-    .integration-card { background:#fff; border:1px solid #e6e9f0; border-radius:16px; padding:18px; box-shadow:var(--shadow-card); }
-    .integration-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:15px; }
-    .integration-card-icon { width:38px; height:38px; border-radius:11px; display:grid; place-items:center; color:var(--blue-600); background:var(--blue-50); }
-    .integration-card h3 { font-size:14px; margin-bottom:3px; }
-    .integration-card p { font-size:11.5px; color:var(--gray-400); }
-    .integration-meta { display:grid; gap:8px; padding-top:13px; border-top:1px solid #edf0f5; }
-    .integration-meta-row { display:flex; justify-content:space-between; gap:16px; font-size:11px; }
-    .integration-meta-row span:first-child { color:var(--gray-400); }
-    .integration-meta-row strong { color:var(--ink-800); text-align:right; }
+    .integration-layout { display:grid; grid-template-columns:minmax(0,1fr) 286px; gap:12px; align-items:start; }
+    .integration-main,.integration-aside { background:#fff; border:1px solid #e6e9f0; border-radius:16px; box-shadow:var(--shadow-card); }
+    .integration-main { overflow:hidden; }
+    .integration-main-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:15px 17px; border-bottom:1px solid #edf0f5; }
+    .integration-main-head h2 { font-size:17px; letter-spacing:-.025em; margin-bottom:3px; }
+    .integration-main-head p { max-width:620px; color:var(--gray-400); font-size:11.5px; }
+    .integration-progress { min-width:138px; text-align:right; }
+    .integration-score { font-family:var(--font-mono); font-size:22px; line-height:1; color:var(--blue-600); font-weight:700; }
+    .integration-score-label { display:block; margin-top:5px; color:var(--gray-400); font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; }
+    .integration-progress-track { width:138px; height:5px; margin-top:9px; overflow:hidden; background:#edf0f5; border-radius:999px; }
+    .integration-progress-bar { width:25%; height:100%; background:var(--blue-600); border-radius:inherit; transition:width .22s ease; }
+    .integration-list { display:grid; }
+    .integration-item { display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:11px; align-items:center; padding:11px 17px; border-bottom:1px solid #edf0f5; }
+    .integration-item:last-child { border-bottom:0; }
+    .integration-item-icon { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; color:var(--blue-600); background:var(--blue-50); }
+    .integration-item-copy { min-width:0; }
+    .integration-item-title { display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+    .integration-item-title h3 { font-size:12.5px; }
+    .integration-item-title .status-chip { background:#f1f3f7; color:var(--gray-500); }
+    .integration-item-copy p { color:var(--gray-400); font-size:10.5px; }
+    .integration-item-actions { display:flex; align-items:center; gap:10px; }
+    .integration-item-status { min-width:138px; text-align:right; color:var(--gray-500); font-size:10.5px; }
+    .integration-item-status .health-dot { display:inline-block; margin-right:7px; vertical-align:1px; }
+    .integration-aside { padding:15px; position:sticky; top:72px; }
+    .integration-aside h3 { font-size:13.5px; margin-bottom:4px; }
+    .integration-aside > p { color:var(--gray-400); font-size:10.5px; margin-bottom:16px; }
+    .integration-quick-actions { display:grid; gap:8px; }
+    .integration-quick-action { display:flex; align-items:center; gap:9px; width:100%; padding:9px 10px; text-align:left; border:1px solid #e6e9f0; border-radius:10px; background:#fff; color:var(--ink-800); cursor:pointer; transition:var(--transition-control); }
+    #chart-bars-wrap { height:125px!important; }
+    .integration-quick-action:hover { border-color:var(--blue-200); background:var(--blue-50); }
+    .integration-quick-action span { flex:1; }
+    .integration-quick-action strong { display:block; font-size:11px; }
+    .integration-quick-action small { display:block; color:var(--gray-400); font-size:9.5px; margin-top:1px; }
+    .integration-last-check { margin-top:14px; padding-top:13px; border-top:1px solid #edf0f5; color:var(--gray-400); font-size:9.5px; }
     .status-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background:#eef8ee; color:#24783a; font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+
+    /* Página dedicada ao editor de blocos */
+    #editor-back-button { display:none; }
+    body.editor-page .sidebar,
+    body.editor-page .sidebar-backdrop,
+    body.editor-page #ecosystem-overview,
+    body.editor-page .campaign-overview-panel,
+    body.editor-page .campaign-list-panel { display:none!important; }
+    body.editor-page .main-wrapper { width:100%; }
+    body.editor-page .content-container { max-width:1600px; padding-top:14px; }
+    body.editor-page .view-pane { display:none!important; }
+    body.editor-page #view-campaigns { display:block!important; }
+    body.editor-page .editor-intro { margin:0 0 12px; }
+    body.editor-page .visual-editor-shell { grid-template-columns:minmax(420px,.78fr) minmax(520px,1.22fr); gap:14px; }
+    body.editor-page .top-bar .menu-toggle,
+    body.editor-page .top-bar .btn-logout,
+    body.editor-page .top-bar .btn-top-action:not(#editor-back-button) { display:none!important; }
+    body.editor-page #editor-back-button { display:inline-flex; background:#fff; color:var(--ink-900); border:1px solid var(--gray-150); box-shadow:var(--shadow-xs); }
+    body.editor-page #editor-back-button:hover { background:var(--gray-50); border-color:var(--gray-200); }
 
     /* Editor visual de ofertas */
     .editor-intro { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:30px 0 14px; }
@@ -1497,16 +1529,17 @@
     .funnel-preview { min-width:0; display:flex; flex-direction:column; background:#e9edf4; }
     .funnel-preview iframe { flex:1; width:100%; min-height:554px; border:0; background:#fff; }
     .empty-inline { padding:24px; text-align:center; color:var(--gray-400); font-size:11px; }
-    @media (max-width:1180px) { .integration-grid{grid-template-columns:repeat(3,1fr)} .integration-hero{grid-template-columns:1fr} .visual-editor-shell{grid-template-columns:1fr}.editor-preview-column{position:relative;top:auto}.preview-canvas{min-height:650px}.domain-layout{grid-template-columns:1fr}.funnel-builder{grid-template-columns:220px minmax(0,1fr)}.funnel-workspace{grid-template-columns:1fr}.html-editor-wrap{border-right:0;border-bottom:1px solid #e6e9f0} }
+    @media (max-width:1180px) { .integration-layout{grid-template-columns:1fr}.integration-aside{position:static}.visual-editor-shell{grid-template-columns:1fr}.editor-preview-column{position:relative;top:auto}.preview-canvas{min-height:650px}.domain-layout{grid-template-columns:1fr}.funnel-builder{grid-template-columns:220px minmax(0,1fr)}.funnel-workspace{grid-template-columns:1fr}.html-editor-wrap{border-right:0;border-bottom:1px solid #e6e9f0} }
     @media (max-width:760px) {
-      .integration-grid{grid-template-columns:repeat(2,1fr)}
-      .integration-catalog{grid-template-columns:1fr}
-      .flow-rail{grid-template-columns:1fr 1fr}
+      .integration-overview-status{display:none}
+      .integration-item{grid-template-columns:32px minmax(0,1fr);padding:12px 14px}
+      .integration-item-actions{grid-column:2;justify-content:space-between}
+      .integration-main-head{flex-direction:column}
+      .integration-progress{text-align:left}
       .top-subheading{display:none}
-      .content-container{padding:16px;overflow:hidden}
-      .integration-overview-head{flex-direction:column;align-items:stretch}
-      .integration-overview-head .btn-pill-secondary{width:100%}
-      .integration-overview,.card,.card-hero-brand,.kpi-tile,.integration-hero,.integration-flow,.integration-summary{max-width:100%}
+      .content-container{padding:12px;overflow:hidden}
+      .integration-overview .btn-pill-secondary{width:auto}
+      .integration-overview,.card,.card-hero-brand,.kpi-tile,.integration-main,.integration-aside{max-width:100%}
       .top-actions{display:grid;grid-template-columns:minmax(0,1fr) 42px}
       .top-actions .ws-select-wrap{grid-column:1 / -1}
       .top-actions .user-role-pill{width:100%;max-width:100%}
@@ -1541,6 +1574,23 @@
       .funnel-workspace{display:block}
       .html-editor{min-height:420px}
       .funnel-preview iframe{min-height:480px}
+      .btn-pill,.btn-pill-secondary,.btn-top-action{min-height:40px}
+    }
+
+    @media (min-width:769px) and (max-height:820px) {
+      :root{--topbar-height:54px;--page-padding:12px;--grid-gutter:10px}
+      .top-bar{padding-top:4px;padding-bottom:4px}
+      .top-subheading{display:none}
+      .sidebar{padding-top:10px}
+      .sidebar-brand{padding-bottom:8px}
+      .sidebar-section-title{padding-top:9px}
+      .nav-item-btn{min-height:32px}
+      .integration-overview{margin-bottom:10px;padding-top:8px;padding-bottom:8px}
+      .card-hero-brand,.kpi-tile{min-height:108px}
+      .card{margin-bottom:10px;padding:14px}
+      #chart-bars-wrap{height:92px!important}
+      #view-dash>.card:last-child>div[style*="overflow-x"]{display:none}
+      #view-dash>.card:last-child{margin-bottom:0}
     }
 
     /* ════ TELA DE LOGIN UPSCALE HUB ════ */
@@ -1915,7 +1965,6 @@
         <button class="nav-item-btn" onclick="navigate('tx')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           <span>Transações & Pix</span>
-          <span class="nav-item-badge badge-green">AO VIVO</span>
         </button>
       </li>
     </ul>
@@ -1926,7 +1975,6 @@
         <button class="nav-item-btn" onclick="navigate('campaigns')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           <span id="nav-text-campaigns">Campanhas & Inventário</span>
-          <span class="nav-item-badge badge-blue">NO AR</span>
         </button>
       </li>
       <li id="nav-li-partners">
@@ -1944,14 +1992,12 @@
         <button class="nav-item-btn" onclick="navigate('integrations')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><path d="M17.5 14v7M14 17.5h7"/></svg>
           <span>Central de Integrações</span>
-          <span class="nav-item-badge badge-green">5</span>
         </button>
       </li>
       <li>
         <button class="nav-item-btn" onclick="navigate('sites')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
           <span>Domínios & Funis</span>
-          <span class="nav-item-badge badge-blue">NOVO</span>
         </button>
       </li>
       <li>
@@ -2030,6 +2076,11 @@
           <span class="role-tag" id="role-tag">GLOBAL</span>
         </div>
 
+        <button class="btn-top-action" id="editor-back-button" onclick="voltarParaCampanhas()" title="Voltar para campanhas">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Voltar às campanhas</span>
+        </button>
+
         <button class="btn-top-action" onclick="atualizarTudo()" title="Atualizar dados em tempo real">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           <span>Atualizar</span>
@@ -2050,23 +2101,13 @@
       </div>
 
       <section class="integration-overview" id="ecosystem-overview" aria-labelledby="integration-overview-title">
-        <div class="integration-overview-head">
-          <div>
-            <div class="integration-overview-title" id="integration-overview-title">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="9"/></svg>
-              Conexões do Ecossistema
-            </div>
-            <div class="integration-overview-sub">Acompanhe o status real de cada integração e webhook.</div>
-          </div>
-          <button class="btn-pill-secondary" onclick="navigate('integrations')">Gerenciar integrações</button>
+        <span class="integration-overview-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="9"/></svg></span>
+        <div class="integration-overview-copy">
+          <div class="integration-overview-title" id="integration-overview-title">Integrações da operação</div>
+          <div class="integration-overview-sub">Widget ativo. Confira as conexões essenciais antes de publicar uma campanha.</div>
         </div>
-        <div class="integration-grid">
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Plataforma de rifa</span><span class="health-dot warn" data-health="campaigns"></span></span><span class="integration-mini-state" data-health-label="campaigns">Aguardando integração</span></button>
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Widget de oferta</span><span class="health-dot ok" data-health="widget"></span></span><span class="integration-mini-state" data-health-label="widget">Embed operacional</span></button>
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Gateway Pix</span><span class="health-dot warn" data-health="pix"></span></span><span class="integration-mini-state" data-health-label="pix">Aguardando gateway</span></button>
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Webhooks</span><span class="health-dot warn" data-health="webhook"></span></span><span class="integration-mini-state" data-health-label="webhook">Aguardando eventos</span></button>
-          <button class="integration-mini" onclick="navigate('integrations')"><span class="integration-mini-top"><span class="integration-mini-name">Vídeo Vturb</span><span class="health-dot warn" data-health="vturb"></span></span><span class="integration-mini-state" data-health-label="vturb">Configuração opcional</span></button>
-        </div>
+        <span class="integration-overview-status"><span class="health-dot warn" data-health="webhook"></span><span data-health-label="webhook">Verificando conexões</span></span>
+        <button class="btn-pill-secondary" onclick="navigate('integrations')">Revisar setup</button>
       </section>
 
       <!-- ══════════════════════════════════════════════════════════════════
@@ -2228,7 +2269,7 @@
       <div id="view-campaigns" class="view-pane">
 
         <!-- 1. HERO CARD DA AÇÃO SELECIONADA & CONTROLE DE CICLO DE VIDA -->
-        <div class="action-hero-card">
+        <div class="action-hero-card campaign-overview-panel">
           <div class="action-hero-top">
             <div>
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
@@ -2273,7 +2314,7 @@
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle; display:inline-block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nova Ação
               </button>
-              <button type="button" class="btn-pill-secondary" onclick="document.getElementById('editor-visual').scrollIntoView({behavior:'smooth', block:'start'})">
+              <button type="button" class="btn-pill-secondary" onclick="abrirEditorBlocos(selectedCampaignId)">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle; display:inline-block;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
                 Editar oferta
               </button>
@@ -2302,7 +2343,7 @@
         </div>
 
         <!-- 2. TABELA COMPLETA DE AÇÕES DO WORKSPACE -->
-        <div class="card" style="margin-bottom:24px;">
+        <div class="card campaign-list-panel" style="margin-bottom:24px;">
           <div class="card-title">
             <span>Ações & Campanhas de Rifas</span>
             <span style="font-size:12px; color:var(--gray-400);" id="actions-count-label">Carregando ações...</span>
@@ -2661,54 +2702,60 @@
 
       <!-- CENTRAL DE INTEGRAÇÕES -->
       <div id="view-integrations" class="view-pane">
-        <div class="integration-hero">
-          <section class="integration-flow">
-            <h2>Uma operação, cinco conexões</h2>
-            <p>Visualize como dados, pagamento e conversão percorrem o ecossistema. Cada etapa possui um ponto claro de configuração e diagnóstico.</p>
-            <div class="flow-rail">
-              <div class="flow-step"><b>01 · Rifa</b><span>Pedido e comprador</span></div>
-              <div class="flow-step"><b>02 · Widget</b><span>Oferta personalizada</span></div>
-              <div class="flow-step"><b>03 · API</b><span>Orquestração segura</span></div>
-              <div class="flow-step"><b>04 · Pix</b><span>Cobrança e split</span></div>
-              <div class="flow-step"><b>05 · Webhook</b><span>Baixa e entrega</span></div>
+        <div class="integration-layout">
+          <section class="integration-main" aria-labelledby="integration-setup-title">
+            <div class="integration-main-head">
+              <div>
+                <h2 id="integration-setup-title">Checklist de publicação</h2>
+                <p>Conclua as quatro conexões essenciais para receber pedidos, cobrar via Pix e confirmar a entrega sem intervenção manual.</p>
+              </div>
+              <div class="integration-progress" aria-live="polite">
+                <span class="integration-score" id="integration-score">1 de 4</span>
+                <span class="integration-score-label">etapas essenciais prontas</span>
+                <div class="integration-progress-track"><div class="integration-progress-bar" id="integration-progress-bar"></div></div>
+              </div>
+            </div>
+
+            <div class="integration-list">
+              <article class="integration-item">
+                <span class="integration-item-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+                <div class="integration-item-copy"><div class="integration-item-title"><h3>1. Conectar a plataforma de rifa</h3></div><p>Recebe campanha, pedido e dados do comprador.</p></div>
+                <div class="integration-item-actions"><span class="integration-item-status"><span class="health-dot warn" data-health="campaigns"></span><span data-health-label="campaigns">Verificando</span></span><button class="btn-pill-secondary" onclick="navigate('gateway')">Configurar</button></div>
+              </article>
+              <article class="integration-item">
+                <span class="integration-item-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="3"/><path d="M9 18h6"/></svg></span>
+                <div class="integration-item-copy"><div class="integration-item-title"><h3>2. Publicar o widget da oferta</h3></div><p>Embed responsivo com ajuste automático de altura.</p></div>
+                <div class="integration-item-actions"><span class="integration-item-status"><span class="health-dot ok" data-health="widget"></span><span data-health-label="widget">Embed operacional</span></span><button class="btn-pill-secondary" onclick="navigate('simulator')">Testar</button></div>
+              </article>
+              <article class="integration-item">
+                <span class="integration-item-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 15h2"/></svg></span>
+                <div class="integration-item-copy"><div class="integration-item-title"><h3>3. Validar o Gateway Pix</h3></div><p>Gera a cobrança e aplica o split configurado.</p></div>
+                <div class="integration-item-actions"><span class="integration-item-status"><span class="health-dot warn" data-health="pix"></span><span data-health-label="pix">Verificando</span></span><button class="btn-pill-secondary" onclick="navigate('simulator')">Simular</button></div>
+              </article>
+              <article class="integration-item">
+                <span class="integration-item-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a3 3 0 1 0-2.83-4H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H8.83A3 3 0 1 0 6 20"/></svg></span>
+                <div class="integration-item-copy"><div class="integration-item-title"><h3>4. Confirmar o retorno por webhook</h3></div><p>Atualiza o pagamento, os logs e a entrega de cotas.</p></div>
+                <div class="integration-item-actions"><span class="integration-item-status"><span class="health-dot warn" data-health="webhook"></span><span data-health-label="webhook">Verificando</span></span><button class="btn-pill-secondary" onclick="navigate('logs')">Ver eventos</button></div>
+              </article>
+              <article class="integration-item">
+                <span class="integration-item-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3V9z"/></svg></span>
+                <div class="integration-item-copy"><div class="integration-item-title"><h3>Vídeo de vendas</h3><span class="status-chip">Opcional</span></div><p>Sincroniza Vturb ou ConverteAI com o pitch da oferta.</p></div>
+                <div class="integration-item-actions"><span class="integration-item-status"><span class="health-dot warn" data-health="vturb"></span><span data-health-label="vturb">Não configurado</span></span><button class="btn-pill-secondary" onclick="navigate('campaigns')">Adicionar</button></div>
+              </article>
             </div>
           </section>
-          <aside class="integration-summary">
-            <div>
-              <span class="status-chip"><span class="health-dot ok"></span> Monitoramento ativo</span>
-              <div class="integration-score" id="integration-score">4/5</div>
-              <strong>serviços preparados</strong>
-              <p style="font-size:11.5px;color:var(--gray-400);margin-top:5px">A pontuação é atualizada usando as respostas reais da API e as configurações da oferta.</p>
-            </div>
-            <button class="btn-pill" onclick="verificarIntegracoes()">Verificar agora</button>
-          </aside>
-        </div>
 
-        <div class="integration-catalog">
-          <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span><div><h3>Plataforma de rifa</h3><p>Origem dos pedidos, compradores e campanhas.</p></div></div><span class="health-dot warn" data-health="campaigns"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Provedor</span><strong>API / Webhook externo</strong></div><div class="integration-meta-row"><span>Responsabilidade</span><strong>Pedido e liberação de cotas</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="campaigns">Aguardando</strong></div></div>
-          </article>
-          <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="3"/><path d="M9 18h6"/></svg></span><div><h3>Widget de oferta</h3><p>Raspadinha, personalização e bridge do iframe.</p></div></div><span class="health-dot ok" data-health="widget"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Canal</span><strong>Iframe + postMessage</strong></div><div class="integration-meta-row"><span>Eventos</span><strong>card:pronto · dx:altura</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="widget">Operacional</strong></div></div>
-          </article>
-          <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 15h2"/></svg></span><div><h3>Gateway Pix e split</h3><p>Geração de cobranças e divisão automática.</p></div></div><span class="health-dot warn" data-health="pix"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Fluxos</span><strong>Pré-bump e pós-Pix</strong></div><div class="integration-meta-row"><span>Split padrão</span><strong>85% · 10% · 5%</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="pix">Aguardando</strong></div></div>
-          </article>
-          <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a3 3 0 1 0-2.83-4H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H8.83A3 3 0 1 0 6 20"/></svg></span><div><h3>Webhooks e eventos</h3><p>Confirmação bancária, baixa e rastreabilidade.</p></div></div><span class="health-dot warn" data-health="webhook"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Entrada</span><strong>/api/webhook/pix</strong></div><div class="integration-meta-row"><span>Auditoria</span><strong>Logs por workspace</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="webhook">Aguardando</strong></div></div>
-          </article>
-          <article class="integration-card">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3V9z"/></svg></span><div><h3>Vturb / ConverteAI</h3><p>Player de vídeo e sincronização do pitch.</p></div></div><span class="health-dot warn" data-health="vturb"></span></div>
-            <div class="integration-meta"><div class="integration-meta-row"><span>Configuração</span><strong>Player ID por campanha</strong></div><div class="integration-meta-row"><span>Fallback</span><strong>Vídeo MP4</strong></div><div class="integration-meta-row"><span>Status</span><strong data-health-label="vturb">Opcional</strong></div></div>
-          </article>
-          <article class="integration-card" style="background:#f8f9fc">
-            <div class="integration-card-head"><div style="display:flex;gap:11px"><span class="integration-card-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66 4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66 4.24-4.24"/></svg></span><div><h3>Ferramentas de integração</h3><p>Acesse configuração, teste e auditoria.</p></div></div></div>
-            <div style="display:grid;gap:8px"><button class="btn-pill-secondary" onclick="navigate('gateway')">Credenciais e snippets</button><button class="btn-pill-secondary" onclick="navigate('simulator')">Abrir simulador</button><button class="btn-pill-secondary" onclick="navigate('logs')">Ver logs e webhooks</button></div>
-          </article>
+          <aside class="integration-aside">
+            <h3>Ações rápidas</h3>
+            <p>Atalhos para configurar e homologar a operação.</p>
+            <div class="integration-quick-actions">
+              <button class="integration-quick-action" onclick="navigate('gateway')"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span><strong>Credenciais e embed</strong><small>URL, token e snippet</small></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+              <button class="integration-quick-action" onclick="navigate('simulator')"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg><span><strong>Teste ponta a ponta</strong><small>Widget, checkout e Pix</small></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+              <button class="integration-quick-action" onclick="navigate('logs')"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span><strong>Eventos e diagnóstico</strong><small>Webhooks e respostas da API</small></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+            <button class="btn-pill" style="width:100%;margin-top:14px" id="integration-check-btn" onclick="verificarIntegracoes()">Verificar conexões</button>
+            <div class="integration-last-check" id="integration-last-check">A verificação usa os dados reais deste workspace.</div>
+          </aside>
         </div>
       </div>
 
@@ -2833,6 +2880,38 @@ window.addEventListener('message', function(e) {
   var allFunnelsData = [];
   var selectedFunnelId = null;
   var funnelSlugTouched = false;
+  var pageParams = new URLSearchParams(window.location.search);
+  var editorPageMode = /\/editor\.php$/i.test(window.location.pathname) || pageParams.get('editor') === '1';
+  var requestedWorkspaceId = parseInt(pageParams.get('workspace_id')) || 0;
+  var requestedCampaignId = parseInt(pageParams.get('campaign_id')) || 0;
+
+  function aplicarModoEditor() {
+    if (!editorPageMode) return;
+    document.body.classList.add('editor-page');
+    document.title = 'Editor de Blocos — upScale Media';
+    if (requestedWorkspaceId) currentWsId = requestedWorkspaceId;
+    if (requestedCampaignId) selectedCampaignId = requestedCampaignId;
+    var title = document.getElementById('page-title');
+    var subtitle = document.getElementById('page-subtitle');
+    var breadcrumb = document.getElementById('breadcrumb-current');
+    if (title) title.textContent = 'Editor de Blocos';
+    if (subtitle) subtitle.textContent = 'Personalize a oferta e acompanhe o preview em tempo real.';
+    if (breadcrumb) breadcrumb.textContent = 'EDITOR';
+  }
+
+  function abrirEditorBlocos(campaignId) {
+    var editorUrl = new URL('editor.php', window.location.href);
+    editorUrl.searchParams.set('workspace_id', String(currentWsId || 2));
+    if (campaignId) editorUrl.searchParams.set('campaign_id', String(campaignId));
+    window.location.assign(editorUrl.toString());
+  }
+
+  function voltarParaCampanhas() {
+    var campaignsUrl = new URL('index.html', window.location.href);
+    campaignsUrl.searchParams.set('workspace_id', String(currentWsId || requestedWorkspaceId || 2));
+    campaignsUrl.hash = 'campaigns';
+    window.location.assign(campaignsUrl.toString());
+  }
 
   function getAdminToken() {
     return localStorage.getItem('upscale_admin_token') || '';
@@ -3018,7 +3097,8 @@ window.addEventListener('message', function(e) {
     if (overlay) overlay.classList.add('hidden');
     document.getElementById('login-password').value = '';
     showToast('Login realizado com sucesso! Bem-vindo.', 'success');
-    navigate('dash', document.querySelector('.nav-item-btn'));
+    navigate(editorPageMode ? 'campaigns' : 'dash', document.querySelector('.nav-item-btn'));
+    aplicarModoEditor();
     atualizarTudo();
   }
 
@@ -3271,9 +3351,10 @@ window.addEventListener('message', function(e) {
         sel.appendChild(opt);
       });
 
-      if (prevVal && sel.querySelector(`option[value="${prevVal}"]`)) {
-        sel.value = prevVal;
-        currentWsId = parseInt(prevVal);
+      var preferredWorkspace = requestedWorkspaceId ? String(requestedWorkspaceId) : prevVal;
+      if (preferredWorkspace && sel.querySelector(`option[value="${preferredWorkspace}"]`)) {
+        sel.value = preferredWorkspace;
+        currentWsId = parseInt(preferredWorkspace);
       } else if (sel.options.length) {
         sel.selectedIndex = 0;
         currentWsId = parseInt(sel.value);
@@ -3373,7 +3454,7 @@ window.addEventListener('message', function(e) {
       tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><strong>Nenhuma transação ainda</strong><span>Assim que o primeiro Pix for gerado, ele aparece aqui em tempo real. Enquanto isso, teste no Simulador Mobile.</span></div></td></tr>';
       return;
     }
-    tbody.innerHTML = orders.slice(0, 6).map(o => {
+    tbody.innerHTML = orders.slice(0, 4).map(o => {
       var badgeClass = o.status === 'paid' ? 'badge-paid' : (o.status === 'expired' ? 'badge-expired' : 'badge-pending');
       var statusLabel = o.status === 'paid' ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polyline points="20 6 9 17 4 12"/></svg> Pago' : (o.status === 'expired' ? 'Expirado' : 'Aguardando Pagamento');
       var forceBtn = o.status !== 'paid'
@@ -3850,7 +3931,7 @@ window.addEventListener('message', function(e) {
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle; display:inline-block;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Finalizar
           </button> `;
         }
-        actionButtons += `<button class="btn-pill-secondary" style="padding:6px 10px; font-size:11px;" onclick="selecionarAcaoPorId(${c.id})">
+        actionButtons += `<button class="btn-pill-secondary" style="padding:6px 10px; font-size:11px;" onclick="abrirEditorBlocos(${c.id})">
           Editar Blocos
         </button>`;
 
@@ -4129,6 +4210,7 @@ window.addEventListener('message', function(e) {
     document.querySelectorAll('[data-health="' + chave + '"]').forEach(function(dot) {
       dot.classList.remove('ok', 'warn', 'error');
       dot.classList.add(estado);
+      dot.setAttribute('aria-label', texto);
     });
     document.querySelectorAll('[data-health-label="' + chave + '"]').forEach(function(label) {
       label.textContent = texto;
@@ -4136,6 +4218,11 @@ window.addEventListener('message', function(e) {
   }
 
   function verificarIntegracoes() {
+    var checkButton = document.getElementById('integration-check-btn');
+    if (checkButton) {
+      checkButton.disabled = true;
+      checkButton.textContent = 'Verificando…';
+    }
     var checks = [
       apiFetch('../api/admin/campaigns.php?workspace_id=' + currentWsId),
       apiFetch('../api/admin/metrics.php?workspace_id=' + currentWsId),
@@ -4180,10 +4267,20 @@ window.addEventListener('message', function(e) {
       var vturbInput = document.getElementById('camp-vturb-player');
       var hasVturb = vturbInput && vturbInput.value.trim().length > 0;
       atualizarSaudeIntegracao('vturb', hasVturb ? 'ok' : 'warn', hasVturb ? 'Player configurado' : 'Configuração opcional');
-      if (hasVturb) ready++;
 
       var score = document.getElementById('integration-score');
-      if (score) score.textContent = ready + '/5';
+      if (score) score.textContent = ready + ' de 4';
+      var progress = document.getElementById('integration-progress-bar');
+      if (progress) progress.style.width = (ready * 25) + '%';
+      var lastCheck = document.getElementById('integration-last-check');
+      if (lastCheck) {
+        var now = new Date();
+        lastCheck.textContent = 'Última verificação às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' · Workspace atual';
+      }
+      if (checkButton) {
+        checkButton.disabled = false;
+        checkButton.textContent = 'Verificar novamente';
+      }
     });
   }
 
@@ -4561,6 +4658,7 @@ window.addEventListener('message', function(e) {
   }
 
   window.addEventListener('load', function() {
+    aplicarModoEditor();
     var loc = window.location;
     var host = loc.host;
     var currentPath = loc.pathname.replace(/\/hub\/?.*$/, '');
@@ -4569,8 +4667,9 @@ window.addEventListener('message', function(e) {
     selecionarTipoLogin(localStorage.getItem('upscale_login_type') === 'client' ? 'client' : 'master');
     renderizarCamposCor();
     iniciarEditorVisual();
-    var initialView = window.location.hash.replace('#', '');
+    var initialView = editorPageMode ? 'campaigns' : window.location.hash.replace('#', '');
     if (document.getElementById('view-' + initialView)) navigate(initialView);
+    aplicarModoEditor();
     
     if (verificarSessao()) {
       atualizarTudo();
