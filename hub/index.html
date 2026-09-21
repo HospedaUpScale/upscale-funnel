@@ -2705,10 +2705,6 @@
                 Permita que qualquer cliente aponte o próprio domínio via <strong>CNAME</strong> e ganhe <strong>certificado SSL (HTTPS) automático na nuvem</strong>, sem você precisar abrir o Easypanel ou o DNS a cada novo cliente.
               </p>
             </div>
-            <button type="button" class="btn-pill" onclick="copiarInstrucaoCliente()" style="background:#F48120; border:none; display:inline-flex; align-items:center; gap:6px;">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-              Copiar Mensagem p/ WhatsApp do Cliente
-            </button>
           </div>
 
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:14px;">
@@ -4626,21 +4622,6 @@ window.addEventListener('message', function(e) {
       .catch(function(error) {
         list.innerHTML = '<div class="empty-inline">' + escapeHtml(error.message) + '</div>';
       });
-  }
-
-  function copiarInstrucaoCliente() {
-    var hostEl = document.getElementById('cf-fallback-origin');
-    var target = (hostEl && hostEl.textContent && hostEl.textContent !== 'Carregando…') ? hostEl.textContent : ('cname.' + window.location.hostname);
-    var txt = "Olá! Para conectar o seu próprio domínio à sua campanha de Booster, basta adicionar este registro DNS no painel onde seu domínio foi comprado (Hostinger, Registro.br, GoDaddy, etc.):\n\n" +
-      "📌 Tipo: CNAME\n" +
-      "📌 Nome/Host: oferta (ou @ para usar o domínio sem subdomínio)\n" +
-      "📌 Aponta para: " + target + "\n\n" +
-      "Após salvar, o certificado SSL (HTTPS com cadeado verde) é ativado automaticamente em até 5 minutos!";
-    navigator.clipboard.writeText(txt).then(function() {
-      showToast('Mensagem pronta copiada! Cole no WhatsApp do cliente.', 'success');
-    }).catch(function() {
-      showToast('Instrução copiada para a área de transferência!', 'success');
-    });
   }
 
   function atualizarPainelPublicacaoDominio() {
