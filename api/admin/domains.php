@@ -16,12 +16,13 @@ if (!$auth && ($config['app_env'] ?? 'production') !== 'local') {
 $targetWsId = (int)($request->get('workspace_id') ?? ($auth['workspace']->id ?? 2));
 if ($targetWsId <= 0) $targetWsId = $auth['workspace']->id ?? 2;
 
+$allowedWorkspaceIds = [];
 if ($auth && $auth['role'] !== 'super_admin') {
-    $allowedIds = [$auth['workspace']->id];
+    $allowedWorkspaceIds = [$auth['workspace']->id];
     foreach ($wsRepo->findDescendants($auth['workspace']->id) as $descendant) {
-        $allowedIds[] = $descendant->id;
+        $allowedWorkspaceIds[] = $descendant->id;
     }
-    if (!in_array($targetWsId, $allowedIds, true)) {
+    if (!in_array($targetWsId, $allowedWorkspaceIds, true)) {
         JsonResponse::error('Acesso negado para este workspace.', 403);
     }
 }
@@ -251,6 +252,49 @@ if ($request->method() === 'POST') {
     $stmt->execute([$domainId, $targetWsId]);
     $domain = $stmt->fetch();
     if (!$domain) JsonResponse::error('Domínio não encontrado.', 404);
+
+    if ($action === 'assign_workspace') {
+        $destinationWsId = (int)($input['target_workspace_id'] ?? 0);
+        if ($destinationWsId <= 0) {
+            JsonResponse::error('Selecione o cliente que receberá este domínio.', 422);
+        }
+        if ($auth && $auth['role'] !== 'super_admin' && !in_array($destinationWsId, $allowedWorkspaceIds, true)) {
+            JsonResponse::error('Você não possui acesso ao cliente selecionado.', 403);
+        }
+
+        $destination = $wsRepo->findById($destinationWsId);
+        if (!$destination) {
+            JsonResponse::error('Cliente de destino não encontrado.', 404);
+        }
+        if ($destinationWsId === $targetWsId) {
+            JsonResponse::success([
+                'message' => "O domínio {$domain['domain']} já está vinculado a {$destination->name}.",
+                'domain_id' => (int)$domain['id'],
+                'workspace_id' => $destinationWsId,
+            ]);
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("UPDATE funnels SET custom_domain_id = NULL, is_home = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ? AND custom_domain_id = ?")
+                ->execute([$targetWsId, $domainId]);
+            $pdo->prepare("UPDATE workspaces SET custom_domain = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND custom_domain = ?")
+                ->execute([$targetWsId, $domain['domain']]);
+            $pdo->prepare("UPDATE custom_domains SET workspace_id = ?, is_primary = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+                ->execute([$destinationWsId, $domainId]);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            JsonResponse::error('Não foi possível vincular o domínio ao cliente selecionado.', 500);
+        }
+
+        JsonResponse::success([
+            'message' => "Domínio {$domain['domain']} vinculado ao cliente {$destination->name}.",
+            'domain_id' => (int)$domain['id'],
+            'workspace_id' => $destinationWsId,
+            'workspace_name' => $destination->name,
+        ]);
+    }
 
     if ($action === 'verify') {
         $active = domainIsPointed($domain['domain'], $config, $domain['verification_token']);

@@ -2809,6 +2809,10 @@
           <section class="card">
             <div class="card-title"><span>Adicionar domínio</span><span class="nav-item-badge badge-blue">HOSTINGER</span></div>
             <p style="font-size:11.5px;color:var(--gray-400)">Digite somente o domínio, sem <code>https://</code> ou caminhos.</p>
+            <label style="display:grid;gap:5px;margin-top:12px;font-size:10.5px;font-weight:700;color:var(--gray-500)">
+              Vincular ao cliente
+              <select id="domain-workspace-target" class="ws-select" style="width:100%"><option value="">Carregando clientes…</option></select>
+            </label>
             <div class="domain-add-row">
               <input type="text" class="field-control" id="domain-input" placeholder="meufunil.com.br" />
               <button type="button" class="btn-pill" onclick="adicionarDominio()">Adicionar domínio</button>
@@ -3408,6 +3412,7 @@ window.addEventListener('message', function(e) {
     carregarMetricas();
     carregarConfiguracaoOferta();
     carregarCampanhas();
+    preencherClientesDominio();
     if (window.location.hash === '#sites') { carregarDominios(); carregarFunis(); }
   }
 
@@ -3512,6 +3517,7 @@ window.addEventListener('message', function(e) {
         currentWsId = parseInt(sel.value);
       }
 
+      preencherClientesDominio();
       document.getElementById('conn-error-banner').classList.remove('show');
       carregarMetricas();
       carregarConfiguracaoOferta();
@@ -4813,12 +4819,32 @@ window.addEventListener('message', function(e) {
       if (!domain.is_primary && !isPublished) {
         actions += '<button class="btn-pill-secondary" onclick="definirDominioPrincipal(' + domain.id + ')">Tornar principal</button>';
       }
+      if (currentRole !== 'merchant_admin' && accessibleWorkspaces.length > 1) {
+        actions += '<select class="ws-select" id="domain-client-' + domain.id + '" style="max-width:210px;font-size:11px">' + opcoesClientesDominio(currentWsId) + '</select>';
+        actions += '<button class="btn-pill-secondary" onclick="vincularDominioCliente(' + domain.id + ')">Vincular cliente</button>';
+      }
       actions += '<button class="btn-pill-secondary" onclick="removerDominio(' + domain.id + ')">Remover</button>';
 
       return '<div class="domain-item" style="' + (isPublished ? 'border-color:var(--green-400); background:rgba(34,197,94,0.03);' : '') + '"><div><div class="domain-name">' + escapeHtml(domain.domain) + publishedBadge + '</div>' +
         '<div class="domain-meta">' + statusBadge + primary + '</div>' +
         '<div class="domain-meta">CNAME / Fallback: oferta → ' + (document.getElementById('cf-fallback-origin') ? document.getElementById('cf-fallback-origin').textContent : 'cname.' + window.location.hostname) + '</div></div><div class="domain-actions">' + actions + '</div></div>';
     }).join('');
+  }
+
+  function opcoesClientesDominio(selectedId) {
+    return (accessibleWorkspaces || []).map(function(workspace) {
+      var prefix = workspace.type === 'partner_whitelabel' ? '[Parceiro] ' : '[Cliente] ';
+      var selected = Number(workspace.id) === Number(selectedId) ? ' selected' : '';
+      return '<option value="' + workspace.id + '"' + selected + '>' + escapeHtml(prefix + workspace.name) + '</option>';
+    }).join('');
+  }
+
+  function preencherClientesDominio() {
+    var select = document.getElementById('domain-workspace-target');
+    if (!select) return;
+    select.innerHTML = opcoesClientesDominio(currentWsId);
+    if (select.querySelector('option[value="' + currentWsId + '"]')) select.value = String(currentWsId);
+    select.disabled = currentRole === 'merchant_admin' || select.options.length <= 1;
   }
 
   function preencherDominiosFunil() {
@@ -4836,14 +4862,48 @@ window.addEventListener('message', function(e) {
     var input = document.getElementById('domain-input');
     var domain = input.value.trim();
     if (!domain) return showToast('Informe o domínio que deseja conectar.', 'error');
-    sitesApi('../api/admin/domains.php?workspace_id=' + currentWsId, {
+    var targetSelect = document.getElementById('domain-workspace-target');
+    var targetWsId = Number(targetSelect && targetSelect.value) || currentWsId;
+    sitesApi('../api/admin/domains.php?workspace_id=' + targetWsId, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'create', domain: domain, is_primary: document.getElementById('domain-primary').checked })
     }).then(function(data) {
       input.value = '';
       showToast(data.message, 'success');
+      if (targetWsId !== currentWsId) {
+        var workspaceSelect = document.getElementById('workspace-select');
+        if (workspaceSelect && workspaceSelect.querySelector('option[value="' + targetWsId + '"]')) {
+          workspaceSelect.value = String(targetWsId);
+          trocarWorkspace();
+          return;
+        }
+      }
       carregarDominios();
+    }).catch(function(error) { showToast(error.message, 'error'); });
+  }
+
+  function vincularDominioCliente(domainId) {
+    var select = document.getElementById('domain-client-' + domainId);
+    var targetWsId = Number(select && select.value);
+    if (!targetWsId) return showToast('Selecione o cliente de destino.', 'error');
+    if (targetWsId === currentWsId) return showToast('Este domínio já pertence ao cliente selecionado.', 'success');
+    var targetName = select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : 'cliente selecionado';
+    if (!confirm('Vincular este domínio a ' + targetName + '? Os funis atuais deixarão de usar este domínio.')) return;
+
+    sitesApi('../api/admin/domains.php?workspace_id=' + currentWsId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'assign_workspace', domain_id: domainId, target_workspace_id: targetWsId })
+    }).then(function(data) {
+      showToast(data.message, 'success');
+      var workspaceSelect = document.getElementById('workspace-select');
+      if (workspaceSelect && workspaceSelect.querySelector('option[value="' + targetWsId + '"]')) {
+        workspaceSelect.value = String(targetWsId);
+        trocarWorkspace();
+      } else {
+        carregarDominios();
+      }
     }).catch(function(error) { showToast(error.message, 'error'); });
   }
 
@@ -4918,9 +4978,15 @@ window.addEventListener('message', function(e) {
   function novoFunil() {
     selectedFunnelId = null;
     funnelSlugTouched = false;
+    var slug = 'novo-funil';
+    var suffix = 2;
+    while (allFunnelsData.some(function(item) { return item.slug === slug; })) {
+      slug = 'novo-funil-' + suffix;
+      suffix += 1;
+    }
     document.getElementById('funnel-id').value = '';
     document.getElementById('funnel-name').value = 'Novo funil';
-    document.getElementById('funnel-slug').value = 'novo-funil';
+    document.getElementById('funnel-slug').value = slug;
     document.getElementById('funnel-domain').value = '';
     document.getElementById('funnel-home').checked = false;
     document.getElementById('funnel-html').value = modeloHtmlFunil();
@@ -4975,6 +5041,10 @@ window.addEventListener('message', function(e) {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     }).then(function(data) {
       selectedFunnelId = data.funnel_id;
+      document.getElementById('funnel-id').value = data.funnel_id;
+      document.getElementById('funnel-copy-url').disabled = false;
+      document.getElementById('funnel-delete').disabled = false;
+      funnelSlugTouched = true;
       showToast(data.message, 'success');
       carregarFunis();
     }).catch(function(error) { showToast(error.message, 'error'); });

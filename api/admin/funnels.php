@@ -63,6 +63,17 @@ if ($request->method() === 'POST') {
         if (!$domainStmt->fetch()) JsonResponse::error('Domínio inválido para este workspace.', 422);
     }
 
+    $slugStmt = $pdo->prepare("SELECT id FROM funnels WHERE workspace_id = ? AND slug = ? AND id <> ? LIMIT 1");
+    $slugStmt->execute([$targetWsId, $slug, $id]);
+    $slugConflictId = (int)($slugStmt->fetchColumn() ?: 0);
+    if ($slugConflictId > 0) {
+        JsonResponse::error(
+            'Este slug já pertence a outro funil deste cliente. Abra o funil existente ou informe outro slug.',
+            409,
+            ['code' => 'funnel_slug_in_use', 'funnel_id' => $slugConflictId]
+        );
+    }
+
     if ($isHome) {
         if ($domainId === null) {
             $pdo->prepare("UPDATE funnels SET is_home = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ? AND custom_domain_id IS NULL")->execute([$targetWsId]);
@@ -86,7 +97,7 @@ if ($request->method() === 'POST') {
             $funnelId = (int)$pdo->lastInsertId();
         }
     } catch (PDOException $e) {
-        JsonResponse::error('Já existe um funil com este slug no workspace.', 409);
+        JsonResponse::error('Não foi possível salvar o funil agora.', 500, ['code' => 'funnel_save_failed']);
     }
 
     JsonResponse::success(['message' => 'Funil salvo com sucesso.', 'funnel_id' => $funnelId, 'status_value' => $status]);
