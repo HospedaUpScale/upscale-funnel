@@ -119,6 +119,39 @@ if ($request->method() === 'POST') {
         if (in_array($domain, ['localhost', strtolower($config['base_domain'] ?? '')], true)) {
             JsonResponse::error('Este domínio é reservado pelo sistema.', 422);
         }
+
+        $existingStmt = $pdo->prepare("SELECT * FROM custom_domains WHERE domain = ? LIMIT 1");
+        $existingStmt->execute([$domain]);
+        $existingDomain = $existingStmt->fetch();
+        if ($existingDomain) {
+            if ((int)$existingDomain['workspace_id'] !== $targetWsId) {
+                JsonResponse::error(
+                    'Este domínio já está vinculado a outro workspace. Remova o vínculo anterior antes de reutilizá-lo.',
+                    409,
+                    ['code' => 'domain_in_use']
+                );
+            }
+
+            if (!empty($input['is_primary']) && empty($existingDomain['is_primary'])) {
+                $pdo->beginTransaction();
+                $pdo->prepare("UPDATE custom_domains SET is_primary = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ?")->execute([$targetWsId]);
+                $pdo->prepare("UPDATE custom_domains SET is_primary = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([(int)$existingDomain['id']]);
+                $pdo->commit();
+                $existingDomain['is_primary'] = 1;
+            }
+
+            JsonResponse::success([
+                'message' => 'Este domínio já estava cadastrado neste workspace e continua disponível para uso.',
+                'domain_id' => (int)$existingDomain['id'],
+                'domain' => $domain,
+                'existing' => true,
+                'domain_status' => $existingDomain['status'],
+                'is_primary' => (bool)$existingDomain['is_primary'],
+                'dns' => domainDnsInstructions($domain, $config),
+                'verification_txt' => 'upscale-verification=' . $existingDomain['verification_token'],
+            ]);
+        }
+
         $tokenValue = bin2hex(random_bytes(16));
         try {
             $pdo->beginTransaction();
@@ -130,7 +163,10 @@ if ($request->method() === 'POST') {
             $pdo->commit();
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            JsonResponse::error('Este domínio já está cadastrado.', 409);
+            if ((string)$e->getCode() === '23000') {
+                JsonResponse::error('Este domínio foi cadastrado por outra solicitação. Atualize a lista e tente novamente.', 409, ['code' => 'domain_conflict']);
+            }
+            JsonResponse::error('Não foi possível cadastrar o domínio agora.', 500, ['code' => 'domain_create_failed']);
         }
         JsonResponse::success([
             'message' => 'Domínio adicionado. Configure o DNS e clique em verificar.',
