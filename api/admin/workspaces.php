@@ -16,9 +16,22 @@ if (!$auth && ($config['app_env'] ?? 'production') !== 'local') {
 // 1. GET: List accessible workspaces
 if ($request->method() === 'GET') {
     $workspaces = [];
+    $partners = [];
+
+    // Carregar parceiros white-label para seleção rápida
+    $allWorkspaces = $wsRepo->all();
+    foreach ($allWorkspaces as $w) {
+        if ($w->type === 'partner_whitelabel' && $w->status === 'active') {
+            $partners[] = [
+                'id'   => $w->id,
+                'name' => $w->name,
+                'slug' => $w->slug,
+            ];
+        }
+    }
+
     if (!$auth || $auth['role'] === 'super_admin') {
-        $all = $wsRepo->all();
-        foreach ($all as $w) {
+        foreach ($allWorkspaces as $w) {
             $parentName = null;
             if ($w->parentId) {
                 $p = $wsRepo->findById($w->parentId);
@@ -85,7 +98,8 @@ if ($request->method() === 'GET') {
 
     JsonResponse::send([
         'status'     => 'success',
-        'workspaces' => $workspaces
+        'workspaces' => $workspaces,
+        'partners'   => $partners,
     ]);
 }
 
@@ -98,26 +112,27 @@ if ($request->method() === 'POST') {
     $input = $request->all();
     $name = trim($input['name'] ?? '');
     $slug = strtolower(trim(preg_replace('/[^a-z0-9\-]/i', '', $input['slug'] ?? '')));
+    $accountType = trim($input['account_type'] ?? $input['type'] ?? 'merchant');
 
     if (empty($name) || empty($slug)) {
-        JsonResponse::error('name and slug are required', 400);
+        JsonResponse::error('Nome e Slug são obrigatórios.', 400);
     }
 
     // Check if slug exists
     if ($wsRepo->findBySlug($slug)) {
-        JsonResponse::error('Slug already in use', 409);
+        JsonResponse::error('O Slug "' . $slug . '" já está em uso.', 409);
     }
 
-    // Login opcional do cliente (e-mail + senha), validado antes de criar qualquer coisa
+    // Login opcional do cliente/parceiro (e-mail + senha), validado antes de criar qualquer coisa
     $adminEmail = strtolower(trim((string) ($input['admin_email'] ?? '')));
     $adminPassword = (string) ($input['admin_password'] ?? '');
     $userRepo = new \App\Repositories\UserRepository($pdo);
     if ($adminEmail !== '') {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-            JsonResponse::error('Informe um e-mail válido para o login do cliente.', 400);
+            JsonResponse::error('Informe um e-mail válido para o login de acesso.', 400);
         }
         if ($adminPassword !== '' && strlen($adminPassword) < 8) {
-            JsonResponse::error('A senha do cliente precisa ter pelo menos 8 caracteres.', 400);
+            JsonResponse::error('A senha de acesso precisa ter pelo menos 8 caracteres.', 400);
         }
         if ($userRepo->findByEmail($adminEmail) && $auth && $auth['role'] === 'partner_admin') {
             JsonResponse::error('Este e-mail já está em uso em outro workspace. Use outro e-mail.', 409);
@@ -128,73 +143,199 @@ if ($request->method() === 'POST') {
     $rawApiToken = bin2hex(random_bytes(20));
     $rawAdminToken = bin2hex(random_bytes(20));
 
-    // Enforce parent_id for partner_admin
     $parentId = null;
-    $type = 'merchant';
-
-    if ($auth && $auth['role'] === 'partner_admin') {
-        $parentId = $auth['workspace']->id;
-        $type = 'merchant';
-    } elseif (!$auth || $auth['role'] === 'super_admin') {
-        $parentId = !empty($input['parent_id']) ? (int)$input['parent_id'] : null;
-        $type = $input['type'] ?? ($parentId ? 'merchant' : 'partner_whitelabel');
-    }
+    $type = $accountType === 'partner_whitelabel' ? 'partner_whitelabel' : 'merchant';
+    $partnerInfo = null;
+    $externalPlatform = trim((string)($input['external_platform'] ?? 'sorteamos'));
 
     $pdo->beginTransaction();
     try {
-    $created = $wsRepo->create([
-        'parent_id'        => $parentId,
-        'type'             => $type,
-        'name'             => $name,
-        'slug'             => $slug,
-        'custom_domain'    => !empty($input['custom_domain']) ? trim($input['custom_domain']) : null,
-        'document'         => $input['document'] ?? null,
-        'api_token_hash'   => hash('sha256', $rawApiToken),
-        'admin_token_hash' => hash('sha256', $rawAdminToken),
-        'gateway_provider' => $input['gateway_provider'] ?? 'mock',
-        'gateway_credentials' => $input['gateway_credentials'] ?? null,
-        'split_recipient_id' => $input['split_recipient_id'] ?? null,
-        'status'           => 'active',
-    ]);
+        if ($type === 'partner_whitelabel') {
+            // Criação direta de Empresa Parceira (White-Label)
+            $parentId = null;
+        } else {
+            // Criação de Cliente / Rifa vinculado a um Parceiro
+            $partnerOption = $input['partner_option'] ?? 'existing'; // 'existing', 'new', 'sorteamos'
+            $newPartnerName = trim($input['new_partner_name'] ?? '');
 
-    // Create default campaign & upsell offer for new workspace
-    $campaignStmt = $pdo->prepare("
-        INSERT INTO campaigns (workspace_id, external_platform, external_campaign_id, title, ticket_price, status)
-        VALUES (?, 'sorteamos', 'camp_default', ?, ?, 'active')
-    ");
-    $campaignTitle = $input['campaign_title'] ?? ($name . ' Campanha Oficial');
-    $offerPrice = (float)($input['price'] ?? 90.00);
-    $campaignStmt->execute([$created->id, $campaignTitle, $offerPrice]);
-    $campId = (int)$pdo->lastInsertId();
+            if ($partnerOption === 'new' && $newPartnerName !== '') {
+                // Usuário optou por criar um Novo Parceiro (ex: Sorteamos ou Outra Empresa)
+                $newPartnerSlug = strtolower(trim(preg_replace('/[^a-z0-9\-]/i', '', $input['new_partner_slug'] ?? '')));
+                if ($newPartnerSlug === '') {
+                    $newPartnerSlug = strtolower(trim(preg_replace('/[^a-z0-9\-]/i', '', str_replace(' ', '-', $newPartnerName))));
+                }
+                if ($newPartnerSlug === '') {
+                    $newPartnerSlug = 'parceiro-' . bin2hex(random_bytes(3));
+                }
 
-    $offerStmt = $pdo->prepare("
-        INSERT INTO upsell_offers (workspace_id, campaign_id, type, title, subtitle, price, quota_count, checkout_mode, is_active)
-        VALUES (?, ?, 'post_pix_scratch', ?, ?, ?, ?, 'pix_native', 1)
-    ");
-    $offerTitle = $input['offer_title'] ?? 'Booster 110X';
-    $offerQuotas = (int)($input['quota_count'] ?? 110);
-    $offerStmt->execute([$created->id, $campId, $offerTitle, $campaignTitle, $offerPrice, $offerQuotas]);
+                // Verifica se parceiro já existe por slug
+                $existingPartner = $wsRepo->findBySlug($newPartnerSlug);
+                if ($existingPartner) {
+                    $parentId = $existingPartner->id;
+                    $partnerInfo = [
+                        'id'      => $existingPartner->id,
+                        'name'    => $existingPartner->name,
+                        'slug'    => $existingPartner->slug,
+                        'is_new'  => false,
+                    ];
+                } else {
+                    $partnerRawApiToken = bin2hex(random_bytes(20));
+                    $partnerRawAdminToken = bin2hex(random_bytes(20));
+                    $createdPartner = $wsRepo->create([
+                        'parent_id'        => null,
+                        'type'             => 'partner_whitelabel',
+                        'name'             => $newPartnerName,
+                        'slug'             => $newPartnerSlug,
+                        'custom_domain'    => null,
+                        'document'         => null,
+                        'api_token_hash'   => hash('sha256', $partnerRawApiToken),
+                        'admin_token_hash' => hash('sha256', $partnerRawAdminToken),
+                        'gateway_provider' => 'mock',
+                        'status'           => 'active',
+                    ]);
+                    $parentId = $createdPartner->id;
+                    $partnerInfo = [
+                        'id'          => $createdPartner->id,
+                        'name'        => $createdPartner->name,
+                        'slug'        => $createdPartner->slug,
+                        'is_new'      => true,
+                        'api_token'   => $partnerRawApiToken,
+                        'admin_token' => $partnerRawAdminToken,
+                    ];
+                }
 
-    // Set partner split rule if parent is provided (sem comissão SaaS)
-    if ($parentId) {
-        $splitStmt = $pdo->prepare("
-            INSERT INTO partner_split_rules (partner_workspace_id, merchant_workspace_id, saas_rate_percentage, partner_rate_percentage, merchant_rate_percentage, absorb_gateway_fees)
-            VALUES (?, ?, 0.00, 0.00, 100.00, 'merchant')
-        ");
-        $splitStmt->execute([$parentId, $created->id]);
-    }
+                if (stripos($newPartnerName, 'sorteamos') !== false || stripos($newPartnerSlug, 'sorteamos') !== false) {
+                    $externalPlatform = 'sorteamos';
+                } else {
+                    $externalPlatform = $newPartnerSlug;
+                }
+            } elseif ($partnerOption === 'sorteamos') {
+                // Opção direta "Sorteamos"
+                $partnerWs = $wsRepo->findBySlug('sorteamos');
+                if (!$partnerWs) {
+                    $partnerRawApiToken = bin2hex(random_bytes(20));
+                    $partnerRawAdminToken = bin2hex(random_bytes(20));
+                    $partnerWs = $wsRepo->create([
+                        'parent_id'        => null,
+                        'type'             => 'partner_whitelabel',
+                        'name'             => 'Sorteamos Plataforma Parceira',
+                        'slug'             => 'sorteamos',
+                        'custom_domain'    => null,
+                        'document'         => null,
+                        'api_token_hash'   => hash('sha256', $partnerRawApiToken),
+                        'admin_token_hash' => hash('sha256', $partnerRawAdminToken),
+                        'gateway_provider' => 'mock',
+                        'status'           => 'active',
+                    ]);
+                    $partnerInfo = [
+                        'id'     => $partnerWs->id,
+                        'name'   => $partnerWs->name,
+                        'slug'   => $partnerWs->slug,
+                        'is_new' => true,
+                    ];
+                } else {
+                    $partnerInfo = [
+                        'id'     => $partnerWs->id,
+                        'name'   => $partnerWs->name,
+                        'slug'   => $partnerWs->slug,
+                        'is_new' => false,
+                    ];
+                }
+                $parentId = $partnerWs->id;
+                $externalPlatform = 'sorteamos';
+            } else {
+                // Parceiro existente selecionado ou herança de autenticação
+                if ($auth && $auth['role'] === 'partner_admin') {
+                    $parentId = $auth['workspace']->id;
+                    $partnerInfo = [
+                        'id'     => $auth['workspace']->id,
+                        'name'   => $auth['workspace']->name,
+                        'slug'   => $auth['workspace']->slug,
+                        'is_new' => false,
+                    ];
+                } elseif (!empty($input['partner_id'])) {
+                    $parentId = (int)$input['partner_id'];
+                    $selectedPartner = $wsRepo->findById($parentId);
+                    if ($selectedPartner) {
+                        $partnerInfo = [
+                            'id'     => $selectedPartner->id,
+                            'name'   => $selectedPartner->name,
+                            'slug'   => $selectedPartner->slug,
+                            'is_new' => false,
+                        ];
+                        if (stripos($selectedPartner->slug, 'sorteamos') !== false) {
+                            $externalPlatform = 'sorteamos';
+                        }
+                    }
+                } elseif (!empty($input['parent_id'])) {
+                    $parentId = (int)$input['parent_id'];
+                } else {
+                    // Fallback para o primeiro parceiro disponível
+                    $firstPartner = $pdo->query("SELECT id, name, slug FROM workspaces WHERE type = 'partner_whitelabel' ORDER BY id ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+                    if ($firstPartner) {
+                        $parentId = (int)$firstPartner['id'];
+                        $partnerInfo = $firstPartner;
+                    }
+                }
+            }
+        }
 
-    $access = null;
-    if ($adminEmail !== '') {
-        $accessRole = $created->type === 'partner_whitelabel' ? 'partner_admin' : 'merchant_admin';
-        $r = $userRepo->upsertForWorkspace($created->id, $accessRole, $adminEmail, $adminPassword, $created->name);
-        $access = [
-            'email'    => $r['email'],
-            'password' => $r['password'] ?? ($adminPassword !== '' ? $adminPassword : null),
-        ];
-    }
+        $created = $wsRepo->create([
+            'parent_id'        => $parentId,
+            'type'             => $type,
+            'name'             => $name,
+            'slug'             => $slug,
+            'custom_domain'    => !empty($input['custom_domain']) ? trim($input['custom_domain']) : null,
+            'document'         => $input['document'] ?? null,
+            'api_token_hash'   => hash('sha256', $rawApiToken),
+            'admin_token_hash' => hash('sha256', $rawAdminToken),
+            'gateway_provider' => $input['gateway_provider'] ?? 'mock',
+            'gateway_credentials' => $input['gateway_credentials'] ?? null,
+            'split_recipient_id' => $input['split_recipient_id'] ?? null,
+            'status'           => 'active',
+        ]);
 
-    $pdo->commit();
+        if ($type === 'merchant') {
+            // Create default campaign & upsell offer for new client workspace
+            $campaignStmt = $pdo->prepare("
+                INSERT INTO campaigns (workspace_id, external_platform, external_campaign_id, title, ticket_price, status)
+                VALUES (?, ?, 'camp_default', ?, ?, 'active')
+            ");
+            $campaignTitle = $input['campaign_title'] ?? ($name . ' Campanha Oficial');
+            $offerPrice = (float)($input['price'] ?? 90.00);
+            $campaignStmt->execute([$created->id, $externalPlatform, $campaignTitle, $offerPrice]);
+            $campId = (int)$pdo->lastInsertId();
+
+            $offerStmt = $pdo->prepare("
+                INSERT INTO upsell_offers (workspace_id, campaign_id, type, title, subtitle, price, quota_count, checkout_mode, is_active)
+                VALUES (?, ?, 'post_pix_scratch', ?, ?, ?, ?, 'pix_native', 1)
+            ");
+            $offerTitle = $input['offer_title'] ?? 'Booster 110X';
+            $offerQuotas = (int)($input['quota_count'] ?? 110);
+            $offerStmt->execute([$created->id, $campId, $offerTitle, $campaignTitle, $offerPrice, $offerQuotas]);
+
+            // Set partner split rule if parent is provided (sem comissão SaaS, 100% merchant)
+            if ($parentId) {
+                $splitStmt = $pdo->prepare("
+                    INSERT INTO partner_split_rules (partner_workspace_id, merchant_workspace_id, saas_rate_percentage, partner_rate_percentage, merchant_rate_percentage, absorb_gateway_fees)
+                    VALUES (?, ?, 0.00, 0.00, 100.00, 'merchant')
+                ");
+                $splitStmt->execute([$parentId, $created->id]);
+            }
+        }
+
+        $access = null;
+        if ($adminEmail !== '') {
+            $accessRole = $created->type === 'partner_whitelabel' ? 'partner_admin' : 'merchant_admin';
+            $r = $userRepo->upsertForWorkspace($created->id, $accessRole, $adminEmail, $adminPassword, $created->name);
+            $access = [
+                'email'    => $r['email'],
+                'password' => $r['password'] ?? ($adminPassword !== '' ? $adminPassword : null),
+                'role'     => $accessRole,
+            ];
+        }
+
+        $pdo->commit();
     } catch (\Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
@@ -204,16 +345,19 @@ if ($request->method() === 'POST') {
 
     JsonResponse::send([
         'status'    => 'success',
-        'message'   => 'Workspace criado com sucesso!',
+        'message'   => $type === 'partner_whitelabel' ? 'Empresa Parceira criada com sucesso!' : 'Subconta de cliente criada com sucesso!',
         'workspace' => [
             'id'            => $created->id,
+            'type'          => $created->type,
+            'parent_id'     => $created->parentId,
             'name'          => $created->name,
             'slug'          => $created->slug,
             'custom_domain' => $created->customDomain,
             'api_token'     => $rawApiToken,     // SHOWN ONLY ONCE!
             'admin_token'   => $rawAdminToken,   // SHOWN ONLY ONCE!
         ],
-        'access' => $access,
+        'partner'   => $partnerInfo,
+        'access'    => $access,
     ], 201);
 }
 

@@ -4536,10 +4536,164 @@ window.addEventListener('message', function(e) {
     .catch(function(e) { showToast(mensagemErroApi(e, 'remover o acesso'), 'error'); });
   }
 
+  var subcontaTipoAtual = 'merchant';
+  var parceirosDisponiveis = [];
+
+  function setSubcontaTipo(tipo) {
+    subcontaTipoAtual = tipo;
+    var btnMerchant = document.getElementById('sub-type-merchant-btn');
+    var btnPartner = document.getElementById('sub-type-partner-btn');
+    var groupPartner = document.getElementById('sub-partner-group');
+    var groupPricing = document.getElementById('sub-pricing-group');
+    var modalTitle = document.getElementById('sub-modal-title');
+    var modalDesc = document.getElementById('sub-modal-desc');
+    var nameLabel = document.getElementById('sub-name-label');
+    var nameInput = document.getElementById('sub-name');
+    var slugLabel = document.getElementById('sub-slug-label');
+    var slugInput = document.getElementById('sub-slug');
+    var domainLabel = document.getElementById('sub-domain-label');
+    var domainInput = document.getElementById('sub-domain');
+    var loginTitle = document.getElementById('sub-login-title');
+    var submitBtn = document.getElementById('btn-submit-sub');
+
+    if (tipo === 'partner_whitelabel') {
+      if (btnMerchant) {
+        btnMerchant.style.background = 'transparent';
+        btnMerchant.style.color = 'var(--gray-500)';
+        btnMerchant.style.boxShadow = 'none';
+        btnMerchant.style.fontWeight = '600';
+      }
+      if (btnPartner) {
+        btnPartner.style.background = '#fff';
+        btnPartner.style.color = 'var(--ink-900)';
+        btnPartner.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+        btnPartner.style.fontWeight = '700';
+      }
+      if (groupPartner) groupPartner.style.display = 'none';
+      if (groupPricing) groupPricing.style.display = 'none';
+      if (modalTitle) modalTitle.textContent = '+ Nova Empresa Parceira (White-Label)';
+      if (modalDesc) modalDesc.textContent = 'Cadastre uma nova empresa parceira para gerenciar clientes com marca própria, tokens exclusivos e relatórios de split.';
+      if (nameLabel) nameLabel.textContent = 'Nome da Empresa Parceira *';
+      if (nameInput) nameInput.placeholder = 'Ex: Sorteamos, Play55, Rifas Brasil';
+      if (slugLabel) slugLabel.textContent = 'Slug da Empresa Parceira (Identificador Único) *';
+      if (slugInput) slugInput.placeholder = 'Ex: sorteamos';
+      if (domainLabel) domainLabel.textContent = 'Domínio White-Label do Parceiro (Opcional)';
+      if (domainInput) domainInput.placeholder = 'Ex: app.sorteamos.com.br';
+      if (loginTitle) loginTitle.textContent = 'LOGIN DO ADMINISTRADOR PARCEIRO (OPCIONAL)';
+      if (submitBtn) submitBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Criar Empresa Parceira & Chaves';
+    } else {
+      if (btnMerchant) {
+        btnMerchant.style.background = '#fff';
+        btnMerchant.style.color = 'var(--ink-900)';
+        btnMerchant.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+        btnMerchant.style.fontWeight = '700';
+      }
+      if (btnPartner) {
+        btnPartner.style.background = 'transparent';
+        btnPartner.style.color = 'var(--gray-500)';
+        btnPartner.style.boxShadow = 'none';
+        btnPartner.style.fontWeight = '600';
+      }
+      if (groupPartner) groupPartner.style.display = 'block';
+      if (groupPricing) groupPricing.style.display = 'grid';
+      if (modalTitle) modalTitle.textContent = '+ Nova Subconta de Cliente (Rifa)';
+      if (modalDesc) modalDesc.textContent = 'Crie uma subconta isolada para seu cliente e defina o parceiro responsável (Sorteamos ou outra empresa).';
+      if (nameLabel) nameLabel.textContent = 'Nome do Cliente / Rifa *';
+      if (nameInput) nameInput.placeholder = 'Ex: Sorteios do Nordeste';
+      if (slugLabel) slugLabel.textContent = 'Slug da Subconta (Identificador Único) *';
+      if (slugInput) slugInput.placeholder = 'Ex: nordestesorteios';
+      if (domainLabel) domainLabel.textContent = 'Domínio Personalizado da Rifa (Opcional)';
+      if (domainInput) domainInput.placeholder = 'Ex: oferta.nordestesorteios.com';
+      if (loginTitle) loginTitle.textContent = 'LOGIN DO CLIENTE (OPCIONAL)';
+      if (submitBtn) submitBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
+    }
+  }
+
+  function carregarParceirosSubconta() {
+    var select = document.getElementById('sub-partner-select');
+    if (!select) return;
+
+    apiFetch('../api/admin/workspaces.php')
+      .then(function(data) {
+        parceirosDisponiveis = (data && data.partners) ? data.partners : [];
+        var opts = '<option value="sorteamos">⭐ Sorteamos (Plataforma Sorteamos)</option>';
+        
+        var addedIds = {};
+        parceirosDisponiveis.forEach(function(p) {
+          if (p.slug === 'sorteamos') return; // já é a primeira opção
+          addedIds[p.id] = true;
+          opts += '<option value="' + p.id + '">🏢 ' + (p.name || 'Parceiro #' + p.id) + ' (' + (p.slug || '') + ')</option>';
+        });
+
+        // Se currentWsId for de um parceiro e não estiver na lista
+        if (currentRole === 'partner_admin' && !addedIds[currentWsId]) {
+          opts += '<option value="' + currentWsId + '">🏢 Este Parceiro Atual (ID #' + currentWsId + ')</option>';
+        }
+
+        opts += '<option value="new">➕ Cadastrar Nova Empresa Parceira...</option>';
+        select.innerHTML = opts;
+      })
+      .catch(function(e) {
+        console.warn('Erro ao carregar lista de parceiros:', e);
+      });
+  }
+
+  function aoMudarParceiroSelect() {
+    var select = document.getElementById('sub-partner-select');
+    var newBox = document.getElementById('sub-new-partner-fields');
+    if (!select || !newBox) return;
+
+    if (select.value === 'new') {
+      newBox.style.display = 'block';
+      var nameInp = document.getElementById('sub-new-partner-name');
+      if (nameInp) nameInp.focus();
+    } else {
+      newBox.style.display = 'none';
+    }
+  }
+
+  function aoDigitarNomeNovoParceiro() {
+    var name = document.getElementById('sub-new-partner-name').value;
+    var slugInput = document.getElementById('sub-new-partner-slug');
+    if (slugInput) {
+      slugInput.value = name.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+  }
+
+  function aoDigitarNomeSubconta() {
+    var name = document.getElementById('sub-name').value;
+    var slugInput = document.getElementById('sub-slug');
+    // Preenche slug automaticamente se o usuário não alterou manualmente
+    if (slugInput && !slugInput.dataset.manualEdited) {
+      slugInput.value = name.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+  }
+
   function abrirModalNovaSubconta() {
     document.getElementById('sub-result').style.display = 'none';
     document.getElementById('res-access-box').style.display = 'none';
-    document.getElementById('form-subconta').reset();
+    var resPartner = document.getElementById('res-partner-info');
+    if (resPartner) resPartner.style.display = 'none';
+
+    var form = document.getElementById('form-subconta');
+    if (form) form.reset();
+
+    var slugInput = document.getElementById('sub-slug');
+    if (slugInput) delete slugInput.dataset.manualEdited;
+
+    var newBox = document.getElementById('sub-new-partner-fields');
+    if (newBox) newBox.style.display = 'none';
+
+    setSubcontaTipo('merchant');
+    carregarParceirosSubconta();
     document.getElementById('modal-subconta').showModal();
   }
 
@@ -4551,19 +4705,40 @@ window.addEventListener('message', function(e) {
     e.preventDefault();
     var btn = document.getElementById('btn-submit-sub');
     btn.disabled = true;
-    btn.textContent = 'Criando Subconta...';
+    btn.textContent = 'Processando...';
 
     var payload = {
-      parent_id: (currentRole === 'partner_admin') ? currentWsId : 1,
-      type: 'merchant',
+      account_type: subcontaTipoAtual,
       name: document.getElementById('sub-name').value.trim(),
       slug: document.getElementById('sub-slug').value.trim(),
       custom_domain: document.getElementById('sub-domain').value.trim() || null,
-      price: parseFloat(document.getElementById('sub-price').value) || 90.00,
-      quota_count: parseInt(document.getElementById('sub-quotas').value) || 110,
       admin_email: document.getElementById('sub-email').value.trim(),
       admin_password: document.getElementById('sub-password').value
     };
+
+    if (subcontaTipoAtual === 'merchant') {
+      var partnerChoice = document.getElementById('sub-partner-select').value;
+      payload.price = parseFloat(document.getElementById('sub-price').value) || 90.00;
+      payload.quota_count = parseInt(document.getElementById('sub-quotas').value) || 110;
+
+      if (partnerChoice === 'new') {
+        payload.partner_option = 'new';
+        payload.new_partner_name = document.getElementById('sub-new-partner-name').value.trim();
+        payload.new_partner_slug = document.getElementById('sub-new-partner-slug').value.trim();
+        if (!payload.new_partner_name) {
+          showToast('Informe o nome da nova empresa parceira.', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
+          return;
+        }
+      } else if (partnerChoice === 'sorteamos') {
+        payload.partner_option = 'sorteamos';
+        payload.external_platform = 'sorteamos';
+      } else {
+        payload.partner_option = 'existing';
+        payload.partner_id = parseInt(partnerChoice) || 1;
+      }
+    }
 
     apiFetch('../api/admin/workspaces.php', {
       method: 'POST',
@@ -4571,9 +4746,31 @@ window.addEventListener('message', function(e) {
     })
     .then(data => {
       btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
+      btn.innerHTML = subcontaTipoAtual === 'partner_whitelabel'
+        ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Criar Empresa Parceira & Chaves'
+        : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
 
       if (data.status === 'success') {
+        var resTitle = document.getElementById('res-title');
+        if (resTitle) {
+          resTitle.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ' +
+            (subcontaTipoAtual === 'partner_whitelabel' ? 'Empresa Parceira Criada com Sucesso!' : 'Subconta de Cliente Criada com Sucesso!');
+        }
+
+        // Info de parceiro vinculado
+        var resPartnerInfo = document.getElementById('res-partner-info');
+        var resPartnerName = document.getElementById('res-partner-name');
+        var resPartnerBadge = document.getElementById('res-partner-badge');
+        if (data.partner && resPartnerInfo && resPartnerName) {
+          resPartnerName.textContent = data.partner.name + ' (ID #' + data.partner.id + ')';
+          if (resPartnerBadge) {
+            resPartnerBadge.style.display = data.partner.is_new ? 'inline-block' : 'none';
+          }
+          resPartnerInfo.style.display = 'block';
+        } else if (resPartnerInfo) {
+          resPartnerInfo.style.display = 'none';
+        }
+
         document.getElementById('res-api-token').textContent = data.workspace.api_token;
         document.getElementById('res-admin-token').textContent = data.workspace.admin_token;
         var accessBox = document.getElementById('res-access-box');
@@ -4585,16 +4782,19 @@ window.addEventListener('message', function(e) {
           accessBox.style.display = 'none';
         }
         document.getElementById('sub-result').style.display = 'block';
-        showToast('Subconta criada com sucesso!', 'success');
+        showToast(subcontaTipoAtual === 'partner_whitelabel' ? 'Empresa parceira criada com sucesso!' : 'Subconta criada com sucesso!', 'success');
         atualizarTudo();
+        carregarParceirosSubconta();
       } else {
-        showToast('Erro ao criar subconta: ' + (data.message || 'Falha'), 'error');
+        showToast('Erro: ' + (data.message || 'Falha ao processar'), 'error');
       }
     })
     .catch(err => {
       btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
-      showToast(mensagemErroApi(err, 'criar a subconta'), 'error');
+      btn.innerHTML = subcontaTipoAtual === 'partner_whitelabel'
+        ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Criar Empresa Parceira & Chaves'
+        : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; display:inline-block;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Subconta & Chaves';
+      showToast(mensagemErroApi(err, 'criar subconta ou parceiro'), 'error');
     });
   }
 
@@ -5285,31 +5485,80 @@ window.addEventListener('message', function(e) {
   </form>
 </dialog>
 
-<!-- MODAL PARA CRIAÇÃO DE NOVA SUBCONTA DE CLIENTE -->
-<dialog class="win" id="modal-subconta" style="max-width:500px; text-align:left; border:1px solid var(--gray-150); border-radius:var(--radius-xl); padding:24px; background:var(--white); color:var(--ink-900); box-shadow:var(--shadow-dropdown);">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-    <h2 style="font-family:var(--font-ui); font-size:17px; font-weight:700; color:var(--ink-900); margin:0;">+ Nova Subconta de Cliente (Rifa)</h2>
+<!-- MODAL PARA CRIAÇÃO DE NOVA SUBCONTA DE CLIENTE OU PARCEIRO -->
+<dialog class="win" id="modal-subconta" style="max-width:520px; text-align:left; border:1px solid var(--gray-150); border-radius:var(--radius-xl); padding:24px; background:var(--white); color:var(--ink-900); box-shadow:var(--shadow-dropdown);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <h2 style="font-family:var(--font-ui); font-size:17px; font-weight:700; color:var(--ink-900); margin:0;" id="sub-modal-title">+ Nova Subconta de Cliente (Rifa)</h2>
     <button type="button" class="modal-close-btn" onclick="fecharModalNovaSubconta()" aria-label="Fechar modal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
-  <p style="font-size:12.5px; color:var(--gray-400); margin-bottom:16px;">
-    Crie uma subconta isolada para seu cliente. Ele terá acesso individual ao próprio painel e você receberá seu comissionamento automático em cada Pix liquidado.
+  <p style="font-size:12px; color:var(--gray-400); margin-bottom:14px; line-height:1.45;" id="sub-modal-desc">
+    Crie uma subconta isolada para seu cliente e defina o parceiro responsável (Sorteamos ou outra empresa).
   </p>
+
+  <!-- SELETOR DE TIPO (CLIENTE OU EMPRESA PARCEIRA) -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; background:var(--gray-100); padding:4px; border-radius:var(--radius-md); margin-bottom:14px;">
+    <button type="button" id="sub-type-merchant-btn" onclick="setSubcontaTipo('merchant')" style="padding:7px 12px; border:none; border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer; background:#fff; color:var(--ink-900); box-shadow:0 1px 3px rgba(0,0,0,0.06); transition:all 0.15s ease;">
+      🎯 Cliente / Rifa
+    </button>
+    <button type="button" id="sub-type-partner-btn" onclick="setSubcontaTipo('partner_whitelabel')" style="padding:7px 12px; border:none; border-radius:var(--radius-sm); font-size:12px; font-weight:600; cursor:pointer; background:transparent; color:var(--gray-500); transition:all 0.15s ease;">
+      🏢 Empresa Parceira (White-Label)
+    </button>
+  </div>
 
   <form id="form-subconta" onsubmit="salvarNovaSubconta(event)">
     <div style="display:grid; gap:12px; margin-bottom:16px;">
+
+      <!-- SEÇÃO DE SELEÇÃO / CRIAÇÃO DE EMPRESA PARCEIRA (QUANDO CLIENTE/RIFA) -->
+      <div id="sub-partner-group" style="padding:10px 12px; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-md);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="font-size:11.5px; font-weight:700; color:var(--ink-900); display:flex; align-items:center; gap:5px; margin:0;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Parceiro / Plataforma da Rifa *
+          </label>
+          <span style="font-size:10.5px; font-weight:600; color:var(--blue-600);">Sorteamos ou outra empresa</span>
+        </div>
+        <select id="sub-partner-select" class="field-control" style="width:100%; border-radius:var(--radius-control); font-weight:600;" onchange="aoMudarParceiroSelect()">
+          <option value="sorteamos">⭐ Sorteamos (Plataforma Sorteamos)</option>
+          <!-- Parceiros dinâmicos inseridos via JS -->
+          <option value="new">➕ Cadastrar Nova Empresa Parceira...</option>
+        </select>
+
+        <!-- FORMULÁRIO RETRÁTIL DE NOVO PARCEIRO -->
+        <div id="sub-new-partner-fields" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--gray-250);">
+          <div style="font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--blue-700); margin-bottom:6px;">
+            Dados da Nova Empresa Parceira
+          </div>
+          <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:8px;">
+            <div>
+              <label style="font-size:11px; font-weight:600; color:var(--gray-600);">Nome da Empresa *</label>
+              <input type="text" id="sub-new-partner-name" class="field-control" style="width:100%; border-radius:var(--radius-control); background:#fff;" placeholder="Ex: Sorteamos, Play55, Rifas Brasil" oninput="aoDigitarNomeNovoParceiro()" />
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:600; color:var(--gray-600);">Slug / Identificador *</label>
+              <input type="text" id="sub-new-partner-slug" class="field-control" style="width:100%; border-radius:var(--radius-control); background:#fff; font-family:var(--font-mono);" placeholder="Ex: sorteamos" />
+            </div>
+          </div>
+          <div style="font-size:10.5px; color:var(--gray-500); margin-top:5px;">
+            ✓ Uma nova empresa parceira white-label será criada e esta subconta ficará vinculada a ela.
+          </div>
+        </div>
+      </div>
+
       <div>
-        <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Nome do Cliente / Rifa *</label>
-        <input type="text" id="sub-name" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="Ex: Sorteios do Nordeste" required />
+        <label id="sub-name-label" style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Nome do Cliente / Rifa *</label>
+        <input type="text" id="sub-name" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="Ex: Sorteios do Nordeste" required oninput="aoDigitarNomeSubconta()" />
       </div>
       <div>
-        <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Slug da Subconta (Identificador Único) *</label>
+        <label id="sub-slug-label" style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Slug da Subconta (Identificador Único) *</label>
         <input type="text" id="sub-slug" class="field-control" style="width:100%; border-radius:var(--radius-control); font-family:var(--font-mono);" placeholder="Ex: nordestesorteios" required />
       </div>
       <div>
-        <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Domínio Personalizado da Rifa (Opcional)</label>
+        <label id="sub-domain-label" style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Domínio Personalizado da Rifa (Opcional)</label>
         <input type="text" id="sub-domain" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="Ex: oferta.nordestesorteios.com" />
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+
+      <!-- CAMPOS DE PREÇO E COTAS (APENAS PARA CLIENTE/RIFA) -->
+      <div id="sub-pricing-group" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
         <div>
           <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Preço do Upsell (R$)</label>
           <input type="number" step="0.01" id="sub-price" class="field-control" style="width:100%; border-radius:var(--radius-control);" value="90.00" />
@@ -5319,12 +5568,13 @@ window.addEventListener('message', function(e) {
           <input type="number" id="sub-quotas" class="field-control" style="width:100%; border-radius:var(--radius-control);" value="110" />
         </div>
       </div>
+
       <div style="padding-top:12px; border-top:1px solid var(--gray-150);">
-        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--gray-400); margin-bottom:8px;">Login do cliente (opcional)</div>
+        <div id="sub-login-title" style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--gray-400); margin-bottom:8px;">Login de acesso (opcional)</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
           <div>
             <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">E-mail de acesso</label>
-            <input type="email" id="sub-email" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="cliente@empresa.com" autocomplete="off" />
+            <input type="email" id="sub-email" class="field-control" style="width:100%; border-radius:var(--radius-control);" placeholder="admin@empresa.com" autocomplete="off" />
           </div>
           <div>
             <label style="font-size:11.5px; font-weight:600; color:var(--gray-500);">Senha (vazio = gerar)</label>
@@ -5335,18 +5585,21 @@ window.addEventListener('message', function(e) {
     </div>
 
     <div id="sub-result" style="display:none; padding:12px; background:var(--blue-50); border:1px solid var(--blue-100); border-radius:var(--radius-md); margin-bottom:16px;">
-      <strong style="color:var(--blue-600); font-size:12px; display:flex; align-items:center; gap:6px; margin-bottom:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Subconta Criada com Sucesso!</strong>
+      <strong id="res-title" style="color:var(--blue-600); font-size:12px; display:flex; align-items:center; gap:6px; margin-bottom:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Criado com Sucesso!</strong>
       <div style="font-size:11.5px; line-height:1.6; color:var(--ink-900);">
-        • <strong>API Token (Para colar na Sorteamos):</strong><br>
+        <div id="res-partner-info" style="display:none; margin-bottom:6px; padding:6px 8px; background:#fff; border-radius:var(--radius-xs); border:1px solid var(--blue-100);">
+          🏢 <strong>Empresa Parceira:</strong> <span id="res-partner-name">Sorteamos</span> <span id="res-partner-badge" style="font-size:10px; background:var(--blue-600); color:#fff; padding:1px 6px; border-radius:10px; font-weight:700; margin-left:4px; display:none;">Nova Empresa</span>
+        </div>
+        • <strong>API Token (Para colar na Sorteamos / Webhook):</strong><br>
         <code id="res-api-token" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; color:var(--blue-600); display:block; margin:2px 0 6px;"></code>
-        • <strong>Admin Token (Acesso Individual do Cliente):</strong><br>
+        • <strong>Admin Token (Acesso Individual):</strong><br>
         <code id="res-admin-token" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; color:var(--green-700); display:block; margin:2px 0 6px;"></code>
         <span id="res-access-box" style="display:none;">
-        • <strong>Login do Cliente (e-mail / senha):</strong><br>
+        • <strong>Login de Acesso (e-mail / senha):</strong><br>
         <code id="res-access-email" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; display:block; margin:2px 0 4px;"></code>
         <code id="res-access-password" style="background:#fff; padding:2px 6px; border-radius:var(--radius-xs); font-weight:700; font-size:11.5px; display:block; margin:0 0 6px;"></code>
         </span>
-        • <strong>Regra de Split Vinculada:</strong> 0% SaaS (100% do Pix creditado diretamente ao Lojista).
+        • <strong>Regra de Split Vinculada:</strong> 0% SaaS (100% repassado ao Lojista/Parceiro).
       </div>
     </div>
 
