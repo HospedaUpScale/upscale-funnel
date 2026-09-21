@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentação Oficial da API & Webhooks | upScale Media Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070e1e;
+      --surface: #0b172e;
+      --surface-card: #0f1f3d;
+      --border: #1e3256;
+      --border-accent: #2563eb;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+      --green-500: #9fe870;
+      --green-700: #15803d;
+      --code-bg: #050a14;
+      --shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.6; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+    a { color: var(--blue-500); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell { width: min(1140px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 64px; }
+    
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      padding: 14px 20px; background: rgba(11, 23, 46, 0.85); backdrop-filter: blur(14px);
+      border: 1px solid var(--border); border-radius: 16px; margin-bottom: 32px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px; color: #fff; text-decoration: none; }
+    .brand-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--blue-600); display: grid; place-items: center; font-weight: 900; }
+    .badge-live { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(159, 232, 112, 0.15); color: var(--green-500); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-500); box-shadow: 0 0 10px var(--green-500); }
+
+    .hero {
+      background: linear-gradient(145deg, #0d1f42 0%, #081329 100%);
+      border: 1px solid var(--border); border-radius: 20px; padding: 36px; margin-bottom: 32px; box-shadow: var(--shadow);
+    }
+    .eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--green-500); margin-bottom: 8px; display: block; }
+    h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .hero-lead { font-size: 15px; color: var(--muted); max-width: 760px; line-height: 1.6; }
+
+    .section-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 28px; margin-bottom: 24px; box-shadow: var(--shadow);
+    }
+    .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .method-tag {
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+    }
+    .method-post { background: #15803d; color: #fff; }
+    .method-get { background: #1d4ed8; color: #fff; }
+    .endpoint-title { font-size: 18px; font-weight: 700; color: #fff; }
+    .endpoint-desc { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; }
+
+    .code-box {
+      background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; margin-bottom: 18px;
+    }
+    .code-head {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 700; color: var(--muted);
+    }
+    pre { padding: 16px; overflow-x: auto; font-size: 12px; line-height: 1.6; color: #cbd5e1; margin: 0; }
+    
+    .btn-copy {
+      background: var(--blue-600); color: #fff; border: 0; border-radius: 6px;
+      padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-copy:hover { background: var(--blue-500); }
+
+    .param-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12.5px; }
+    .param-table th { text-align: left; padding: 10px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); color: var(--muted); }
+    .param-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .param-table code { background: rgba(59, 130, 246, 0.15); color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 11.5px; }
+
+    .flow-steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 18px;
+    }
+    .flow-step-item {
+      background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;
+    }
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%; background: var(--blue-600); color: #fff;
+      display: grid; place-items: center; font-size: 11px; font-weight: 800; margin-bottom: 10px;
+    }
+    .flow-step-item strong { display: block; font-size: 13.5px; margin-bottom: 4px; color: #fff; }
+    .flow-step-item p { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.4; }
+
+    footer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 48px; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="topbar">
+      <a class="brand" href="../hub/index.html">
+        <span class="brand-mark">U</span>
+        <span>upScale Media Network</span>
+      </a>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="badge-live"><span class="dot"></span> API v1 Ativa</span>
+        <a href="../hub/index.html" style="font-size:12px; font-weight:700; color:#fff; padding:6px 12px; background:var(--blue-600); border-radius:8px;">Abrir Painel Hub ↗</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <span class="eyebrow">Manual de Integração Oficial</span>
+      <h1>API & Webhook Oficial da Rede upScale</h1>
+      <p class="hero-lead">
+        Documentação para plataformas de rifas (<strong>Sorteamos</strong>, <strong>Play55</strong>, <strong>SorteiMe</strong> ou checkout próprio) receberem eventos de compras de cotas e renderizarem o <strong>Booster / Raspadinha de Alta Conversão</strong> em tempo real.
+      </p>
+
+      <div class="flow-steps">
+        <div class="flow-step-item">
+          <div class="step-num">1</div>
+          <strong>Venda de Bilhetes na Rifa</strong>
+          <p>O comprador paga o Pix na plataforma de rifa.</p>
+        </div>
+        <div class="flow-step-item">
+          <div class="step-num">2</div>
+          <strong>Disparo do Webhook</strong>
+          <p>A rifa chama o webhook oficial da upScale com os dados da venda.</p>
+        </div>
+        <div class="flow-step-item">
+          <div class="step-num">3</div>
+          <strong>Card Personalizado</strong>
+          <p>A upScale valida a compra mínima, ativa o bônus e devolve o Iframe pronto.</p>
+        </div>
+        <div class="flow-step-item">
+          <div class="step-num">4</div>
+          <strong>Pix de Upsell 1-Clique</strong>
+          <p>O comprador raspa na tela e converte cotas extras com split liquidado.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- ENDPOINT 1: WEBHOOK DE VENDAS -->
+    <section class="section-card">
+      <div class="section-head">
+        <span class="method-tag method-post">POST</span>
+        <h2 class="endpoint-title">/api/v1/webhook</h2>
+      </div>
+      <p class="endpoint-desc">
+        A plataforma de rifas dispara este webhook assim que a compra de cotas for aprovada. A upScale registra o comprador, avalia o bônus de R$ 50.000 e gera o token de acesso exclusivo para a tela de obrigado.
+      </p>
+
+      <div class="code-box">
+        <div class="code-head"><span>Exemplo de Chamada (cURL / HTTP POST)</span><button class="btn-copy" onclick="copiarTexto('curl-webhook')">Copiar cURL</button></div>
+        <pre id="curl-webhook">curl -X POST https://seudominio.com/api/v1/webhook \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_DO_WORKSPACE" \
+  -d '{
+    "order_id": "PED-98432",
+    "customer": {
+      "name": "Carlos Alberto Silva",
+      "phone": "11987654321",
+      "cpf": "12345678900"
+    },
+    "amount": 60.00,
+    "quotas": 100,
+    "status": "paid"
+  }'</pre>
+      </div>
+
+      <h3 style="font-size:13.5px; font-weight:700; color:#fff; margin-top:20px;">Parâmetros aceitos no JSON:</h3>
+      <table class="param-table">
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>order_id</code></td>
+            <td>String</td>
+            <td>Sim</td>
+            <td>Identificador único do pedido na plataforma de rifa (ex: <code>PED-98432</code>).</td>
+          </tr>
+          <tr>
+            <td><code>customer.name</code></td>
+            <td>String</td>
+            <td>Sim</td>
+            <td>Nome completo do comprador. A API extrai o primeiro nome para a raspadinha.</td>
+          </tr>
+          <tr>
+            <td><code>customer.phone</code></td>
+            <td>String</td>
+            <td>Opcional</td>
+            <td>Telefone/WhatsApp com DDD (ex: <code>11999999999</code>) para recuperação e Pix.</td>
+          </tr>
+          <tr>
+            <td><code>amount</code></td>
+            <td>Number</td>
+            <td>Sim</td>
+            <td>Valor total pago na rifa (ex: <code>60.00</code>). Usado para validar a compra mínima do bônus.</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>String</td>
+            <td>Sim</td>
+            <td>Status do pagamento: <code>paid</code>, <code>pago</code> ou <code>confirmed</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-size:13.5px; font-weight:700; color:#fff; margin-top:24px;">Resposta Retornada (200 OK):</h3>
+      <div class="code-box">
+        <div class="code-head"><span>JSON de Sucesso</span><button class="btn-copy" onclick="copiarTexto('res-webhook')">Copiar</button></div>
+        <pre id="res-webhook">{
+  "status": "success",
+  "message": "Venda registrada com sucesso na upScale Media Network.",
+  "token": "tk_fadcf7d458d3da7900b352afba329241",
+  "order_id": "PED-98432",
+  "card_url": "https://seudominio.com/?token=tk_fadcf7d458d3da7900b352afba329241",
+  "iframe_snippet": "&lt;iframe id=\"upscale-frame\" src=\"https://seudominio.com/?token=tk_fadcf...\" style=\"width:100%;border:0;height:820px;\" scrolling=\"no\"&gt;&lt;/iframe&gt;...",
+  "buyer": {
+    "name": "Carlos Alberto Silva",
+    "first_name": "Carlos",
+    "phone": "11987654321"
+  },
+  "bonus": {
+    "carro_a": "RANGER",
+    "carro_b": "BMW",
+    "extra_amount": 50000.00,
+    "min_order": 30.00,
+    "eligible": true,
+    "badge": "COMPRA CONFIRMADA"
+  }
+}</pre>
+      </div>
+    </section>
+
+    <!-- ENDPOINT 2: CONSULTA DE OFERTA -->
+    <section class="section-card">
+      <div class="section-head">
+        <span class="method-tag method-get">GET</span>
+        <h2 class="endpoint-title">/api/v1/offer</h2>
+      </div>
+      <p class="endpoint-desc">
+        Consulta pública dos dados da campanha e oferta ativa (título, preço, cotas do booster, timer de urgência e valores de bônus).
+      </p>
+      <div class="code-box">
+        <div class="code-head"><span>Exemplo de Requisição</span><button class="btn-copy" onclick="copiarTexto('curl-offer')">Copiar</button></div>
+        <pre id="curl-offer">curl -X GET https://seudominio.com/api/v1/offer?workspace_id=2</pre>
+      </div>
+    </section>
+
+    <!-- ENDPOINT 3: AUDITORIA DE GANHADOR -->
+    <section class="section-card">
+      <div class="section-head">
+        <span class="method-tag method-get">GET</span>
+        <h2 class="endpoint-title">/api/v1/winner</h2>
+      </div>
+      <p class="endpoint-desc">
+        Permite ao organizador da rifa auditar e validar se o ganhador de uma cota premiada comprou pelo card da raspadinha e tem direito aos <strong>R$ 50.000 extras</strong>.
+      </p>
+      <div class="code-box">
+        <div class="code-head"><span>Exemplo de Consulta de Ganhador</span><button class="btn-copy" onclick="copiarTexto('curl-winner')">Copiar</button></div>
+        <pre id="curl-winner">curl -X GET "https://seudominio.com/api/v1/winner?order_id=PED-98432" \
+  -H "Authorization: Bearer SEU_TOKEN_DO_WORKSPACE"</pre>
+      </div>
+    </section>
+
+    <!-- INCORPORAÇÃO POR IFRAME & AUTO-ALTURA -->
+    <section class="section-card">
+      <h2 style="font-size:18px; color:#fff; margin-bottom:10px;">Como incorporar o Iframe na Página de Obrigado da Rifa</h2>
+      <p style="font-size:13.5px; color:var(--muted); margin-bottom:14px;">
+        A plataforma de rifa pode simplesmente embutir este Iframe na tela de conclusão de pagamento. O script ajusta a altura automaticamente eliminando qualquer barra de rolagem.
+      </p>
+      <div class="code-box">
+        <div class="code-head"><span>HTML para a tela pós-compra da rifa</span><button class="btn-copy" onclick="copiarTexto('embed-snippet')">Copiar Código</button></div>
+        <pre id="embed-snippet">&lt;div style="width:100%;max-width:680px;margin:0 auto;"&gt;
+  &lt;iframe 
+    id="upscale-frame" 
+    src="https://seudominio.com/?workspace_id=2&amp;nome={{nome}}&amp;valor={{valor}}" 
+    style="width:100%;border:0;min-height:520px;" 
+    scrolling="no"&gt;
+  &lt;/iframe&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+window.addEventListener('message', function(e) {
+  if (e.data &amp;&amp; e.data.tipo === 'dx:altura') {
+    document.getElementById('upscale-frame').style.height = e.data.altura + 'px';
+  }
+});
+&lt;/script&gt;</pre>
+      </div>
+    </section>
+
+    <footer>
+      upScale Media Network · Tecnologia de Monetização & Upsell SaaS de Alta Conversão
+    </footer>
+  </div>
+
+  <script>
+    function copiarTexto(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      navigator.clipboard.writeText(el.innerText).then(function() {
+        alert('Código copiado para a área de transferência!');
+      });
+    }
+  </script>
+</body>
+</html>
