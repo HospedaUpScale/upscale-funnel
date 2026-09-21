@@ -6,6 +6,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
+    # Se chamar sem .php e o arquivo existir com .php, executa ele
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^([a-z0-9_-]+)/?$ $1.php [L,QSA]
+
     # Se o arquivo ou pasta física existir, serve direto (ex: view.php)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

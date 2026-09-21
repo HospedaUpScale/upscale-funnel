@@ -122,7 +122,22 @@ $eventRepo->log($workspace->id, $order['id'], 'pix_generated', [
     'offer_id'       => $offer['id']
 ]);
 
-// 8. Return Response
+// 8. Atualizar token de acesso pós-compra se fornecido (Auditoria de Ganhadores & Bônus Extra)
+if (!empty($input['token'])) {
+    $pdo->prepare("
+        UPDATE order_access_tokens 
+        SET upsell_converted = 1, upsell_order_id = ? 
+        WHERE token = ?
+    ")->execute([(int)$order['id'], trim($input['token'])]);
+} elseif (!empty($externalOrderId)) {
+    $pdo->prepare("
+        UPDATE order_access_tokens 
+        SET upsell_converted = 1, upsell_order_id = ? 
+        WHERE workspace_id = ? AND external_order_id = ?
+    ")->execute([(int)$order['id'], $workspace->id, $externalOrderId]);
+}
+
+// 9. Return Response
 JsonResponse::send([
     'status'         => 'success',
     'order_id'       => $order['id'],

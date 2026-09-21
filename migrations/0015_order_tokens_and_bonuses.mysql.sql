@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS order_access_tokens (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    workspace_id BIGINT UNSIGNED NOT NULL,
+    external_order_id VARCHAR(120) NULL,
+    customer_name VARCHAR(150) NULL,
+    customer_phone VARCHAR(50) NULL,
+    customer_cpf VARCHAR(20) NULL,
+    base_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    is_paid TINYINT(1) NOT NULL DEFAULT 1,
+    carro_a VARCHAR(100) NULL,
+    carro_b VARCHAR(100) NULL,
+    extra_bonus DECIMAL(10,2) NOT NULL DEFAULT 50000.00,
+    min_order DECIMAL(10,2) NOT NULL DEFAULT 30.00,
+    bonus_entitled TINYINT(1) NOT NULL DEFAULT 1,
+    upsell_converted TINYINT(1) NOT NULL DEFAULT 0,
+    upsell_order_id BIGINT UNSIGNED NULL,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_order_tokens_token (token),
+    INDEX idx_order_tokens_ws_order (workspace_id, external_order_id),
+    CONSTRAINT fk_order_tokens_ws FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

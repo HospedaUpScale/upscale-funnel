@@ -698,6 +698,12 @@
     return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
   }
 
+  var tokenPedido = param(['token', 'tk', 'auth_token']);
+  var orderIdParam = param(['order_id', 'pedido_id', 'pedido', 'id']);
+  var phoneParam = param(['telefone', 'phone', 'celular']);
+  var compraConfirmada = false;
+  var bonusAtivo = false;
+
   var nome = primeiroNome(CFG.nome) ||
              primeiroNome(param(['nome', 'name', 'first_name', 'cliente']));
 
@@ -716,6 +722,101 @@
     return true;
   }
 
+  /* ═══ RESOLUÇÃO DE CONTEXTO EM CAMADAS (API -> URL -> TELA PAI -> PADRÃO) ═══ */
+  function aplicarContextoResolvido(ctx) {
+    if (!ctx) return;
+    if (ctx.buyer && ctx.buyer.first_name) {
+      definirNome(ctx.buyer.first_name);
+    }
+    if (ctx.confirmed) {
+      compraConfirmada = true;
+      var badge = $('badge');
+      if (badge) {
+        badge.textContent = ctx.badge || 'Compra Confirmada';
+        badge.style.background = 'var(--green-500)';
+        badge.style.color = '#05153F';
+        badge.style.fontWeight = '800';
+      }
+    }
+    if (ctx.booster) {
+      if (ctx.booster.bonus_entitled) {
+        bonusAtivo = true;
+        var note = $('bonus-note');
+        if (note && ctx.booster.extra_bonus) {
+          var bonusFmt = 'R$ ' + Number(ctx.booster.extra_bonus).toLocaleString('pt-BR');
+          note.innerHTML = '<strong style="color:var(--green-500); display:inline-block; margin-right:4px;">★ Bônus de ' + bonusFmt + ' Ativado!</strong> ' + (note.textContent || '');
+        }
+      }
+      if (ctx.booster.price && (!CFG.extra || CFG.extra === '90')) {
+        CFG.extra = ctx.booster.price;
+        valorFmt = moeda(ctx.booster.price);
+        $('valor').textContent = valorFmt;
+      }
+      if (ctx.booster.title && (!CFG.premio || CFG.premio === 'Booster 110X')) {
+        CFG.premio = ctx.booster.title;
+        $('premio').textContent = ctx.booster.title;
+        $('under-v').textContent = ctx.booster.title;
+      }
+    }
+  }
+
+  function executarFallbackUrlOuTela() {
+    // Camada 2: Puxa da URL (se veio na query string)
+    var nomeUrl = param(['nome', 'name', 'first_name', 'cliente']);
+    if (nomeUrl) {
+      definirNome(nomeUrl);
+      var badge = $('badge');
+      if (badge) {
+        badge.textContent = 'Compra Confirmada';
+        badge.style.background = 'var(--green-500)';
+        badge.style.color = '#05153F';
+      }
+      return;
+    }
+
+    // Camada 3: Varredura na tela pai caso esteja embutido via iframe
+    try {
+      if (parent !== window && parent.document) {
+        var el = parent.document.querySelector('.customer-name, #nome-cliente, .obrigado-nome, [data-buyer-name]');
+        if (el && el.textContent) {
+          definirNome(el.textContent.trim());
+          return;
+        }
+      }
+    } catch(e) {}
+
+    // Camada 4: Fallback padrão elegante
+    aplicarNome();
+  }
+
+  // Camada 1: Consulta API com timeout de 1500ms (resiliência total)
+  (function consultarContextoApi() {
+    var qs = location.search.slice(1);
+    var apiUrl = 'api/order-context.php' + (qs ? '?' + qs : '');
+    var timerTimeout = null;
+    var abortCtrl = window.AbortController ? new AbortController() : null;
+
+    if (abortCtrl) {
+      timerTimeout = setTimeout(function () { abortCtrl.abort(); }, 1500);
+    }
+
+    fetch(apiUrl, { signal: abortCtrl ? abortCtrl.signal : undefined })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (timerTimeout) clearTimeout(timerTimeout);
+        if (res && res.status === 'success') {
+          aplicarContextoResolvido(res);
+        } else {
+          executarFallbackUrlOuTela();
+        }
+      })
+      .catch(function () {
+        // Se a API estiver offline, timeout ou falhar, roda o fallback imediatamente!
+        if (timerTimeout) clearTimeout(timerTimeout);
+        executarFallbackUrlOuTela();
+      });
+  })();
+
   var ORIGENS_PAI = attr('origens', 'https://oferta.vendedorsincero.pro')
                       .split(',').map(function (s) { return s.trim(); }).filter(Boolean);
 
@@ -730,8 +831,8 @@
       mostrarTelaPreview(d.screen);
       return;
     }
-    if (d.tipo === 'card:nome' || d.tipo === 'dx:nome') {
-      definirNome(d.nome || d.valor);
+    if (d.tipo === 'card:nome' || d.tipo === 'dx:nome' || d.tipo === 'upscale:dados_comprador') {
+      definirNome(d.nome || d.valor || d.customer_name);
     }
   });
 
@@ -1184,12 +1285,14 @@
     $('cta-label').textContent = 'Gerando Pix Seguro…';
 
     var payload = {
-      name:     nome || 'Cliente',
-      phone:    param(['telefone', 'phone', 'celular']),
-      cpf:      param(['cpf']),
-      order_id: param(['order_id', 'pedido_id', 'id']),
-      offer_id: param(['offer_id']),
-      workspace:param(['__workspace', 'workspace'])
+      name:        nome || 'Cliente',
+      phone:       param(['telefone', 'phone', 'celular']),
+      cpf:         param(['cpf']),
+      order_id:    param(['order_id', 'pedido_id', 'id']),
+      offer_id:    param(['offer_id']),
+      workspace:   param(['__workspace', 'workspace']),
+      token:       tokenPedido,
+      bonus_extra: bonusAtivo ? 50000 : 0
     };
 
     fetch('api/pix-upsell.php', {
