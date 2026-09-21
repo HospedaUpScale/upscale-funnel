@@ -44,12 +44,16 @@ function domainDnsInstructions(string $domain, array $config): array
         $targetIp = $_SERVER['SERVER_ADDR'] ?? '';
     }
 
+    $fallbackCname = 'cname.' . $targetHost;
+
     return [
         'target_hostname' => $targetHost,
-        'target_ip' => $targetIp,
+        'target_ip'       => $targetIp,
+        'fallback_cname'  => $fallbackCname,
         'records' => [
-            ['type' => 'A', 'name' => '@', 'value' => $targetIp, 'recommended_for' => 'domínio raiz'],
-            ['type' => 'CNAME', 'name' => 'www', 'value' => $targetHost, 'recommended_for' => 'www'],
+            ['type' => 'CNAME', 'name' => 'oferta', 'value' => $fallbackCname, 'recommended_for' => 'Cloudflare for SaaS (SSL Automático Grátis)'],
+            ['type' => 'A', 'name' => '@', 'value' => $targetIp, 'recommended_for' => 'Hostinger / DNS Direto'],
+            ['type' => 'CNAME', 'name' => 'www', 'value' => $targetHost, 'recommended_for' => 'www direto'],
         ],
     ];
 }
@@ -57,11 +61,20 @@ function domainDnsInstructions(string $domain, array $config): array
 function domainIsPointed(string $domain, array $config, string $verificationToken): bool
 {
     $targetHost = strtolower($config['base_domain'] ?? '');
+    $fallbackCname = 'cname.' . $targetHost;
     $domainIps = gethostbynamel($domain) ?: [];
     $targetIps = $targetHost !== '' ? (gethostbynamel($targetHost) ?: []) : [];
     if ($domainIps && $targetIps && array_intersect($domainIps, $targetIps)) return true;
 
     if (function_exists('dns_get_record')) {
+        $cnameRecords = @dns_get_record($domain, DNS_CNAME) ?: [];
+        foreach ($cnameRecords as $record) {
+            $target = strtolower(rtrim($record['target'] ?? '', '.'));
+            if ($target === $targetHost || $target === $fallbackCname || str_ends_with($target, '.' . $targetHost)) {
+                return true;
+            }
+        }
+
         $txtRecords = @dns_get_record($domain, DNS_TXT) ?: [];
         foreach ($txtRecords as $record) {
             $txt = $record['txt'] ?? '';
@@ -75,14 +88,23 @@ if ($request->method() === 'GET') {
     $stmt = $pdo->prepare("SELECT * FROM custom_domains WHERE workspace_id = ? ORDER BY is_primary DESC, id DESC");
     $stmt->execute([$targetWsId]);
     $domains = $stmt->fetchAll();
+    $stmtWs = $pdo->prepare("SELECT custom_domain FROM workspaces WHERE id = ?");
+    $stmtWs->execute([$targetWsId]);
+    $currentWsDomain = (string)($stmtWs->fetchColumn() ?: '');
+
     foreach ($domains as &$domain) {
         $domain['id'] = (int)$domain['id'];
         $domain['workspace_id'] = (int)$domain['workspace_id'];
         $domain['is_primary'] = (bool)$domain['is_primary'];
+        $domain['is_published_offer'] = ($domain['domain'] === $currentWsDomain);
         $domain['dns'] = domainDnsInstructions($domain['domain'], $config);
         $domain['verification_txt'] = 'upscale-verification=' . $domain['verification_token'];
     }
-    JsonResponse::success(['domains' => $domains, 'dns' => domainDnsInstructions('', $config)]);
+    JsonResponse::success([
+        'domains' => $domains,
+        'published_domain' => $currentWsDomain,
+        'dns' => domainDnsInstructions('', $config)
+    ]);
 }
 
 if ($request->method() === 'POST') {
@@ -120,6 +142,75 @@ if ($request->method() === 'POST') {
     }
 
     $domainId = (int)($input['domain_id'] ?? 0);
+    $domainStr = normalizeDomain((string)($input['domain'] ?? ''));
+
+    if ($action === 'unpublish_offer' || $action === 'reset_default_domain') {
+        $pdo->prepare("UPDATE workspaces SET custom_domain = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$targetWsId]);
+        JsonResponse::success([
+            'message' => 'Oferta restaurada para a URL padrão do sistema.',
+            'published_domain' => null,
+            'public_url' => '',
+            'embed_url' => '',
+            'iframe_code' => ''
+        ]);
+    }
+
+    if ($action === 'publish_offer' || $action === 'publish_domain') {
+        $domain = null;
+        if ($domainId > 0) {
+            $stmt = $pdo->prepare("SELECT * FROM custom_domains WHERE id = ? AND workspace_id = ?");
+            $stmt->execute([$domainId, $targetWsId]);
+            $domain = $stmt->fetch();
+        } elseif ($domainStr !== '') {
+            $stmt = $pdo->prepare("SELECT * FROM custom_domains WHERE domain = ? AND workspace_id = ?");
+            $stmt->execute([$domainStr, $targetWsId]);
+            $domain = $stmt->fetch();
+            if (!$domain) {
+                $tokenValue = bin2hex(random_bytes(16));
+                $stmtIns = $pdo->prepare("INSERT INTO custom_domains (workspace_id, domain, verification_token, status, is_primary) VALUES (?, ?, ?, 'active', 1)");
+                $stmtIns->execute([$targetWsId, $domainStr, $tokenValue]);
+                $domainId = (int)$pdo->lastInsertId();
+                $domain = ['id' => $domainId, 'domain' => $domainStr, 'workspace_id' => $targetWsId, 'status' => 'active'];
+            } else {
+                $domainId = (int)$domain['id'];
+            }
+        }
+
+        if (!$domain) {
+            JsonResponse::error('Selecione ou informe um domínio válido para publicar.', 422);
+        }
+
+        // 1. Marca esse domínio como primário e ativo
+        $pdo->prepare("UPDATE custom_domains SET is_primary = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ?")->execute([$targetWsId]);
+        $pdo->prepare("UPDATE custom_domains SET is_primary = 1, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$domainId]);
+
+        // 2. Vincula no workspace como custom_domain oficial
+        $pdo->prepare("UPDATE workspaces SET custom_domain = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$domain['domain'], $targetWsId]);
+
+        // 3. Remove qualquer funil HTML que estivesse sobrepondo a raiz deste domínio
+        $pdo->prepare("UPDATE funnels SET is_home = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ? AND custom_domain_id = ?")
+            ->execute([$targetWsId, $domainId]);
+
+        // 4. Garante que a oferta de upsell está ativa
+        $pdo->prepare("UPDATE upsell_offers SET is_active = 1 WHERE workspace_id = ?")->execute([$targetWsId]);
+
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+            || (!empty($_SERVER['HTTP_CF_VISITOR']) && str_contains($_SERVER['HTTP_CF_VISITOR'], 'https'))
+            ? 'https' : 'http';
+        $publicUrl = $scheme . '://' . $domain['domain'];
+
+        JsonResponse::success([
+            'message' => "Oferta Booster publicada com sucesso no domínio {$domain['domain']}!",
+            'domain_id' => $domainId,
+            'domain' => $domain['domain'],
+            'public_url' => $publicUrl,
+            'embed_url' => $publicUrl . '/?nome={{nome}}',
+            'iframe_code' => '<iframe id="upscale-frame" src="' . $publicUrl . '/?nome={{nome}}" style="width:100%;border:0;height:820px;" scrolling="no"></iframe>'
+        ]);
+    }
+
     $stmt = $pdo->prepare("SELECT * FROM custom_domains WHERE id = ? AND workspace_id = ?");
     $stmt->execute([$domainId, $targetWsId]);
     $domain = $stmt->fetch();

@@ -2368,6 +2368,42 @@
               </tbody>
             </table>
           </div>
+        <!-- BARRA DE PUBLICAÇÃO NO DOMÍNIO DA CAMPANHA (1 CLIQUE) -->
+        <div class="card" style="margin-bottom:24px; border:1px solid var(--blue-200); background:linear-gradient(180deg, #F8FAFF 0%, #FFFFFF 100%);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="nav-item-badge badge-blue">DOMÍNIO DA OFERTA</span>
+                <span id="camp-published-badge" class="nav-item-badge" style="background:var(--green-100); color:var(--green-700); font-weight:700;">● ATIVO</span>
+              </div>
+              <h3 style="margin:4px 0 0; font-size:15px; font-weight:700; color:var(--ink-900);">Publicar Oferta Booster no Domínio Próprio</h3>
+              <p style="margin:2px 0 0; font-size:12px; color:var(--gray-500);">
+                Defina em qual domínio do cliente esta campanha/raspadinha responderá diretamente na raiz (ex: <code>https://oferta.meusite.com.br/</code>).
+              </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <select id="camp-publish-domain-select" class="ws-select" style="min-width:210px; font-weight:600; font-size:12px;">
+                <option value="">Carregando domínios…</option>
+              </select>
+              <button type="button" class="btn-pill" id="btn-camp-publish" onclick="publicarDominioSelecionadoCampanha()" style="display:inline-flex; align-items:center; gap:6px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Publicar no Domínio
+              </button>
+              <button type="button" class="btn-pill-secondary" id="btn-camp-open-domain" onclick="abrirOfertaPublicada()" title="Abrir oferta no domínio publicado" style="display:none;">
+                Abrir Oferta ↗
+              </button>
+              <button type="button" class="btn-pill-secondary" id="btn-camp-copy-iframe" onclick="copiarIframeOferta()" title="Copiar código Iframe embed">
+                Copiar Iframe Embed
+              </button>
+            </div>
+          </div>
+          <div id="camp-published-url-box" style="margin-top:12px; padding:9px 12px; background:var(--gray-50); border:1px solid var(--gray-150); border-radius:var(--radius-xs); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:12px;">
+            <div><span>URL Pública Ativa da Oferta: </span><strong id="camp-active-url-display" style="color:var(--blue-600); margin-left:4px;">Carregando…</strong></div>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn-pill-secondary" style="padding:3px 8px; font-size:11px;" onclick="copiarValor('camp-active-url-display')">Copiar URL</button>
+              <button type="button" class="btn-pill-secondary" style="padding:3px 8px; font-size:11px;" onclick="restaurarUrlPadraoOferta()" title="Voltar a usar a URL interna do servidor">Restaurar Padrão</button>
+            </div>
+          </div>
         </div>
 
         <!-- 3. TÍTULO DE SEÇÃO: CUSTOMIZADOR DE BLOCOS DA OFERTA -->
@@ -2649,8 +2685,122 @@
       <!-- DOMÍNIOS PERSONALIZADOS E FUNIS HTML -->
       <div id="view-sites" class="view-pane">
         <section class="site-builder-hero">
-          <div><h2>Publique seus funis em qualquer domínio</h2><p>Conecte um domínio comprado na Hostinger, verifique o DNS e escolha qual funil HTML completo será aberto como página inicial.</p></div>
+          <div><h2>Publique seus funis em qualquer domínio</h2><p>Conecte um domínio comprado na Hostinger ou ative a automação com Cloudflare for SaaS para ter SSL instantâneo sem mexer no servidor.</p></div>
           <span class="status-chip"><span class="health-dot ok"></span> Multi-domínio preparado</span>
+        </section>
+
+        <!-- GUIA DE AUTOMAÇÃO CLOUDFLARE FOR SAAS (100 DOMÍNIOS GRÁTIS COM SSL) -->
+        <section class="card" style="margin-bottom:18px; border:1px solid var(--blue-100); background:linear-gradient(180deg, var(--blue-50) 0%, #FFFFFF 100%);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span class="nav-item-badge" style="background:#F48120; color:#fff; font-weight:800;">CLOUDFLARE FOR SAAS</span>
+                <span class="nav-item-badge badge-blue">100 DOMÍNIOS GRÁTIS</span>
+                <span class="nav-item-badge" style="background:var(--green-100); color:var(--green-700); font-weight:700;">SSL AUTOMÁTICO</span>
+              </div>
+              <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--ink-900);">Automação de Domínios Próprios (Zero Configuração Manual no Easypanel)</h3>
+              <p style="margin:4px 0 0; font-size:12px; color:var(--gray-500); line-height:1.5;">
+                Permita que qualquer cliente aponte o próprio domínio via <strong>CNAME</strong> e ganhe <strong>certificado SSL (HTTPS) automático na nuvem</strong>, sem você precisar abrir o Easypanel ou o DNS a cada novo cliente.
+              </p>
+            </div>
+            <button type="button" class="btn-pill" onclick="copiarInstrucaoCliente()" style="background:#F48120; border:none; display:inline-flex; align-items:center; gap:6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+              Copiar Mensagem p/ WhatsApp do Cliente
+            </button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:14px;">
+            <div style="background:#fff; border:1px solid var(--gray-150); border-radius:var(--radius-md); padding:14px;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--blue-600); margin-bottom:6px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--blue-50); color:var(--blue-600); font-size:11px;">1</span>
+                Conta Cloudflare
+              </div>
+              <p style="font-size:11.5px; color:var(--gray-500); margin:0; line-height:1.4;">
+                Crie sua conta gratuita na Cloudflare e adicione seu domínio base da rede (ex: <code>upscalefunnel.site</code>).
+              </p>
+            </div>
+
+            <div style="background:#fff; border:1px solid var(--gray-150); border-radius:var(--radius-md); padding:14px;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--blue-600); margin-bottom:6px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--blue-50); color:var(--blue-600); font-size:11px;">2</span>
+                Ativar Custom Hostnames
+              </div>
+              <p style="font-size:11.5px; color:var(--gray-500); margin:0; line-height:1.4;">
+                No menu Cloudflare abra <strong>SSL/TLS → Custom Hostnames</strong> e clique em <em>Enable Cloudflare for SaaS</em>.
+              </p>
+            </div>
+
+            <div style="background:#fff; border:1px solid var(--gray-150); border-radius:var(--radius-md); padding:14px;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--blue-600); margin-bottom:6px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--blue-50); color:var(--blue-600); font-size:11px;">3</span>
+                Definir Fallback Origin
+              </div>
+              <p style="font-size:11.5px; color:var(--gray-500); margin:0 0 6px; line-height:1.4;">
+                No campo Fallback Origin, use o CNAME da sua rede:
+              </p>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <code id="cf-fallback-origin" style="flex:1; background:var(--gray-50); padding:4px 8px; border-radius:var(--radius-xs); font-size:11px; font-weight:700; color:var(--ink-900); border:1px solid var(--gray-150); overflow:hidden; text-overflow:ellipsis;">Carregando…</code>
+                <button type="button" class="btn-pill-secondary" style="padding:4px 8px; font-size:11px;" onclick="copiarValor('cf-fallback-origin')">Copiar</button>
+              </div>
+            </div>
+
+            <div style="background:#fff; border:1px solid var(--gray-150); border-radius:var(--radius-md); padding:14px;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--green-700); margin-bottom:6px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--green-100); color:var(--green-700); font-size:11px;">4</span>
+                Pronto para os Clientes!
+              </div>
+              <p style="font-size:11.5px; color:var(--gray-500); margin:0; line-height:1.4;">
+                O cliente só precisa criar 1 CNAME no domínio dele apontando para o seu Fallback. O SSL é emitido em segundos na nuvem!
+              </p>
+            </div>
+          </div>
+
+          <div style="background:rgba(244,129,32,0.08); border:1px solid rgba(244,129,32,0.2); border-radius:var(--radius-md); padding:10px 14px; font-size:11.5px; color:#853D00; display:flex; align-items:center; gap:8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span><strong>Diferencial:</strong> Com a Cloudflare for SaaS ativa, os primeiros 100 domínios de clientes são <strong>100% gratuitos</strong> com renovação automática de SSL e proteção anti-DDoS.</span>
+          </div>
+        </section>
+
+        <!-- CARD PUBLICAR OFERTA NO DOMÍNIO (1-CLIQUE) -->
+        <section class="card" style="margin-bottom:18px; border:1px solid var(--blue-200); background:linear-gradient(180deg, #F5F8FF 0%, #FFFFFF 100%);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span class="nav-item-badge badge-blue">OFERTA BOOSTER</span>
+                <span id="domain-offer-status-badge" class="nav-item-badge" style="background:var(--green-100); color:var(--green-700); font-weight:700;">● DOMÍNIO CONECTADO</span>
+              </div>
+              <h3 style="margin:0; font-size:16px; font-weight:800; color:var(--ink-900);">Publicar Oferta Booster no Domínio (1 Clique)</h3>
+              <p style="margin:4px 0 0; font-size:12px; color:var(--gray-500); line-height:1.5;">
+                Vincule sua campanha de Booster para responder <strong>diretamente na raiz do seu domínio</strong> (ex: <code>https://oferta.meusite.com.br/</code>). Ao acessar ou carregar pelo iframe da rifa, o Booster abre com a raspadinha e checkout Pix prontos.
+              </p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn-pill-secondary" id="btn-open-published-offer" onclick="abrirOfertaPublicada()" style="display:none;">
+                Abrir Oferta ↗
+              </button>
+              <button type="button" class="btn-pill-secondary" onclick="copiarIframeOferta()" title="Copiar código Iframe com auto-altura">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                Copiar Iframe Embed
+              </button>
+            </div>
+          </div>
+
+          <div style="background:#fff; border:1px solid var(--gray-150); border-radius:var(--radius-md); padding:12px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span style="font-size:12px; font-weight:700; color:var(--ink-900);">Domínio Ativo:</span>
+              <select id="quick-publish-domain-select" class="ws-select" style="min-width:200px; font-size:12px; font-weight:600;">
+                <option value="">Carregando domínios…</option>
+              </select>
+              <button type="button" class="btn-pill" onclick="publicarDominioRapido()" style="padding:6px 14px; font-size:12px;">
+                🚀 Publicar Neste Domínio
+              </button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:11.5px; color:var(--gray-400);">URL Pública:</span>
+              <code id="display-published-url" style="background:var(--blue-50); color:var(--blue-600); padding:4px 8px; border-radius:var(--radius-xs); font-size:12px; font-weight:700; border:1px solid var(--blue-100);">Carregando…</code>
+              <button type="button" class="btn-pill-secondary" style="padding:4px 8px; font-size:11px;" onclick="copiarValor('display-published-url')">Copiar</button>
+            </div>
+          </div>
         </section>
 
         <div class="domain-layout">
@@ -4442,6 +4592,9 @@ window.addEventListener('message', function(e) {
     });
   }
 
+  var currentPublishedDomain = '';
+  var currentPublishedUrl = '';
+
   function carregarDominios() {
     var list = document.getElementById('domains-list');
     if (!list) return;
@@ -4449,15 +4602,188 @@ window.addEventListener('message', function(e) {
     sitesApi('../api/admin/domains.php?workspace_id=' + currentWsId)
       .then(function(data) {
         allDomainsData = data.domains || [];
+        currentPublishedDomain = data.published_domain || '';
+        currentPublishedUrl = data.published_url || (currentPublishedDomain ? ('https://' + currentPublishedDomain) : '');
         var dns = data.dns || {};
-        document.getElementById('dns-target-ip').textContent = dns.target_ip || 'IP da hospedagem';
-        document.getElementById('dns-target-host').textContent = dns.target_hostname || window.location.hostname;
+        var ipEl = document.getElementById('dns-target-ip');
+        if (ipEl) ipEl.textContent = dns.target_ip || 'IP da hospedagem';
+        var hostEl = document.getElementById('dns-target-host');
+        if (hostEl) hostEl.textContent = dns.target_hostname || window.location.hostname;
+        var cfEl = document.getElementById('cf-fallback-origin');
+        if (cfEl) cfEl.textContent = dns.fallback_cname || ('cname.' + (dns.target_hostname || window.location.hostname));
         renderizarDominios();
         preencherDominiosFunil();
+        atualizarPainelPublicacaoDominio();
       })
       .catch(function(error) {
         list.innerHTML = '<div class="empty-inline">' + escapeHtml(error.message) + '</div>';
       });
+  }
+
+  function copiarInstrucaoCliente() {
+    var hostEl = document.getElementById('cf-fallback-origin');
+    var target = (hostEl && hostEl.textContent && hostEl.textContent !== 'Carregando…') ? hostEl.textContent : ('cname.' + window.location.hostname);
+    var txt = "Olá! Para conectar o seu próprio domínio à sua campanha de Booster, basta adicionar este registro DNS no painel onde seu domínio foi comprado (Hostinger, Registro.br, GoDaddy, etc.):\n\n" +
+      "📌 Tipo: CNAME\n" +
+      "📌 Nome/Host: oferta (ou @ para usar o domínio sem subdomínio)\n" +
+      "📌 Aponta para: " + target + "\n\n" +
+      "Após salvar, o certificado SSL (HTTPS com cadeado verde) é ativado automaticamente em até 5 minutos!";
+    navigator.clipboard.writeText(txt).then(function() {
+      showToast('Mensagem pronta copiada! Cole no WhatsApp do cliente.', 'success');
+    }).catch(function() {
+      showToast('Instrução copiada para a área de transferência!', 'success');
+    });
+  }
+
+  function atualizarPainelPublicacaoDominio() {
+    var urlPadrao = window.location.origin + '/index.html?workspace_id=' + currentWsId;
+    var displayUrl = currentPublishedDomain ? ('https://' + currentPublishedDomain) : urlPadrao;
+    var hasCustom = Boolean(currentPublishedDomain);
+
+    // 1. Atualiza card no view-sites
+    var badgeSites = document.getElementById('domain-offer-status-badge');
+    if (badgeSites) {
+      badgeSites.textContent = hasCustom ? ('● ' + currentPublishedDomain) : '● URL PADRÃO ATIVA';
+      badgeSites.style.background = hasCustom ? 'var(--green-100)' : 'var(--blue-50)';
+      badgeSites.style.color = hasCustom ? 'var(--green-700)' : 'var(--blue-600)';
+    }
+    var urlElSites = document.getElementById('display-published-url');
+    if (urlElSites) urlElSites.textContent = displayUrl;
+    var btnOpenSites = document.getElementById('btn-open-published-offer');
+    if (btnOpenSites) btnOpenSites.style.display = 'inline-flex';
+
+    var quickSelect = document.getElementById('quick-publish-domain-select');
+    if (quickSelect) {
+      quickSelect.innerHTML = '<option value="">-- URL Padrão do Sistema --</option>' +
+        allDomainsData.map(function(d) {
+          var sel = (d.domain === currentPublishedDomain || d.is_published_offer) ? ' selected' : '';
+          return '<option value="' + d.id + '"' + sel + '>' + escapeHtml(d.domain) + (d.status === 'active' ? ' (Ativo)' : ' (Pendente)') + '</option>';
+        }).join('');
+    }
+
+    // 2. Atualiza barra de publicação no view-campaigns
+    var badgeCamp = document.getElementById('camp-published-badge');
+    if (badgeCamp) {
+      badgeCamp.textContent = hasCustom ? ('● ' + currentPublishedDomain) : '● URL PADRÃO';
+      badgeCamp.style.background = hasCustom ? 'var(--green-100)' : 'var(--blue-50)';
+      badgeCamp.style.color = hasCustom ? 'var(--green-700)' : 'var(--blue-600)';
+    }
+    var urlElCamp = document.getElementById('camp-active-url-display');
+    if (urlElCamp) urlElCamp.textContent = displayUrl;
+    var btnOpenCamp = document.getElementById('btn-camp-open-domain');
+    if (btnOpenCamp) btnOpenCamp.style.display = 'inline-flex';
+
+    var campSelect = document.getElementById('camp-publish-domain-select');
+    if (campSelect) {
+      campSelect.innerHTML = '<option value="">-- URL Padrão do Sistema --</option>' +
+        allDomainsData.map(function(d) {
+          var sel = (d.domain === currentPublishedDomain || d.is_published_offer) ? ' selected' : '';
+          return '<option value="' + d.id + '"' + sel + '>' + escapeHtml(d.domain) + (d.status === 'active' ? ' (Ativo)' : ' (Pendente)') + '</option>';
+        }).join('');
+    }
+
+    // 3. Atualiza snippet embed da aba Credenciais & API
+    var snippetEl = document.getElementById('snippet-embed');
+    if (snippetEl) {
+      var embedSrc = hasCustom ? ('https://' + currentPublishedDomain + '/index.html?nome={{nome}}') : (urlPadrao + '&nome={{nome}}');
+      snippetEl.textContent = '<iframe id="upscale-frame" src="' + embedSrc + '" style="width:100%;border:0;height:820px;" scrolling="no"></iframe>\n' +
+        '<script>\n' +
+        'window.addEventListener(\'message\', function(e) {\n' +
+        '  if (e.data && e.data.tipo === \'dx:altura\') {\n' +
+        '    document.getElementById(\'upscale-frame\').style.height = e.data.altura + \'px\';\n' +
+        '  }\n' +
+        '});\n' +
+        '<\/script>';
+    }
+  }
+
+  function publicarOfertaNoDominio(domainId, domainName) {
+    if (!confirm('Deseja publicar a Oferta Booster no domínio ' + domainName + '?\n\nA oferta responderá diretamente na raiz (ex: https://' + domainName + '/) com raspadinha e Pix em tempo real.')) return;
+    sitesApi('../api/admin/domains.php?workspace_id=' + currentWsId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'publish_offer', domain_id: domainId })
+    }).then(function(data) {
+      showToast(data.message || 'Oferta publicada no domínio com sucesso!', 'success');
+      currentPublishedDomain = data.domain || domainName;
+      currentPublishedUrl = data.public_url || ('https://' + currentPublishedDomain);
+      carregarDominios();
+    }).catch(function(error) {
+      showToast(error.message, 'error');
+    });
+  }
+
+  function publicarDominioRapido() {
+    var sel = document.getElementById('quick-publish-domain-select');
+    if (!sel) return;
+    var domainId = sel.value;
+    if (!domainId) {
+      restaurarUrlPadraoOferta();
+      return;
+    }
+    var opt = sel.options[sel.selectedIndex];
+    var domainName = opt ? opt.text.split(' ')[0] : 'selecionado';
+    publicarOfertaNoDominio(domainId, domainName);
+  }
+
+  function publicarDominioSelecionadoCampanha() {
+    var sel = document.getElementById('camp-publish-domain-select');
+    if (!sel) return;
+    var domainId = sel.value;
+    if (!domainId) {
+      restaurarUrlPadraoOferta();
+      return;
+    }
+    var opt = sel.options[sel.selectedIndex];
+    var domainName = opt ? opt.text.split(' ')[0] : 'selecionado';
+    publicarOfertaNoDominio(domainId, domainName);
+  }
+
+  function restaurarUrlPadraoOferta() {
+    if (!confirm('Deseja restaurar a oferta para a URL padrão do sistema?')) return;
+    sitesApi('../api/admin/domains.php?workspace_id=' + currentWsId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'unpublish_offer' })
+    }).then(function(data) {
+      showToast(data.message || 'Oferta restaurada para a URL padrão.', 'success');
+      currentPublishedDomain = '';
+      currentPublishedUrl = '';
+      carregarDominios();
+    }).catch(function(error) {
+      showToast(error.message, 'error');
+    });
+  }
+
+  function abrirOfertaPublicada() {
+    var url = currentPublishedDomain ? ('https://' + currentPublishedDomain) : (window.location.origin + '/index.html?workspace_id=' + currentWsId);
+    window.open(url, '_blank');
+  }
+
+  function copiarLinkOferta() {
+    var url = currentPublishedDomain ? ('https://' + currentPublishedDomain) : (window.location.origin + '/index.html?workspace_id=' + currentWsId);
+    navigator.clipboard.writeText(url).then(function() {
+      showToast('Link da oferta copiado!', 'success');
+    }).catch(function() {
+      showToast('URL da oferta: ' + url, 'info');
+    });
+  }
+
+  function copiarIframeOferta() {
+    var targetUrl = currentPublishedDomain ? ('https://' + currentPublishedDomain + '/index.html?nome={{nome}}') : (window.location.origin + '/index.html?workspace_id=' + currentWsId + '&nome={{nome}}');
+    var code = '<iframe id="upscale-frame" src="' + targetUrl + '" style="width:100%;border:0;height:820px;" scrolling="no"></iframe>\n' +
+      '<script>\n' +
+      'window.addEventListener(\'message\', function(e) {\n' +
+      '  if (e.data && e.data.tipo === \'dx:altura\') {\n' +
+      '    document.getElementById(\'upscale-frame\').style.height = e.data.altura + \'px\';\n' +
+      '  }\n' +
+      '});\n' +
+      '<\/script>';
+    navigator.clipboard.writeText(code).then(function() {
+      showToast('Código do Iframe copiado com sucesso! Cole na página da rifa.', 'success');
+    }).catch(function() {
+      showToast('Iframe copiado para área de transferência!', 'info');
+    });
   }
 
   function renderizarDominios() {
@@ -4468,13 +4794,28 @@ window.addEventListener('message', function(e) {
     }
     list.innerHTML = allDomainsData.map(function(domain) {
       var active = domain.status === 'active';
+      var isPublished = (domain.domain === currentPublishedDomain || domain.is_published_offer);
+      var statusBadge = active ? '<span class="domain-status active">Ativo</span>' : '<span class="domain-status">Aguardando DNS</span>';
       var primary = domain.is_primary ? ' · principal' : '';
-      var actions = '<button class="btn-pill-secondary" onclick="verificarDominio(' + domain.id + ')">Verificar</button>';
-      if (!domain.is_primary) actions += '<button class="btn-pill-secondary" onclick="definirDominioPrincipal(' + domain.id + ')">Tornar principal</button>';
+      var publishedBadge = isPublished ? '<span class="nav-item-badge" style="background:var(--green-100); color:var(--green-700); font-weight:800; margin-left:6px;">👑 OFERTA ATIVA AQUI</span>' : '';
+
+      var actions = '';
+      if (isPublished) {
+        actions += '<button class="btn-pill" style="background:var(--green-600); color:#fff; font-size:11px; padding:4px 9px;" onclick="abrirOfertaPublicada()">Abrir Oferta ↗</button>';
+        actions += '<button class="btn-pill-secondary" onclick="copiarIframeOferta()">Copiar Iframe</button>';
+        actions += '<button class="btn-pill-secondary" onclick="copiarLinkOferta()">Copiar Link</button>';
+      } else {
+        actions += '<button class="btn-pill" style="background:#0F39D6; color:#fff; font-size:11px; padding:4px 9px;" onclick="publicarOfertaNoDominio(' + domain.id + ', \'' + escapeHtml(domain.domain) + '\')">🚀 Publicar Oferta</button>';
+      }
+      actions += '<button class="btn-pill-secondary" onclick="verificarDominio(' + domain.id + ')">Verificar</button>';
+      if (!domain.is_primary && !isPublished) {
+        actions += '<button class="btn-pill-secondary" onclick="definirDominioPrincipal(' + domain.id + ')">Tornar principal</button>';
+      }
       actions += '<button class="btn-pill-secondary" onclick="removerDominio(' + domain.id + ')">Remover</button>';
-      return '<div class="domain-item"><div><div class="domain-name">' + escapeHtml(domain.domain) + '</div>' +
-        '<div class="domain-meta"><span class="domain-status ' + (active ? 'active' : '') + '">' + (active ? 'Ativo' : 'Aguardando DNS') + '</span>' + primary + '</div>' +
-        '<div class="domain-meta">TXT opcional: ' + escapeHtml(domain.verification_txt || '') + '</div></div><div class="domain-actions">' + actions + '</div></div>';
+
+      return '<div class="domain-item" style="' + (isPublished ? 'border-color:var(--green-400); background:rgba(34,197,94,0.03);' : '') + '"><div><div class="domain-name">' + escapeHtml(domain.domain) + publishedBadge + '</div>' +
+        '<div class="domain-meta">' + statusBadge + primary + '</div>' +
+        '<div class="domain-meta">CNAME / Fallback: oferta → ' + (document.getElementById('cf-fallback-origin') ? document.getElementById('cf-fallback-origin').textContent : 'cname.' + window.location.hostname) + '</div></div><div class="domain-actions">' + actions + '</div></div>';
     }).join('');
   }
 
