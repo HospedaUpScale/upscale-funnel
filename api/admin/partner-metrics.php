@@ -60,8 +60,8 @@ foreach ($merchants as $m) {
         $amount = (float)$tx['amount'];
         $splits = !empty($tx['split_details']) ? (is_array($tx['split_details']) ? $tx['split_details'] : json_decode($tx['split_details'], true)) : null;
 
-        $pShare = (float)($splits['partner_amount'] ?? ($amount * 0.05));
-        $sShare = (float)($splits['saas_amount'] ?? ($amount * 0.10));
+        $pShare = (float)($splits['partner_amount'] ?? 0.0);
+        $sShare = (float)($splits['saas_amount'] ?? 0.0);
         $mShare = (float)($splits['merchant_amount'] ?? ($amount - $pShare - $sShare));
 
         $mGmv += $amount;

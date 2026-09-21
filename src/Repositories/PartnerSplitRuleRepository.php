@@ -43,11 +43,11 @@ class PartnerSplitRuleRepository
             }
         }
 
-        // 3. System fallback: 10% SaaS, 5% Partner, 85% Merchant
+        // 3. System fallback: 0% SaaS, 0% Partner, 100% Merchant (sem comissões)
         return [
-            'saas_rate_percentage' => 10.00,
-            'partner_rate_percentage' => 5.00,
-            'merchant_rate_percentage' => 85.00,
+            'saas_rate_percentage' => 0.00,
+            'partner_rate_percentage' => 0.00,
+            'merchant_rate_percentage' => 100.00,
             'absorb_gateway_fees' => 'merchant'
         ];
     }

@@ -175,11 +175,11 @@ if ($request->method() === 'POST') {
     $offerQuotas = (int)($input['quota_count'] ?? 110);
     $offerStmt->execute([$created->id, $campId, $offerTitle, $campaignTitle, $offerPrice, $offerQuotas]);
 
-    // Set partner split rule if parent is provided
+    // Set partner split rule if parent is provided (sem comissão SaaS)
     if ($parentId) {
         $splitStmt = $pdo->prepare("
             INSERT INTO partner_split_rules (partner_workspace_id, merchant_workspace_id, saas_rate_percentage, partner_rate_percentage, merchant_rate_percentage, absorb_gateway_fees)
-            VALUES (?, ?, 10.00, 5.00, 85.00, 'merchant')
+            VALUES (?, ?, 0.00, 0.00, 100.00, 'merchant')
         ");
         $splitStmt->execute([$parentId, $created->id]);
     }
