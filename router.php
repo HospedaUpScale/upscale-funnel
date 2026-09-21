@@ -44,12 +44,23 @@ if (strpos($uri, '/api') === 0) {
     return;
 }
 
-// 4. Funis publicados em URL amigável
+// 4. Funis publicados em URL amigável (/f/{slug} ou /{slug})
 if (preg_match('#^/f/([a-z0-9-]+)/?$#i', $uri, $matches)) {
     $_GET['slug'] = $matches[1];
     require __DIR__ . '/funnel.php';
     return;
 }
 
-// 5. Raiz resolve funil por domínio ou mantém a oferta padrão
+if (preg_match('#^/([a-z0-9-]+)/?$#i', $uri, $matches)) {
+    $potentialSlug = strtolower($matches[1]);
+    $reserved = ['api', 'hub', 'assets', 'css', 'js', 'documentacao', 'migrations', 'scripts', 'src', 'storage', 'config', 'vendor', 'f'];
+    if (!in_array($potentialSlug, $reserved, true) && !file_exists(__DIR__ . '/' . $potentialSlug)) {
+        $_GET['slug'] = $potentialSlug;
+        require __DIR__ . '/funnel.php';
+        return;
+    }
+}
+
+// 5. Fallback padrão
 return false;
+

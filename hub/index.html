@@ -2837,12 +2837,21 @@
               <div><h3 id="funnel-editor-title">Novo funil HTML</h3><p style="font-size:10px;color:var(--gray-400);margin-top:2px">Cole um documento HTML completo, incluindo CSS e JavaScript.</p></div>
               <div class="funnel-editor-actions"><button type="button" class="btn-pill-secondary" id="funnel-copy-url" onclick="copiarUrlFunil(selectedFunnelId)" disabled>Copiar URL</button><button type="button" class="btn-pill-secondary" id="funnel-delete" onclick="removerFunil(selectedFunnelId)" disabled>Excluir</button><button type="button" class="btn-pill-secondary" onclick="salvarFunil('draft')">Salvar rascunho</button><button type="button" class="btn-pill" onclick="salvarFunil('published')">Publicar</button></div>
             </div>
-            <div class="funnel-form">
+            <div class="funnel-form" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
               <input type="hidden" id="funnel-id" />
-              <input type="text" class="field-control" id="funnel-name" placeholder="Nome do funil" oninput="sincronizarSlugFunil(); atualizarPreviewFunil()" />
-              <input type="text" class="field-control" id="funnel-slug" placeholder="slug-da-pagina" oninput="funnelSlugTouched = true" />
-              <select class="ws-select" id="funnel-domain"><option value="">URL padrão do sistema</option></select>
-              <label class="funnel-home-toggle"><input type="checkbox" id="funnel-home"> Página inicial</label>
+              <input type="text" class="field-control" id="funnel-name" placeholder="Nome da página / funil" style="flex:1; min-width:180px;" oninput="sincronizarSlugFunil(); atualizarPreviewFunil(); atualizarPreviewUrlFunil()" />
+              <input type="text" class="field-control" id="funnel-slug" placeholder="slug-da-pagina" style="flex:1; min-width:160px;" oninput="funnelSlugTouched = true; atualizarPreviewUrlFunil()" />
+              <select class="ws-select" id="funnel-domain" style="min-width:190px;" onchange="atualizarPreviewUrlFunil()"><option value="">URL padrão do sistema</option></select>
+              <div class="funnel-url-badge-box" style="display:flex; align-items:center; gap:6px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:6px 10px; font-size:11.5px; color:#1e40af; flex:2; min-width:260px;">
+                <span style="font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#2563eb; white-space:nowrap;">Novo Link:</span>
+                <span id="funnel-url-display-text" style="font-family:var(--font-mono); font-size:11.5px; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">...</span>
+                <button type="button" class="btn-pill-secondary" style="padding:2px 7px; font-size:10.5px; border-color:#93c5fd; background:#fff;" onclick="copiarUrlPreviewAtual()" title="Copiar URL gerada">Copiar</button>
+                <a id="btn-open-preview-url" href="#" target="_blank" class="btn-pill-secondary" style="padding:2px 7px; font-size:10.5px; text-decoration:none; border-color:#93c5fd; background:#fff;" title="Abrir página">↗</a>
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--gray-400); margin:-4px 0 10px 0; display:flex; align-items:center; gap:6px;">
+              <span style="display:inline-flex; width:6px; height:6px; border-radius:50%; background:var(--green-500);"></span>
+              <span><strong>Proteção da Raspadinha:</strong> A oferta Booster nativa permanece sempre intacta na raiz (<code>/</code>). Cada HTML publicado gera uma URL nova dedicada.</span>
             </div>
             <div class="funnel-workspace">
               <div class="html-editor-wrap"><div class="html-editor-label"><span>HTML COMPLETO</span><span id="html-size-label">0 KB</span></div><textarea class="html-editor" id="funnel-html" spellcheck="false" oninput="atualizarPreviewFunil()" placeholder="<!doctype html>..."></textarea></div>
@@ -4935,9 +4944,48 @@ window.addEventListener('message', function(e) {
   }
 
   function urlPublicaFunil(funnel) {
-    var basePath = window.location.pathname.replace(/\/hub\/?(?:index\.html)?$/, '');
-    if (funnel.domain) return 'https://' + funnel.domain + (funnel.is_home ? '/' : '/f/' + funnel.slug);
-    return window.location.origin + basePath + '/f/' + funnel.slug;
+    if (!funnel) return '';
+    if (funnel.public_url) return funnel.public_url;
+    var domain = funnel.domain;
+    if (!domain && funnel.custom_domain_id) {
+      var dObj = allDomainsData.find(function(d) { return Number(d.id) === Number(funnel.custom_domain_id); });
+      if (dObj) domain = dObj.domain;
+    }
+    if (domain) return 'https://' + domain + '/f/' + funnel.slug;
+    return window.location.origin + '/f/' + funnel.slug;
+  }
+
+  function calcularUrlAtualFunil() {
+    var slugEl = document.getElementById('funnel-slug');
+    var slug = (slugEl ? slugEl.value.trim() : '') || 'novo-funil';
+    var domainSelect = document.getElementById('funnel-domain');
+    var domainId = domainSelect ? domainSelect.value : '';
+    var domainName = '';
+    if (domainId) {
+      var d = allDomainsData.find(function(item) { return String(item.id) === String(domainId); });
+      if (d) domainName = d.domain;
+    }
+    if (!domainName && currentPublishedDomain) domainName = currentPublishedDomain;
+
+    if (domainName) return 'https://' + domainName + '/f/' + slug;
+    return window.location.origin + '/f/' + slug;
+  }
+
+  function atualizarPreviewUrlFunil() {
+    var url = calcularUrlAtualFunil();
+    var txtEl = document.getElementById('funnel-url-display-text');
+    if (txtEl) txtEl.textContent = url;
+    var btnOpen = document.getElementById('btn-open-preview-url');
+    if (btnOpen) btnOpen.href = url;
+  }
+
+  function copiarUrlPreviewAtual() {
+    var url = calcularUrlAtualFunil();
+    navigator.clipboard.writeText(url).then(function() {
+      showToast('Link do funil copiado!', 'success');
+    }).catch(function() {
+      showToast('URL: ' + url, 'info');
+    });
   }
 
   function renderizarFunis() {
@@ -4947,8 +4995,22 @@ window.addEventListener('message', function(e) {
       return;
     }
     list.innerHTML = allFunnelsData.map(function(funnel) {
-      return '<button type="button" class="funnel-list-item ' + (Number(selectedFunnelId) === Number(funnel.id) ? 'active' : '') + '" onclick="selecionarFunil(' + funnel.id + ')">' +
-        '<strong>' + escapeHtml(funnel.name) + '</strong><span>' + escapeHtml(funnel.status === 'published' ? 'Publicado' : 'Rascunho') + ' · /' + escapeHtml(funnel.slug) + '</span></button>';
+      var url = urlPublicaFunil(funnel);
+      var isSel = Number(selectedFunnelId) === Number(funnel.id);
+      var isPub = funnel.status === 'published';
+      return '<div class="funnel-list-item ' + (isSel ? 'active' : '') + '" style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; cursor:pointer;" onclick="selecionarFunil(' + funnel.id + ')">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">' +
+          '<strong style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">' + escapeHtml(funnel.name) + '</strong>' +
+          '<span class="nav-item-badge" style="font-size:10px; padding:1px 6px; ' + (isPub ? 'background:var(--green-100); color:var(--green-700);' : 'background:var(--gray-150); color:var(--gray-500);') + '">' + (isPub ? 'PUBLICADO' : 'RASCUNHO') + '</span>' +
+        '</div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:6px; margin-top:2px;">' +
+          '<span style="font-family:var(--font-mono); font-size:11px; color:var(--blue-600); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;">/' + escapeHtml(funnel.slug) + '</span>' +
+          '<div style="display:flex; gap:4px; flex-shrink:0;">' +
+            '<button type="button" class="btn-pill-secondary" style="font-size:10px; padding:2px 6px;" title="Copiar link" onclick="event.stopPropagation(); copiarUrlFunil(' + funnel.id + ')">Copiar</button>' +
+            '<a href="' + escapeHtml(url) + '" target="_blank" onclick="event.stopPropagation()" class="btn-pill-secondary" style="font-size:10px; padding:2px 6px; text-decoration:none;" title="Abrir">↗</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     }).join('');
   }
 
@@ -4969,13 +5031,13 @@ window.addEventListener('message', function(e) {
     document.getElementById('funnel-name').value = 'Novo funil';
     document.getElementById('funnel-slug').value = slug;
     document.getElementById('funnel-domain').value = '';
-    document.getElementById('funnel-home').checked = false;
     document.getElementById('funnel-html').value = modeloHtmlFunil();
     document.getElementById('funnel-editor-title').textContent = 'Novo funil HTML';
     document.getElementById('funnel-copy-url').disabled = true;
     document.getElementById('funnel-delete').disabled = true;
     renderizarFunis();
     atualizarPreviewFunil();
+    atualizarPreviewUrlFunil();
   }
 
   function selecionarFunil(funnelId) {
@@ -4987,19 +5049,20 @@ window.addEventListener('message', function(e) {
     document.getElementById('funnel-name').value = funnel.name;
     document.getElementById('funnel-slug').value = funnel.slug;
     document.getElementById('funnel-domain').value = funnel.custom_domain_id || '';
-    document.getElementById('funnel-home').checked = Boolean(funnel.is_home);
     document.getElementById('funnel-html').value = funnel.html_content;
     document.getElementById('funnel-editor-title').textContent = funnel.name;
     document.getElementById('funnel-copy-url').disabled = false;
     document.getElementById('funnel-delete').disabled = false;
     renderizarFunis();
     atualizarPreviewFunil();
+    atualizarPreviewUrlFunil();
   }
 
   function sincronizarSlugFunil() {
     if (funnelSlugTouched) return;
     var name = document.getElementById('funnel-name').value;
     document.getElementById('funnel-slug').value = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    atualizarPreviewUrlFunil();
   }
 
   function atualizarPreviewFunil() {
@@ -5014,7 +5077,7 @@ window.addEventListener('message', function(e) {
       name: document.getElementById('funnel-name').value.trim(),
       slug: document.getElementById('funnel-slug').value.trim(),
       custom_domain_id: Number(document.getElementById('funnel-domain').value) || null,
-      is_home: document.getElementById('funnel-home').checked,
+      is_home: false, // Raspadinha protegida na raiz: funis HTML geram links dedicados
       html_content: document.getElementById('funnel-html').value,
       status: status
     };
@@ -5023,11 +5086,18 @@ window.addEventListener('message', function(e) {
     }).then(function(data) {
       selectedFunnelId = data.funnel_id;
       document.getElementById('funnel-id').value = data.funnel_id;
+      if (data.slug) document.getElementById('funnel-slug').value = data.slug;
       document.getElementById('funnel-copy-url').disabled = false;
       document.getElementById('funnel-delete').disabled = false;
       funnelSlugTouched = true;
-      showToast(data.message, 'success');
+      atualizarPreviewUrlFunil();
       carregarFunis();
+
+      if (status === 'published') {
+        abrirModalFunilPublicado(data);
+      } else {
+        showToast(data.message || 'Rascunho salvo!', 'success');
+      }
     }).catch(function(error) { showToast(error.message, 'error'); });
   }
 
@@ -5043,7 +5113,72 @@ window.addEventListener('message', function(e) {
     if (!funnelId) return;
     var funnel = allFunnelsData.find(function(item) { return Number(item.id) === Number(funnelId); });
     if (!funnel) return;
-    navigator.clipboard.writeText(urlPublicaFunil(funnel)).then(function() { showToast('URL pública copiada.', 'success'); });
+    var url = urlPublicaFunil(funnel);
+    navigator.clipboard.writeText(url).then(function() { showToast('URL pública copiada: ' + url, 'success'); });
+  }
+
+  function abrirModalFunilPublicado(data) {
+    var modal = document.getElementById('modal-funnel-published');
+    if (!modal) {
+      showToast('Funil publicado! Link: ' + (data.public_url || ''), 'success');
+      return;
+    }
+    var pubUrl = data.public_url || calcularUrlAtualFunil();
+    var inputUrl = document.getElementById('modal-published-url-input');
+    if (inputUrl) inputUrl.value = pubUrl;
+
+    var btnOpen = document.getElementById('btn-modal-open-link');
+    if (btnOpen) btnOpen.href = pubUrl;
+
+    var iframeArea = document.getElementById('modal-published-iframe-snippet');
+    if (iframeArea) {
+      iframeArea.value = '<iframe id="upscale-custom-funnel" src="' + pubUrl + '" style="width:100%;min-height:750px;border:none;" scrolling="no"></iframe>';
+    }
+
+    if (typeof modal.showModal === 'function') {
+      modal.showModal();
+    } else {
+      modal.style.display = 'block';
+    }
+  }
+
+  function fecharModalFunilPublicado() {
+    var modal = document.getElementById('modal-funnel-published');
+    if (!modal) return;
+    if (typeof modal.close === 'function') {
+      modal.close();
+    } else {
+      modal.style.display = 'none';
+    }
+  }
+
+  function copiarLinkModalPublicado() {
+    var inputUrl = document.getElementById('modal-published-url-input');
+    if (!inputUrl) return;
+    var url = inputUrl.value;
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('btn-modal-copy-link');
+      if (btn) {
+        var old = btn.textContent;
+        btn.textContent = 'Copiado! ✓';
+        btn.style.background = 'var(--green-700)';
+        setTimeout(function() {
+          btn.textContent = old;
+          btn.style.background = '';
+        }, 2000);
+      }
+      showToast('Link do funil copiado com sucesso!', 'success');
+    }).catch(function() {
+      showToast('Link: ' + url, 'info');
+    });
+  }
+
+  function copiarIframeModalPublicado() {
+    var iframeArea = document.getElementById('modal-published-iframe-snippet');
+    if (!iframeArea) return;
+    navigator.clipboard.writeText(iframeArea.value).then(function() {
+      showToast('Código de Iframe copiado!', 'success');
+    });
   }
 
   function escapeHtml(text) {
@@ -5310,6 +5445,51 @@ window.addEventListener('message', function(e) {
       </button>
     </div>
   </form>
+</dialog>
+
+<!-- MODAL DE NOVO LINK DO FUNIL PUBLICADO -->
+<dialog class="win" id="modal-funnel-published" style="max-width:540px; text-align:left; border:1px solid var(--gray-150); border-radius:var(--radius-xl); padding:26px; background:var(--white); color:var(--ink-900); box-shadow:var(--shadow-dropdown);">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:var(--green-100); color:var(--green-700); flex-shrink:0;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </span>
+      <div>
+        <h2 style="font-family:var(--font-ui); font-size:17px; font-weight:800; color:var(--ink-900); margin:0;">Página HTML Publicada!</h2>
+        <span style="font-size:11.5px; color:var(--gray-400);" id="modal-published-status-desc">O seu novo link exclusivo está no ar e pronto para ser acessado.</span>
+      </div>
+    </div>
+    <button type="button" class="modal-close-btn" onclick="fecharModalFunilPublicado()" aria-label="Fechar modal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+
+  <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 14px; margin-bottom:16px;">
+    <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Raspadinha Intacta na Raiz
+    </div>
+    <p style="font-size:12px; color:#166534; margin:0; line-height:1.4;">
+      A oferta principal da raspadinha continua respondendo na raiz do seu domínio sem nenhuma alteração. O HTML foi publicado no novo link abaixo:
+    </p>
+  </div>
+
+  <label style="font-size:11.5px; font-weight:700; color:var(--ink-700); display:block; margin-bottom:6px;">Novo Link Dedicado:</label>
+  <div style="display:flex; gap:8px; margin-bottom:12px;">
+    <input type="text" id="modal-published-url-input" class="field-control" readonly style="flex:1; font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--blue-700); background:#f8fafc;" onclick="this.select()" />
+    <button type="button" class="btn-pill" id="btn-modal-copy-link" onclick="copiarLinkModalPublicado()" style="white-space:nowrap; padding:0 16px;">Copiar Link</button>
+    <a id="btn-modal-open-link" href="#" target="_blank" class="btn-pill-secondary" style="display:inline-flex; align-items:center; text-decoration:none; padding:0 14px;">Abrir ↗</a>
+  </div>
+
+  <details style="margin-top:12px; padding:10px 12px; border:1px solid var(--gray-150); border-radius:8px; background:var(--gray-50);">
+    <summary style="font-size:11.5px; font-weight:600; color:var(--gray-600); cursor:pointer;">Código de Iframe (para embutir na Rifa / Checkout)</summary>
+    <div style="margin-top:8px;">
+      <textarea id="modal-published-iframe-snippet" readonly class="html-editor" style="height:70px; font-size:11px; background:#fff;" onclick="this.select()"></textarea>
+      <button type="button" class="btn-pill-secondary" style="margin-top:6px; font-size:11px; padding:4px 10px;" onclick="copiarIframeModalPublicado()">Copiar código do Iframe</button>
+    </div>
+  </details>
+
+  <div style="display:flex; justify-content:flex-end; margin-top:18px;">
+    <button type="button" class="btn-pill-secondary" onclick="fecharModalFunilPublicado()">Concluir</button>
+  </div>
 </dialog>
 
 <div class="toast-container" id="toast-container"></div>

@@ -15,29 +15,40 @@ try {
     $domain = null;
 }
 
-if ($slug === '' && !$domain) {
+// Na raiz (/): SEMPRE serve a Raspadinha / Oferta Booster nativa!
+// A raspadinha NUNCA é sobrescrita por funis HTML.
+if ($slug === '') {
+    header('Content-Type: text/html; charset=utf-8');
     readfile(__DIR__ . '/index.html');
     exit;
 }
 
-if ($slug !== '') {
-    $stmt = $pdo->prepare("SELECT * FROM funnels WHERE workspace_id = ? AND slug = ? AND status = 'published' LIMIT 1");
-    $stmt->execute([$workspace->id, $slug]);
-} else {
-    $stmt = $pdo->prepare("SELECT * FROM funnels WHERE workspace_id = ? AND custom_domain_id = ? AND is_home = 1 AND status = 'published' ORDER BY id DESC LIMIT 1");
-    $stmt->execute([$workspace->id, (int)$domain['id']]);
+// Quando há slug (/f/{slug} ou /{slug}): busca o funil HTML correspondente
+$funnel = null;
+
+// 1. Tenta buscar no workspace atual pelo slug publicado
+$stmt = $pdo->prepare("SELECT * FROM funnels WHERE workspace_id = ? AND slug = ? AND status = 'published' LIMIT 1");
+$stmt->execute([$workspace->id, $slug]);
+$funnel = $stmt->fetch();
+
+// 2. Se houver domínio customizado, tenta pelo custom_domain_id
+if (!$funnel && $domain) {
+    $stmt = $pdo->prepare("SELECT * FROM funnels WHERE custom_domain_id = ? AND slug = ? AND status = 'published' LIMIT 1");
+    $stmt->execute([(int)$domain['id'], $slug]);
+    $funnel = $stmt->fetch();
 }
 
-$funnel = $stmt->fetch();
+// 3. Fallback: busca global pelo slug ativo
 if (!$funnel) {
-    // Se não há página HTML customizada na raiz do domínio, serve a Oferta Booster nativa do Workspace!
-    if ($slug === '') {
-        readfile(__DIR__ . '/index.html');
-        exit;
-    }
+    $stmt = $pdo->prepare("SELECT * FROM funnels WHERE slug = ? AND status = 'published' ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$slug]);
+    $funnel = $stmt->fetch();
+}
+
+if (!$funnel) {
     http_response_code(404);
     header('Content-Type: text/html; charset=utf-8');
-    echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Funil não encontrado</title><style>body{font:16px system-ui;background:#f4f6fa;color:#05153f;display:grid;place-items:center;min-height:100vh;margin:0}.box{max-width:520px;padding:32px;background:#fff;border:1px solid #e4e8f0;border-radius:18px;text-align:center}a{color:#0229c4}</style></head><body><div class="box"><h1>Funil não encontrado</h1><p>Esta página ainda não foi publicada ou não está vinculada a este domínio.</p></div></body></html>';
+    echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Página não encontrada</title><style>body{font:16px system-ui,-apple-system,sans-serif;background:#05153f;color:#fff;display:grid;place-items:center;min-height:100vh;margin:0}.box{max-width:520px;padding:36px;background:#0b1e52;border:1px solid rgba(255,255,255,0.1);border-radius:18px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.3)}h1{font-size:22px;margin:0 0 10px;color:#9fe870}p{color:#dce2fd;font-size:14px;line-height:1.6;margin:0 0 20px}a{display:inline-block;background:#0229c4;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:13px}</style></head><body><div class="box"><h1>Página ou Funil não encontrado</h1><p>O link acessado (/' . htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') . ') ainda não foi publicado ou não está ativo no momento.</p><a href="/">Ir para a Oferta Principal</a></div></body></html>';
     exit;
 }
 

@@ -8,6 +8,12 @@
     RewriteRule ^(?:config|migrations|scripts|src|storage)(?:/|$) - [F,L,NC]
     RewriteRule ^f/([a-z0-9-]+)/?$ funnel.php?slug=$1 [L,QSA,NC]
 
+    # Rota direta para páginas/funis HTML (/slug) preservando arquivos e diretórios reais
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/(api|hub|assets|documentacao|migrations|scripts|src|storage|config|vendor) [NC]
+    RewriteRule ^([a-z0-9-]+)/?$ funnel.php?slug=$1 [L,QSA,NC]
+
     # Repassa o header Authorization ao PHP (Hostinger/CGI o remove por padrao e o Hub perde a sessao)
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
