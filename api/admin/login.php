@@ -6,9 +6,21 @@ use App\Auth\AdminAuth;
 use App\Auth\AuthSessionRepository;
 use App\Http\JsonResponse;
 use App\Repositories\UserRepository;
+use App\Security\RateLimiter;
 
 if ($request->method() !== 'POST') {
     JsonResponse::error('Method not allowed. Use POST.', 405);
+}
+
+$ip = (string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+$ip = trim(explode(',', $ip)[0]);
+$rateLimiter = new RateLimiter();
+$rateKey = 'login_ip_' . $ip;
+
+if ($rateLimiter->isTooManyAttempts($rateKey, 5, 900)) {
+    $seconds = $rateLimiter->availableIn($rateKey, 900);
+    header('Retry-After: ' . $seconds);
+    JsonResponse::error("Muitas tentativas incorretas. Acesso bloqueado por {$seconds}s para segurança.", 429);
 }
 
 $input = $request->all();
@@ -19,8 +31,11 @@ $directToken = trim((string) ($input['token'] ?? ''));
 
 $superAdminToken = (string) ($config['super_admin_token'] ?? '');
 
-function login_fail(string $message): void
+function login_fail(string $message, ?RateLimiter $limiter = null, ?string $key = null): void
 {
+    if ($limiter && $key) {
+        $limiter->hit($key);
+    }
     usleep(400000);
     JsonResponse::error($message, 401);
 }
@@ -30,8 +45,10 @@ if ($directToken !== '') {
     $adminAuth = new AdminAuth($wsRepo, $superAdminToken);
     $auth = $adminAuth->authenticate($directToken);
     if (!$auth) {
-        login_fail('Token administrativo inválido.');
+        login_fail('Token administrativo inválido.', $rateLimiter, $rateKey);
     }
+
+    $rateLimiter->clear($rateKey);
 
     JsonResponse::send([
         'status' => 'success',
@@ -64,6 +81,8 @@ if ($type === '' || $type === 'master') {
             JsonResponse::error('SUPER_ADMIN_TOKEN não está configurado no servidor (.env / variáveis de ambiente).', 500);
         }
 
+        $rateLimiter->clear($rateKey);
+
         JsonResponse::send([
             'status' => 'success',
             'token'  => $superAdminToken,
@@ -78,7 +97,7 @@ if ($type === '' || $type === 'master') {
     }
 
     if ($type === 'master') {
-        login_fail('Usuário ou senha Master incorretos.');
+        login_fail('Usuário ou senha Master incorretos.', $rateLimiter, $rateKey);
     }
 }
 
@@ -89,12 +108,12 @@ $user = $users->findByEmail($username);
 if (!$user || empty($user['password_hash']) || !password_verify($password, $user['password_hash'])) {
     login_fail($type === 'client'
         ? 'E-mail ou senha incorretos. Confira os dados enviados pela sua agência.'
-        : 'Usuário ou senha incorretos. Verifique suas credenciais.');
+        : 'Usuário ou senha incorretos. Verifique suas credenciais.', $rateLimiter, $rateKey);
 }
 
 $memberships = $users->activeMemberships((int) $user['id']);
 if (!$memberships) {
-    login_fail('Este usuário não possui acesso a nenhum workspace ativo. Fale com o administrador.');
+    login_fail('Este usuário não possui acesso a nenhum workspace ativo. Fale com o administrador.', $rateLimiter, $rateKey);
 }
 
 $wanted = (int) ($input['workspace_id'] ?? 0);
@@ -108,6 +127,8 @@ foreach ($memberships as $m) {
 
 $role = $chosen['membership_role'] === 'partner_admin' ? 'partner_admin' : 'merchant_admin';
 $session = (new AuthSessionRepository($pdo))->create((int) $user['id'], (int) $chosen['workspace_id'], $role);
+
+$rateLimiter->clear($rateKey);
 
 JsonResponse::send([
     'status' => 'success',

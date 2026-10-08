@@ -44,6 +44,13 @@ if (strpos($uri, '/api') === 0) {
     return;
 }
 
+// 3.5 Rota pública de Oferta de Raspadinha (/o/{slug})
+if (preg_match('#^/o/([a-z0-9-]+)/?$#i', $uri, $matches)) {
+    $_GET['offer_slug'] = $matches[1];
+    require __DIR__ . '/offer-public.php';
+    return;
+}
+
 // 4. Funis publicados em URL amigável (/f/{slug} ou /{slug})
 if (preg_match('#^/f/([a-z0-9-]+)/?$#i', $uri, $matches)) {
     $_GET['slug'] = $matches[1];
