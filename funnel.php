@@ -25,16 +25,19 @@ if ($slug === '') {
 
 // Quando há slug (/f/{slug} ou /{slug}): busca o funil HTML correspondente
 $funnel = null;
+$targetWsId = $domain ? (int)$domain['workspace_id'] : ($workspace ? (int)$workspace->id : 0);
 
-// 1. Tenta buscar no workspace atual pelo slug publicado
-$stmt = $pdo->prepare("SELECT * FROM funnels WHERE workspace_id = ? AND slug = ? AND status = 'published' LIMIT 1");
-$stmt->execute([$workspace->id, $slug]);
-$funnel = $stmt->fetch();
-
-// 2. Se houver domínio customizado, tenta pelo custom_domain_id
-if (!$funnel && $domain) {
+// 1. Se houver domínio customizado identificado, busca preferencialmente o funil deste domínio
+if ($domain) {
     $stmt = $pdo->prepare("SELECT * FROM funnels WHERE custom_domain_id = ? AND slug = ? AND status = 'published' LIMIT 1");
     $stmt->execute([(int)$domain['id'], $slug]);
+    $funnel = $stmt->fetch();
+}
+
+// 2. Busca no workspace correspondente pelo slug publicado
+if (!$funnel && $targetWsId > 0) {
+    $stmt = $pdo->prepare("SELECT * FROM funnels WHERE workspace_id = ? AND slug = ? AND status = 'published' LIMIT 1");
+    $stmt->execute([$targetWsId, $slug]);
     $funnel = $stmt->fetch();
 }
 
@@ -59,16 +62,134 @@ $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 $scheme = $isHttps ? 'https' : 'http';
 $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? $host);
 $rawHtml = !empty($funnel['published_content']) ? $funnel['published_content'] : $funnel['html_content'];
+
 $html = strtr($rawHtml, [
-    '{{workspace_id}}' => (string)$workspace->id,
-    '{{workspace_slug}}' => $workspace->slug,
-    '{{workspace_name}}' => htmlspecialchars($workspace->name, ENT_QUOTES, 'UTF-8'),
+    '{{workspace_id}}' => (string)($funnel['workspace_id'] ?? $workspace->id),
+    '{{workspace_slug}}' => $workspace->slug ?? '',
+    '{{workspace_name}}' => htmlspecialchars($workspace->name ?? '', ENT_QUOTES, 'UTF-8'),
     '{{domain}}' => $host,
     '{{base_url}}' => $baseUrl,
     '{{api_base}}' => $baseUrl . '/api',
 ]);
 
+// ═══ GARANTIA DE TRAQUEAMENTO TOTAL ("TRAQUEIE TUDO") ═══
+// Extrai Pixel ID se configurado no settings_config
+$pixelId = '';
+if (!empty($funnel['settings_config'])) {
+    $cfg = json_decode((string)$funnel['settings_config'], true);
+    if (!empty($cfg['tracking']['meta_pixel_id'])) {
+        $pixelId = trim((string)$cfg['tracking']['meta_pixel_id']);
+    }
+}
+
+// Injeta Snippet do Meta Pixel no <head> se configurado e ainda não presente
+if ($pixelId !== '' && !str_contains($html, 'connect.facebook.net/en_US/fbevents.js')) {
+    $pixelHeadSnippet = "
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', " . json_encode($pixelId) . ");
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height='1' width='1' style='display:none' src='https://www.facebook.com/tr?id=" . urlencode($pixelId) . "&ev=PageView&noscript=1'/></noscript>
+  <!-- End Meta Pixel Code -->";
+    if (str_contains($html, '</head>')) {
+        $html = str_replace('</head>', $pixelHeadSnippet . "\n</head>", $html);
+    }
+}
+
+// Injeta Script Universal de Traqueamento se ainda não presente no HTML
+if (!str_contains($html, 'upscale_campaign_utms')) {
+    $universalTrackingScript = "
+<script>
+(() => {
+  'use strict';
+  const storageKey = 'upscale_campaign_utms';
+  let utmMap = {};
+
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) utmMap = JSON.parse(saved);
+  } catch (e) {}
+
+  const currentParams = new URLSearchParams(window.location.search);
+  currentParams.forEach((val, key) => {
+    if (/^(utm_|fbclid|gclid|ttclid|src|sck|kwai|tiktok|source)/i.test(key)) {
+      utmMap[key] = val;
+    }
+  });
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(utmMap));
+    sessionStorage.setItem(storageKey, JSON.stringify(utmMap));
+  } catch (e) {}
+
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'ViewContent', { content_name: " . json_encode($funnel['name'] ?? 'Campanha') . " });
+  }
+
+  const applyUtms = (link) => {
+    try {
+      if (!link || !link.href || link.href.startsWith('#') || link.href.startsWith('javascript:')) return;
+      const targetUrl = new URL(link.href, window.location.href);
+      Object.keys(utmMap).forEach((k) => {
+        if (!targetUrl.searchParams.has(k)) targetUrl.searchParams.set(k, utmMap[k]);
+      });
+      link.href = targetUrl.href;
+    } catch (err) {}
+  };
+  document.querySelectorAll('a').forEach(applyUtms);
+
+  document.querySelectorAll('.js-buy, .btn-cta, [data-block-type=\"button\"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'InitiateCheckout', { content_name: " . json_encode($funnel['name'] ?? 'Campanha') . " });
+      }
+    });
+  });
+
+  document.querySelectorAll('a[href*=\"whatsapp.com\"], a[href*=\"wa.me\"], a[href*=\"instagram.com\"], a[href*=\"t.me\"]').forEach((ch) => {
+    ch.addEventListener('click', () => {
+      if (typeof window.fbq === 'function') window.fbq('track', 'Contact', { channel: ch.hostname });
+    });
+  });
+
+  const scrollFired = {};
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement, b = document.body;
+    const pct = Math.round(((h.scrollTop || b.scrollTop) / ((h.scrollHeight || b.scrollHeight) - h.clientHeight)) * 100);
+    [25, 50, 75, 90].forEach((m) => {
+      if (pct >= m && !scrollFired[m]) {
+        scrollFired[m] = true;
+        if (typeof window.fbq === 'function') window.fbq('trackCustom', 'ScrollDepth', { depth: m + '%' });
+      }
+    });
+  }, { passive: true });
+
+  [15, 30, 60].forEach((sec) => {
+    setTimeout(() => {
+      if (typeof window.fbq === 'function') window.fbq('trackCustom', 'TimeOnPage', { seconds: sec });
+    }, sec * 1000);
+  });
+})();
+</script>";
+
+    if (str_contains($html, '</body>')) {
+        $html = str_replace('</body>', $universalTrackingScript . "\n</body>", $html);
+    } else {
+        $html .= $universalTrackingScript;
+    }
+}
+
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('X-Robots-Tag: index, follow');
 echo $html;
+

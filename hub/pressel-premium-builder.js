@@ -668,28 +668,113 @@ ${stickyHtml}
 (() => {
   'use strict';
 
-  // Repasse de parâmetros de campanha (UTMs e fbclid) preservando a navegação nativa
-  const incoming = new URLSearchParams(window.location.search);
-  document.querySelectorAll('.js-buy').forEach((link) => {
+  // ═══ FULL TRACKING SUITE (TRAQUEAMENTO COMPLETO) ═══
+  const storageKey = 'upscale_campaign_utms';
+  let utmMap = {};
+
+  // 1. Capturar e persistir UTMs e IDs de tráfego (UTMs, fbclid, gclid, ttclid, src, sck)
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) utmMap = JSON.parse(saved);
+  } catch (e) {}
+
+  const currentParams = new URLSearchParams(window.location.search);
+  currentParams.forEach((val, key) => {
+    if (/^(utm_|fbclid|gclid|ttclid|src|sck|kwai|tiktok|source)/i.test(key)) {
+      utmMap[key] = val;
+    }
+  });
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(utmMap));
+    sessionStorage.setItem(storageKey, JSON.stringify(utmMap));
+  } catch (e) {}
+
+  // 2. Disparar ViewContent no Meta Pixel com dados da campanha
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'ViewContent', {
+      content_name: ${JSON.stringify(seo.title || 'Campanha')},
+      content_type: 'product',
+      value: ${parseFloat(String(hero.price_value || '0').replace(',', '.')) || 0},
+      currency: 'BRL'
+    });
+  }
+
+  // 3. Injetar UTMs em TODOS os links e botões da página
+  const applyUtms = (link) => {
     try {
-      const destination = new URL(link.href, window.location.href);
-      incoming.forEach((value, key) => {
-        if (/^utm_[a-z0-9_]+$/i.test(key) || key === 'fbclid') {
-          destination.searchParams.set(key, value);
+      if (!link || !link.href || link.href.startsWith('#') || link.href.startsWith('javascript:')) return;
+      const targetUrl = new URL(link.href, window.location.href);
+      Object.keys(utmMap).forEach((k) => {
+        if (!targetUrl.searchParams.has(k)) {
+          targetUrl.searchParams.set(k, utmMap[k]);
         }
       });
-      link.href = destination.href;
-    } catch (error) {
-      console.warn('URL da campanha não pôde ser atualizada com UTMs.', error);
-    }
+      link.href = targetUrl.href;
+    } catch (err) {}
+  };
 
+  document.querySelectorAll('a').forEach(applyUtms);
+
+  // 4. Rastreamento de Cliques nos Botões de Ação (Hero, Sticky, etc.)
+  document.querySelectorAll('.js-buy').forEach((link) => {
     link.addEventListener('click', () => {
       try {
         if (typeof window.fbq === 'function') {
-          window.fbq('track', '${pixelEvent}');
+          window.fbq('track', '${pixelEvent}', {
+            content_name: ${JSON.stringify(hero.title || 'Campanha')},
+            value: ${parseFloat(String(hero.price_value || '0').replace(',', '.')) || 0},
+            currency: 'BRL'
+          });
         }
-      } catch (error) {
-        console.warn('Tracking de clique não enviado.', error);
+      } catch (e) {
+        console.warn('Tracking de clique não enviado.', e);
+      }
+    });
+  });
+
+  // 5. Rastreamento de Contato / Redes Sociais / WhatsApp
+  document.querySelectorAll('a[href*="whatsapp.com"], a[href*="wa.me"], a[href*="instagram.com"], a[href*="t.me"]').forEach((channel) => {
+    channel.addEventListener('click', () => {
+      try {
+        if (typeof window.fbq === 'function') {
+          window.fbq('track', 'Contact', { channel: channel.hostname });
+        }
+      } catch (e) {}
+    });
+  });
+
+  // 6. Rastreamento de Rolagem (Scroll Depth: 25%, 50%, 75%, 90%)
+  const scrollFired = {};
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const b = document.body;
+    const percent = Math.round(((h.scrollTop || b.scrollTop) / ((h.scrollHeight || b.scrollHeight) - h.clientHeight)) * 100);
+    [25, 50, 75, 90].forEach((milestone) => {
+      if (percent >= milestone && !scrollFired[milestone]) {
+        scrollFired[milestone] = true;
+        if (typeof window.fbq === 'function') {
+          window.fbq('trackCustom', 'ScrollDepth', { depth: milestone + '%' });
+        }
+      }
+    });
+  }, { passive: true });
+
+  // 7. Rastreamento de Tempo na Página (Engagement: 15s, 30s, 60s)
+  [15, 30, 60].forEach((sec) => {
+    setTimeout(() => {
+      if (typeof window.fbq === 'function') {
+        window.fbq('trackCustom', 'TimeOnPage', { seconds: sec });
+      }
+    }, sec * 1000);
+  });
+
+  // 8. Rastreamento de Interação com FAQ
+  document.querySelectorAll('details').forEach((faq) => {
+    faq.addEventListener('toggle', () => {
+      if (faq.open && typeof window.fbq === 'function') {
+        const q = faq.querySelector('summary');
+        window.fbq('trackCustom', 'FaqInteraction', { question: q ? q.textContent.trim() : '' });
       }
     });
   });

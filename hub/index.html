@@ -22,6 +22,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="pressel-premium-builder.js" defer></script>
   <script src="elementor-builder.js" defer></script>
 </head>
 <body>
@@ -1435,19 +1436,24 @@
                 <p class="card-subtitle-clean">Aponte um domínio ou subdomínio para a rede upScale.</p>
               </div>
             </div>
-            <div style="display:flex; gap:10px; max-width:640px; flex-wrap:wrap;">
+            <div style="display:flex; gap:10px; max-width:720px; flex-wrap:wrap; align-items:center;">
               <input type="text" class="form-input" id="domain-input" placeholder="ex: rifa.seusite.com.br" style="flex:1; min-width:260px;">
               <button type="button" class="btn-primary" onclick="adicionarDominio()">Conectar domínio</button>
+              <button type="button" class="btn-secondary" id="btn-testar-dns-topo" onclick="testarDnsAvulso()" title="Testar se o DNS já está apontado para o IP 179.198.96.35">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Testar Apontamento</span>
+              </button>
             </div>
 
             <!-- Guias Recolhíveis de DNS e Cloudflare -->
-            <details class="collapsible-guide">
-              <summary class="collapsible-summary">Instruções de Apontamento DNS (Tipo A e CNAME)</summary>
+            <details class="collapsible-guide" open>
+              <summary class="collapsible-summary">Instruções de Apontamento DNS (IP da VPS: 179.198.96.35)</summary>
               <div class="collapsible-content">
-                Para vincular seu domínio, acesse o painel onde registrou seu domínio (Hostinger, Cloudflare, Registro.br) e crie uma das entradas abaixo:
-                <ul style="margin:8px 0 8px 18px;">
-                  <li><strong>Entrada CNAME:</strong> Host <code>rifa</code> apontando para o servidor principal <code>seudominio.com.br</code>.</li>
-                  <li><strong>Entrada Tipo A:</strong> Host <code>@</code> ou subdomínio apontando para o IP do seu servidor.</li>
+                Para vincular seu domínio ou o de um cliente, acesse o painel onde registrou seu domínio (Hostinger, Registro.br, Cloudflare) e adicione as entradas:
+                <ul style="margin:8px 0 8px 18px; line-height: 1.6;">
+                  <li><strong>Entrada Tipo A (Recomendado):</strong> Host <code>@</code> (ou subdomínio) apontando para o IP: <strong style="color:var(--primary); font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px;">179.198.96.35</strong></li>
+                  <li><strong>Entrada www:</strong> Tipo <code>CNAME</code>, Host <code>www</code> apontando para o domínio principal.</li>
+                  <li><strong>Easypanel:</strong> Adicione o domínio na aba <em>Domínios</em> do Easypanel para gerar o certificado SSL (HTTPS) com cadeado verde.</li>
                 </ul>
               </div>
             </details>
@@ -1461,7 +1467,16 @@
           </div>
 
           <div class="card">
-            <h3 class="card-title-clean" style="margin-bottom:14px;">Domínios Vinculados ao Workspace</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h3 class="card-title-clean" style="margin:0;">Domínios Vinculados ao Workspace</h3>
+                <p class="card-subtitle-clean" style="margin:2px 0 0 0;">Verifique o apontamento DNS e o status SSL de cada domínio.</p>
+              </div>
+              <button type="button" class="btn-secondary" id="btn-verificar-todos-dominios" style="min-height:30px; font-size:12px; display:inline-flex; align-items:center; gap:6px;" onclick="verificarTodosApontamentos(this)">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Verificar Todos os Apontamentos</span>
+              </button>
+            </div>
             <div class="table-responsive">
               <table class="clean-table">
                 <thead>
@@ -1497,7 +1512,21 @@
                   <span class="elementor-topbar-sep">/</span>
                 </div>
                 <input type="text" id="funnel-name" class="elementor-page-title-input" value="Oferta especial" placeholder="Nome da página..." oninput="marcarFunilModificado()" title="Clique para editar o nome da página">
-                <input type="hidden" id="funnel-slug" value="oferta-especial">
+                
+                <!-- Slug Customizável da Página -->
+                <div class="elementor-slug-box" title="Slug personalizado da página (/f/[slug])">
+                  <span class="elementor-slug-prefix">/f/</span>
+                  <input type="text" id="funnel-slug" class="elementor-slug-input" value="oferta-especial" placeholder="slug-da-pagina" oninput="atualizarSlugBuilder(this.value)">
+                </div>
+
+                <!-- Seletor de Domínio Conectado com estilo de hospedagem -->
+                <div class="elementor-domain-box" title="Domínio de hospedagem da página">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#175CFF" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Hospedagem:</span>
+                  <select id="builder-funnel-domain-select" class="elementor-domain-select" onchange="trocarDominioBuilder(this.value)">
+                    <option value="">(Padrão da Plataforma)</option>
+                  </select>
+                </div>
                 
                 <div class="elementor-status-pill" id="funnel-status-pill">
                   <span class="status-dot"></span>
@@ -1539,6 +1568,12 @@
               </div>
 
               <div class="elementor-topbar-right">
+                <!-- Botão Criar Nova Página / Pressel -->
+                <button type="button" class="btn-builder-new" onclick="abrirModalNovoFunil()" title="Criar nova página ou pressel com modelo de alta conversão">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>+ Nova Página</span>
+                </button>
+
                 <!-- Botão de Gaveta de Páginas -->
                 <button type="button" class="btn-pages-drawer" onclick="togglePagesDrawer()" title="Ver lista de todas as páginas">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1576,6 +1611,10 @@
                   <button type="button" class="elementor-tab-btn" id="tab-btn-code" onclick="switchSidebarTab('code')">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                     <span>Código</span>
+                  </button>
+                  <button type="button" class="elementor-tab-btn" id="tab-btn-tracking" onclick="switchSidebarTab('tracking')" title="Configurações de Rastreamento e Meta Pixel">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    <span>Rastreamento</span>
                   </button>
                 </div>
 
@@ -1791,6 +1830,96 @@
                       <!-- Editor CodeMirror com Line Numbers -->
                       <div class="elementor-code-editor-box">
                         <textarea id="funnel-code-editor" style="display:none;"></textarea>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- ── ABA 4: RASTREAMENTO & PIXEL (TRAQUEIE TUDO) ── -->
+                  <div id="pane-tracking" class="elementor-tab-pane" style="display:none;">
+                    <div class="elementor-tracking-pane">
+                      <div class="tracking-card-box">
+                        <div class="tracking-card-header">
+                          <span class="tracking-card-title">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#175CFF" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Meta Pixel da Página
+                          </span>
+                          <span class="badge badge-success" style="font-size:10.5px;">Ativo</span>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin:0;">Cole o ID do seu Pixel para vincular automaticamente eventos e conversões da campanha.</p>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Meta Pixel ID</label>
+                          <input type="text" id="builder-pixel-id-input" class="elementor-prop-input" placeholder="ex: 184920491823901" oninput="atualizarPixelIdTracking(this.value)">
+                        </div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Evento do Botão CTA</label>
+                          <select id="builder-pixel-event-select" class="elementor-prop-select" onchange="atualizarPixelEventTracking(this.value)">
+                            <option value="InitiateCheckout" selected>InitiateCheckout (Iniciar Finalização)</option>
+                            <option value="AddToCart">AddToCart (Adicionar ao Carrinho)</option>
+                            <option value="Purchase">Purchase (Compra Concluída)</option>
+                            <option value="Lead">Lead (Contato Gerado)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Status do Traqueamento Completo -->
+                      <div class="tracking-card-box">
+                        <div class="tracking-card-header">
+                          <span class="tracking-card-title">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                            Traqueamento Ativo ("Trakeie Tudo")
+                          </span>
+                        </div>
+                        <ul class="tracking-status-list">
+                          <li class="tracking-status-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div>
+                              <strong>UTM & Parâmetros de Tráfego</strong>
+                              <div style="font-size:11px; color:#64748b;">utm_source, utm_medium, utm_campaign, fbclid, gclid repassados para todos os botões e links.</div>
+                            </div>
+                          </li>
+                          <li class="tracking-status-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div>
+                              <strong>PageView & ViewContent</strong>
+                              <div style="font-size:11px; color:#64748b;">Disparo automático no carregamento da página com título e preço da cota.</div>
+                            </div>
+                          </li>
+                          <li class="tracking-status-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div>
+                              <strong>InitiateCheckout</strong>
+                              <div style="font-size:11px; color:#64748b;">Rastreado no Hero CTA e Sticky CTA fixo sincronizado.</div>
+                            </div>
+                          </li>
+                          <li class="tracking-status-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div>
+                              <strong>Contact (WhatsApp / Redes)</strong>
+                              <div style="font-size:11px; color:#64748b;">Disparo ao clicar em links para grupos de WhatsApp, Instagram ou suporte.</div>
+                            </div>
+                          </li>
+                          <li class="tracking-status-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div>
+                              <strong>Scroll Depth (Profundidade de Rolagem)</strong>
+                              <div style="font-size:11px; color:#64748b;">Disparo nos marcos de 25%, 50%, 75% e 90% da página.</div>
+                            </div>
+                          </li>
+                          <li class="tracking-status-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div>
+                              <strong>Time On Page (Tempo de Permanência)</strong>
+                              <div style="font-size:11px; color:#64748b;">Disparo de engajamento aos 15s, 30s e 60s de leitura.</div>
+                            </div>
+                          </li>
+                          <li class="tracking-status-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div>
+                              <strong>Vídeos & Dúvidas Frequentes</strong>
+                              <div style="font-size:11px; color:#64748b;">Rastreamento de play em entregas reais e cliques no acordeão de FAQ.</div>
+                            </div>
+                          </li>
+                        </ul>
                       </div>
                     </div>
                   </div>
@@ -2391,6 +2520,164 @@
     <div style="display:flex; justify-content:flex-end; gap:8px;">
       <button type="button" class="btn-secondary" onclick="fecharModalNovaAcao()">Cancelar</button>
       <button type="submit" class="btn-primary">Criar Campanha</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- MODAL: NOVO FUNIL / PÁGINA COM TEMPLATES, SLUG E DOMÍNIO -->
+<dialog class="win-clean" id="modal-novo-funil-template" style="max-width:760px; width:92vw;">
+  <div class="modal-header-clean">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      <div>
+        <h3 class="modal-title-clean">Criar Nova Página / Funil</h3>
+        <p style="margin:2px 0 0; font-size:12px; color:var(--text-muted);">Escolha o modelo de alta conversão, personalize o slug e vincule ao domínio do cliente.</p>
+      </div>
+    </div>
+    <button type="button" class="modal-close-icon" onclick="fecharModalNovoFunil()">&times;</button>
+  </div>
+
+  <form onsubmit="criarNovoFunilConfirmar(event)">
+    <!-- 1. SELEÇÃO DE TEMPLATE -->
+    <div style="margin-bottom:14px;">
+      <label class="form-label" style="margin-bottom:8px;">1. Escolha o Modelo da Página</label>
+      <div class="template-cards-grid">
+        <!-- Template 1: Pressel Premium -->
+        <div class="template-card active" data-template="pressel-premium" onclick="selecionarCardTemplate('pressel-premium')">
+          <span class="template-badge-chip badge-rec">⭐ Recomendado • Modelo Brayam Braz</span>
+          <div class="template-card-title">Pressel Premium — Campanhas</div>
+          <p class="template-card-desc">Visual escuro luxuoso, Ranger V6/Pix, marquee animada, prêmios, entregas reais em vídeo, canais WhatsApp, FAQ sanfona e traqueamento total.</p>
+        </div>
+
+        <!-- Template 2: Booster Padrão -->
+        <div class="template-card" data-template="default" onclick="selecionarCardTemplate('default')">
+          <span class="template-badge-chip badge-booster">Conversão Direta</span>
+          <div class="template-card-title">Página Booster Padrão</div>
+          <p class="template-card-desc">Estrutura clean com contagem regressiva evergreen, pacotes de cotas, selos de segurança e checkout Pix instantâneo.</p>
+        </div>
+
+        <!-- Template 3: Página em Branco -->
+        <div class="template-card" data-template="blank" onclick="selecionarCardTemplate('blank')">
+          <span class="template-badge-chip badge-blank">HTML Livre</span>
+          <div class="template-card-title">Página em Branco</div>
+          <p class="template-card-desc">Tela limpa para montar layouts autorais do zero ou importar páginas personalizadas com traqueamento UTM nativo.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. HOSPEDAGEM & DOMÍNIO (ESTILO HOSPEDAGEM) -->
+    <div class="hosting-section-box">
+      <div class="hosting-section-header">
+        <div class="hosting-section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#175CFF" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>2. Onde você deseja hospedar esta página?</span>
+        </div>
+        <span style="font-size:11px; color:#10b981; font-weight:700;">🟢 Servidor 179.198.96.35</span>
+      </div>
+      <p class="hosting-section-desc">Selecione o domínio próprio conectado ou use a hospedagem padrão da plataforma:</p>
+      
+      <!-- Cards interativos de hospedagem gerados dinamicamente via JS -->
+      <div class="hosting-cards-grid" id="modal-hosting-cards-grid">
+        <div style="text-align:center; padding:16px; color:#94a3b8; font-size:12px;">Carregando opções de hospedagem...</div>
+      </div>
+
+      <input type="hidden" id="modal-funnel-domain-id" value="">
+      <input type="hidden" id="modal-funnel-domain-name" value="">
+      <select id="modal-funnel-domain" style="display:none;"></select>
+    </div>
+
+    <!-- 3. CAMPOS DE CONFIGURAÇÃO (SLUG, NOME, PIXEL) -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div>
+        <label class="form-label" for="modal-funnel-name">Nome da Página <span style="color:var(--red-500);">*</span></label>
+        <input type="text" class="form-input" id="modal-funnel-name" value="Ranger V6 Ação Especial" placeholder="ex: Ranger V6 Brayam Braz" required oninput="onModalFunnelNameInput(this.value)">
+      </div>
+      <div>
+        <label class="form-label" for="modal-funnel-slug">Slug Personalizado da URL <span style="color:var(--red-500);">*</span></label>
+        <div style="display:flex; align-items:center; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:8px; padding:2px 10px;">
+          <span style="font-family:monospace; font-weight:700; color:#175CFF; margin-right:4px;">/f/</span>
+          <input type="text" id="modal-funnel-slug" style="border:none; background:transparent; outline:none; padding:7px 0; font-family:monospace; font-weight:700; font-size:13px; color:#0f172a; width:100%;" placeholder="minha-campanha" required oninput="onModalFunnelSlugInput(this.value)">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="form-label" for="modal-funnel-pixel">Meta Pixel ID (Traqueamento FB/Insta - Opcional)</label>
+      <input type="text" class="form-input" id="modal-funnel-pixel" placeholder="ex: 184920491823901" oninput="atualizarModalUrlPreview()">
+      <span style="font-size:11px; color:var(--text-muted); display:block; margin-top:3px;">Rastreia PageView, ViewContent, InitiateCheckout nos botões de compra, tempo de página e cliques de WhatsApp.</span>
+    </div>
+
+    <!-- 4. PRÉVIA DO LINK PÚBLICO -->
+    <div style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin:16px 0; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div>
+        <small style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; display:block;">Link público final da página:</small>
+        <span id="modal-funnel-url-preview" style="font-family:monospace; font-weight:700; color:#175CFF; font-size:13.5px; word-break:break-all;">https://canedo.upscalebrasil.com/f/ranger-v6</span>
+      </div>
+      <span class="badge badge-success" style="font-size:11px; white-space:nowrap;">🎯 Traqueamento 100% ativo</span>
+    </div>
+
+    <!-- 5. BOTÕES DE AÇÃO -->
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button type="button" class="btn-secondary" onclick="fecharModalNovoFunil()">Cancelar</button>
+      <button type="submit" class="btn-primary" style="font-weight:700;">Criar e Abrir no Editor 🚀</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- MODAL: CONFIRMAR HOSPEDAGEM E PUBLICAR PÁGINA -->
+<dialog class="win-clean" id="modal-publicar-hospedagem" style="max-width:680px; width:92vw;">
+  <div class="modal-header-clean">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="2.2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4.5c1.62-1.63 5-2 5-2"/><path d="M12 9v5s3.03-.55 4.5-2c1.63-1.62 2-5 2-5"/></svg>
+      <div>
+        <h3 class="modal-title-clean">Publicar Página — Escolha a Hospedagem</h3>
+        <p style="margin:2px 0 0; font-size:12px; color:var(--text-muted);">Qual domínio você deseja vincular para colocar este funil no ar?</p>
+      </div>
+    </div>
+    <button type="button" class="modal-close-icon" onclick="fecharModalPublicarHospedagem()">&times;</button>
+  </div>
+
+  <form onsubmit="confirmarPublicacaoHospedagem(event)">
+    <!-- 1. SELEÇÃO DE DOMÍNIO / HOSPEDAGEM -->
+    <div class="hosting-section-box">
+      <div class="hosting-section-header">
+        <div class="hosting-section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#175CFF" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>Domínio de Hospedagem</span>
+        </div>
+        <span style="font-size:11px; color:#10b981; font-weight:700;">🟢 Servidor 179.198.96.35</span>
+      </div>
+      <p class="hosting-section-desc">Escolha em qual domínio público esta página ficará acessível aos compradores:</p>
+
+      <div class="hosting-cards-grid" id="publish-hosting-cards-grid">
+        <!-- Cards gerados via JS -->
+      </div>
+    </div>
+
+    <!-- 2. CONFIRMAÇÃO DO SLUG -->
+    <div style="margin-bottom:14px;">
+      <label class="form-label" for="publish-funnel-slug">Slug da URL Pública <span style="color:var(--red-500);">*</span></label>
+      <div style="display:flex; align-items:center; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:8px; padding:2px 10px;">
+        <span style="font-family:monospace; font-weight:700; color:#175CFF; margin-right:4px;">/f/</span>
+        <input type="text" id="publish-funnel-slug" style="border:none; background:transparent; outline:none; padding:7px 0; font-family:monospace; font-weight:700; font-size:13.5px; color:#0f172a; width:100%;" required oninput="onPublishSlugInput(this.value)">
+      </div>
+    </div>
+
+    <!-- 3. PREVIEW DO LINK FINAL -->
+    <div style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div>
+        <small style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; display:block;">Endereço de Publicação:</small>
+        <span id="publish-funnel-url-preview" style="font-family:monospace; font-weight:700; color:#175CFF; font-size:13.5px; word-break:break-all;">https://canedo.upscalebrasil.com/f/minha-campanha</span>
+      </div>
+      <span class="badge badge-success" style="font-size:11px; white-space:nowrap;">🎯 Traqueamento 100% ativo</span>
+    </div>
+
+    <!-- 4. BOTÕES -->
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button type="button" class="btn-secondary" onclick="fecharModalPublicarHospedagem()">Cancelar</button>
+      <button type="submit" class="btn-primary" style="font-weight:700; background:linear-gradient(135deg, #10b981 0%, #059669 100%); border:none; box-shadow:0 2px 10px rgba(16,185,129,0.3);">
+        🚀 Confirmar Hospedagem e Publicar no Ar
+      </button>
     </div>
   </form>
 </dialog>
@@ -4291,14 +4578,37 @@
     }
 
     tbody.innerHTML = allDomainsData.map(function(d) {
-      var isOk = d.dns_status === 'active';
-      return `<tr>
-        <td><strong>${escapeHtml(d.domain)}</strong></td>
-        <td>Workspace #${d.workspace_id}</td>
-        <td><span class="badge ${isOk ? 'badge-success' : 'badge-warning'}"><span class="badge-dot-indicator"></span> ${isOk ? 'Ativo' : 'Pendente DNS'}</span></td>
-        <td><span class="badge badge-success">🔒 SSL Ativo</span></td>
+      var isOk = (d.status === 'active');
+      var domainName = escapeHtml(d.domain);
+      return `<tr id="domain-row-${d.id}">
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="color:var(--text-main); font-size:13.5px;">${domainName}</strong>
+            ${d.is_primary ? '<span class="badge badge-primary" style="font-size:10px; padding:1px 6px;">Principal</span>' : ''}
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+            IP Alvo: <code>179.198.96.35</code> &bull; ${d.last_checked_at ? 'Última checagem: ' + d.last_checked_at.substring(0, 16) : 'Checagem pendente'}
+          </div>
+        </td>
+        <td><span style="font-size:12px; color:var(--text-muted);">Workspace #${d.workspace_id}</span></td>
+        <td>
+          <span class="badge ${isOk ? 'badge-success' : 'badge-warning'}" id="domain-status-badge-${d.id}">
+            <span class="badge-dot-indicator"></span> ${isOk ? 'Conectado (Ativo)' : 'Pendente DNS'}
+          </span>
+        </td>
+        <td>
+          <span class="badge ${isOk ? 'badge-success' : 'badge-neutral'}" id="domain-ssl-badge-${d.id}">
+            ${isOk ? '🔒 SSL Ativo' : '⏳ Aguardando DNS'}
+          </span>
+        </td>
         <td style="text-align:right;">
-          <button type="button" class="btn-danger-ghost" style="min-height:26px; padding:0 8px; font-size:11px;" onclick="removerDominio(${d.id})">Remover</button>
+          <div style="display:inline-flex; gap:6px; align-items:center;">
+            <button type="button" class="btn-secondary" id="btn-verify-domain-${d.id}" style="min-height:28px; padding:0 10px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;" onclick="verificarApontamentoDominio(${d.id}, '${domainName}', this)" title="Verificar se o DNS já apontou para 179.198.96.35">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span>Verificar Apontamento</span>
+            </button>
+            <button type="button" class="btn-danger-ghost" style="min-height:28px; padding:0 8px; font-size:11.5px;" onclick="removerDominio(${d.id})" title="Remover este domínio">Remover</button>
+          </div>
         </td>
       </tr>`;
     }).join('');
@@ -4308,6 +4618,104 @@
         return `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`;
       }).join('');
     }
+  }
+
+  function verificarApontamentoDominio(id, domainName, btn) {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-sm" style="display:inline-block; width:12px; height:12px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:4px;"></span> Verificando...';
+    }
+
+    apiFetch('../api/admin/domains.php', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'verify', domain_id: id, workspace_id: currentWsId || 2 })
+    })
+    .then(function(data) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> <span>Verificar Apontamento</span>';
+      }
+
+      if (data.status === 'success' && data.verified) {
+        showToast('✅ Domínio ' + (domainName || '') + ' apontado corretamente para 179.198.96.35!', 'success');
+        var badge = document.getElementById('domain-status-badge-' + id);
+        if (badge) {
+          badge.className = 'badge badge-success';
+          badge.innerHTML = '<span class="badge-dot-indicator"></span> Conectado (Ativo)';
+        }
+        var sslBadge = document.getElementById('domain-ssl-badge-' + id);
+        if (sslBadge) {
+          sslBadge.className = 'badge badge-success';
+          sslBadge.innerHTML = '🔒 SSL Ativo';
+        }
+        carregarDominios();
+      } else {
+        var msg = data.message || 'DNS ainda não propagou.';
+        showToast('⏳ ' + msg, 'warning');
+      }
+    })
+    .catch(function(err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> <span>Verificar Apontamento</span>';
+      }
+      showToast('Erro ao verificar apontamento: ' + err.message, 'error');
+    });
+  }
+
+  function verificarTodosApontamentos(btn) {
+    if (!allDomainsData || !allDomainsData.length) {
+      showToast('Nenhum domínio cadastrado para verificar.', 'info');
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Verificando todos...';
+    }
+
+    var promises = allDomainsData.map(function(d) {
+      return apiFetch('../api/admin/domains.php', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'verify', domain_id: d.id, workspace_id: currentWsId || 2 })
+      }).catch(function() { return null; });
+    });
+
+    Promise.all(promises).then(function() {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>Verificar Todos os Apontamentos</span>';
+      }
+      showToast('Verificação de domínios concluída!', 'info');
+      carregarDominios();
+    });
+  }
+
+  function testarDnsAvulso() {
+    var dom = document.getElementById('domain-input').value.trim();
+    if (!dom) {
+      showToast('Digite o domínio no campo acima para testar.', 'error');
+      return;
+    }
+    var btn = document.getElementById('btn-testar-dns-topo');
+    if (btn) btn.disabled = true;
+    showToast('Consultando DNS de ' + dom + '...', 'info');
+
+    apiFetch('../api/admin/domains.php', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'test_dns', domain: dom, workspace_id: currentWsId || 2 })
+    })
+    .then(function(data) {
+      if (btn) btn.disabled = false;
+      if (data.status === 'success' && data.verified) {
+        showToast('✅ O domínio ' + dom + ' já está apontado para 179.198.96.35! Pode conectar.', 'success');
+      } else {
+        showToast('⏳ ' + (data.message || 'DNS ainda não propagou para o IP 179.198.96.35.'), 'warning');
+      }
+    })
+    .catch(function(err) {
+      if (btn) btn.disabled = false;
+      showToast('Erro ao testar DNS: ' + err.message, 'error');
+    });
   }
 
   function adicionarDominio() {

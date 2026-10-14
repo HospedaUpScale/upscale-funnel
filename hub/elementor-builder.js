@@ -14,19 +14,179 @@
     funnelId: null,
     name: 'Oferta Especial',
     slug: 'oferta-especial',
+    templateSlug: 'default',
+    customDomainId: null,
+    customDomainName: '',
+    metaPixelId: '',
+    ctaTrackEvent: 'InitiateCheckout',
     currentHtml: '',
     selectedBlockId: null,
     activeDevice: 'desktop',
     activeZoom: 75,
     canvasMode: 'edit', // 'edit' ou 'test'
-    activeTab: 'elements', // 'elements', 'style', 'code'
+    activeTab: 'elements', // 'elements', 'style', 'code', 'tracking'
     isModified: false,
     historyStack: [],
     historyIndex: -1,
     availableOffers: [],
+    availableDomains: [],
     codeMirror: null,
     debounceTimer: null
   };
+
+  // ══ AUXILIARES DE SLUG E URLS ══
+  function sanitizeSlug(val) {
+    if (!val) return '';
+    return String(val).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9_-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  function getPublicUrl() {
+    var sl = state.slug || 'pagina';
+    if (state.customDomainName) {
+      return 'https://' + state.customDomainName + '/f/' + sl;
+    }
+    return window.location.origin + '/f/' + sl;
+  }
+
+  function atualizarDisplayLinkPublico() {
+    var pubUrl = getPublicUrl();
+    var hostDisplay = state.customDomainName ? state.customDomainName : window.location.host;
+    var urlDisplay = document.getElementById('sidebar-public-url-display');
+    var openBtn = document.getElementById('sidebar-open-url-btn');
+    if (urlDisplay) urlDisplay.textContent = hostDisplay + '/f/' + (state.slug || 'pagina');
+    if (openBtn) openBtn.href = pubUrl;
+
+    var slugInput = document.getElementById('funnel-slug');
+    if (slugInput && slugInput !== document.activeElement && slugInput.value !== (state.slug || '')) {
+      slugInput.value = state.slug || '';
+    }
+
+    var domainSelect = document.getElementById('builder-funnel-domain-select');
+    if (domainSelect && state.customDomainId !== null) {
+      domainSelect.value = String(state.customDomainId);
+    }
+  }
+
+  // ══ SUITE DE RASTREAMENTO COMPLETO ("TRAQUEIE TUDO") ══
+  function getDefaultTrackingRuntime(pixelId, pixelEvent, contentName, priceValue) {
+    var pId = pixelId || state.metaPixelId || '';
+    var pEvt = pixelEvent || state.ctaTrackEvent || 'InitiateCheckout';
+    var pName = contentName || state.name || 'Campanha';
+    var pVal = parseFloat(priceValue || 0);
+
+    var pixelTag = (pId && state.canvasMode !== 'edit') ? `
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '${escapeHtml(pId)}');
+  fbq('track', 'PageView');
+  <\/script>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${encodeURIComponent(pId)}&ev=PageView&noscript=1"/></noscript>
+  <!-- End Meta Pixel Code -->` : '';
+
+    return `${pixelTag}
+  <!-- Full Tracking Suite (Traqueamento Completo & UTMs) -->
+  <script>
+  (function() {
+    'use strict';
+    var storageKey = 'upscale_campaign_utms';
+    var utmMap = {};
+
+    try {
+      var saved = localStorage.getItem(storageKey);
+      if (saved) utmMap = JSON.parse(saved);
+    } catch (e) {}
+
+    var params = new URLSearchParams(window.location.search);
+    params.forEach(function(val, key) {
+      if (/^(utm_|fbclid|gclid|ttclid|src|sck|kwai|tiktok|source)/i.test(key)) {
+        utmMap[key] = val;
+      }
+    });
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(utmMap));
+      sessionStorage.setItem(storageKey, JSON.stringify(utmMap));
+    } catch (e) {}
+
+    // Injetar UTMs em TODOS os links e botões da página
+    function applyUtms(link) {
+      try {
+        if (!link || !link.href || link.href.indexOf('#') === 0 || link.href.indexOf('javascript:') === 0) return;
+        var u = new URL(link.href, window.location.href);
+        Object.keys(utmMap).forEach(function(k) {
+          if (!u.searchParams.has(k)) u.searchParams.set(k, utmMap[k]);
+        });
+        link.href = u.href;
+      } catch (err) {}
+    }
+    document.querySelectorAll('a').forEach(applyUtms);
+
+    // Meta Pixel Tracking
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', 'ViewContent', {
+        content_name: ${JSON.stringify(pName)},
+        content_type: 'product',
+        value: ${pVal},
+        currency: 'BRL'
+      });
+    }
+
+    // Clique em botões de compra (Hero, CTA, etc.)
+    document.querySelectorAll('.btn-cta, .js-buy, [data-block-type="button"]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (typeof window.fbq === 'function') {
+          window.fbq('track', '${pEvt}', {
+            content_name: ${JSON.stringify(pName)},
+            value: ${pVal},
+            currency: 'BRL'
+          });
+        }
+      });
+    });
+
+    // Contato em WhatsApp e Redes
+    document.querySelectorAll('a[href*="whatsapp.com"], a[href*="wa.me"], a[href*="instagram.com"], a[href*="t.me"]').forEach(function(channel) {
+      channel.addEventListener('click', function() {
+        if (typeof window.fbq === 'function') {
+          window.fbq('track', 'Contact', { channel: channel.hostname });
+        }
+      });
+    });
+
+    // Scroll Depth
+    var scrollFired = {};
+    window.addEventListener('scroll', function() {
+      var h = document.documentElement, b = document.body;
+      var pct = Math.round(((h.scrollTop || b.scrollTop) / ((h.scrollHeight || b.scrollHeight) - h.clientHeight)) * 100);
+      [25, 50, 75, 90].forEach(function(m) {
+        if (pct >= m && !scrollFired[m]) {
+          scrollFired[m] = true;
+          if (typeof window.fbq === 'function') window.fbq('trackCustom', 'ScrollDepth', { depth: m + '%' });
+        }
+      });
+    }, { passive: true });
+
+    // Time On Page
+    [15, 30, 60].forEach(function(sec) {
+      setTimeout(function() {
+        if (typeof window.fbq === 'function') window.fbq('trackCustom', 'TimeOnPage', { seconds: sec });
+      }, sec * 1000);
+    });
+  })();
+  <\/script>`;
+  }
 
   // ══ TEMPLATE PADRÃO DE ALTA CONVERSÃO (INSPIRADO NA REFERÊNCIA) ══
   function getDefaultTemplate() {
@@ -188,6 +348,7 @@
       });
     })();
   <\/script>
+  ${getDefaultTrackingRuntime()}
 </body>
 </html>`;
   }
@@ -318,6 +479,7 @@
   function initBuilder() {
     setupCodeMirror();
     carregarOfertasWorkspace();
+    carregarDominiosBuilder();
     setupEventListeners();
     carregarFunilInicial();
   }
@@ -332,6 +494,69 @@
       .catch(function (e) {
         console.warn('Ofertas não carregadas para dropdown:', e);
       });
+  }
+
+  // ══ CARREGAR DOMÍNIOS CONECTADOS DO WORKSPACE ══
+  function carregarDominiosBuilder() {
+    var wsId = window.currentWsId || 2;
+    window.apiFetch('../api/admin/domains.php?workspace_id=' + wsId)
+      .then(function (data) {
+        var domains = (data.domains || []);
+        state.availableDomains = domains;
+
+        var selTopbar = document.getElementById('builder-funnel-domain-select');
+        var selModal = document.getElementById('modal-funnel-domain');
+
+        var optionsHtml = '<option value="">(Padrão da Plataforma)</option>' +
+          domains.map(function(d) {
+            var isPrimary = d.is_primary ? ' ★ (Principal)' : '';
+            return '<option value="' + d.id + '" data-domain="' + escapeHtml(d.domain) + '">' + escapeHtml(d.domain) + isPrimary + '</option>';
+          }).join('');
+
+        if (selTopbar) {
+          selTopbar.innerHTML = optionsHtml;
+          if (state.customDomainId) selTopbar.value = String(state.customDomainId);
+        }
+        if (selModal) {
+          selModal.innerHTML = optionsHtml;
+          if (state.customDomainId) selModal.value = String(state.customDomainId);
+        }
+
+        // Se o funil atual não tem domínio definido e há um primário ativo
+        if (!state.customDomainId && domains.length > 0) {
+          var primary = domains.find(function(d) { return d.is_primary && d.status === 'active'; }) || domains[0];
+          if (primary && primary.status === 'active') {
+            state.customDomainId = primary.id;
+            state.customDomainName = primary.domain;
+            if (selTopbar) selTopbar.value = String(primary.id);
+            if (selModal) selModal.value = String(primary.id);
+            atualizarDisplayLinkPublico();
+          }
+        }
+      })
+      .catch(function (e) {
+        console.warn('Erro ao carregar domínios para builder:', e);
+      });
+  }
+
+  function trocarDominioBuilder(domId) {
+    if (!domId) {
+      state.customDomainId = null;
+      state.customDomainName = '';
+    } else {
+      state.customDomainId = parseInt(domId, 10);
+      var found = state.availableDomains.find(function(d) { return d.id === state.customDomainId; });
+      state.customDomainName = found ? found.domain : '';
+    }
+    atualizarDisplayLinkPublico();
+    marcarModificado();
+  }
+
+  function atualizarSlugBuilder(val) {
+    var clean = sanitizeSlug(val);
+    state.slug = clean;
+    atualizarDisplayLinkPublico();
+    marcarModificado();
   }
 
   // ══ CONFIGURAÇÃO DO EDITOR CODEMIRROR ══
@@ -391,11 +616,7 @@
     iframe.srcdoc = htmlToInject;
 
     // Atualiza o display da URL pública no footer da barra lateral
-    var urlDisplay = document.getElementById('sidebar-public-url-display');
-    var openBtn = document.getElementById('sidebar-open-url-btn');
-    var pubUrl = window.location.origin + '/f/' + (state.slug || 'pagina');
-    if (urlDisplay) urlDisplay.textContent = window.location.host + '/f/' + (state.slug || 'pagina');
-    if (openBtn) openBtn.href = pubUrl;
+    atualizarDisplayLinkPublico();
 
     // Notifica modo atual para o iframe logo que carregar
     iframe.onload = function () {
@@ -514,16 +735,15 @@
     }
   }
 
-  // ══ ALTERNAR ABAS DA SIDEBAR (ELEMENTOS, ESTILO, CÓDIGO) ══
+  // ══ ALTERNAR ABAS DA SIDEBAR (ELEMENTOS, ESTILO, CÓDIGO, RASTREAMENTO) ══
   function switchSidebarTab(tabName) {
     state.activeTab = tabName;
-    document.getElementById('tab-btn-elements').classList.toggle('active', tabName === 'elements');
-    document.getElementById('tab-btn-style').classList.toggle('active', tabName === 'style');
-    document.getElementById('tab-btn-code').classList.toggle('active', tabName === 'code');
-
-    document.getElementById('pane-elements').style.display = (tabName === 'elements') ? 'block' : 'none';
-    document.getElementById('pane-style').style.display = (tabName === 'style') ? 'block' : 'none';
-    document.getElementById('pane-code').style.display = (tabName === 'code') ? 'block' : 'none';
+    ['elements', 'style', 'code', 'tracking'].forEach(function(t) {
+      var btn = document.getElementById('tab-btn-' + t);
+      var pane = document.getElementById('pane-' + t);
+      if (btn) btn.classList.toggle('active', tabName === t);
+      if (pane) pane.style.display = (tabName === t) ? 'block' : 'none';
+    });
 
     if (tabName === 'code' && state.codeMirror) {
       setTimeout(function () { state.codeMirror.refresh(); }, 50);
@@ -904,7 +1124,9 @@
   function salvarFunilRascunho() {
     var nameInput = document.getElementById('funnel-name');
     var name = (nameInput ? nameInput.value : state.name) || 'Página';
-    var slug = state.slug || 'pagina';
+    var slugInput = document.getElementById('funnel-slug');
+    var slug = sanitizeSlug(slugInput ? slugInput.value : state.slug) || 'pagina';
+    state.slug = slug;
 
     var pill = document.getElementById('funnel-status-pill');
     var text = document.getElementById('funnel-status-text');
@@ -921,6 +1143,14 @@
         funnel_id: state.funnelId,
         name: name,
         slug: slug,
+        custom_domain_id: state.customDomainId,
+        template_slug: state.templateSlug || 'default',
+        settings_config: {
+          tracking: {
+            meta_pixel_id: state.metaPixelId || '',
+            cta_track_event: state.ctaTrackEvent || 'InitiateCheckout'
+          }
+        },
         draft_content: state.currentHtml,
         html_content: state.currentHtml,
         workspace_id: wsId
@@ -931,6 +1161,7 @@
         state.funnelId = data.funnel_id;
         state.slug = data.slug;
         marcarSalvo('Rascunho salvo');
+        atualizarDisplayLinkPublico();
         window.showToast && window.showToast('Rascunho salvo com sucesso!', 'success');
         carregarListaGaveta();
       } else {
@@ -944,8 +1175,96 @@
     });
   }
 
-  // ══ PUBLICAR PÁGINA (COLOCA NO AR COM LINK PÚBLICO REAL) ══
+  // ══ PUBLICAR PÁGINA (ESTILO DE HOSPEDAGEM — PERGUNTA QUAL DOMÍNIO VINCULAR) ══
+  var publishSelectedDomainId = null;
+  var publishSelectedDomainName = '';
+
   function publicarFunilCompleto() {
+    abrirModalPublicarHospedagem();
+  }
+
+  function abrirModalPublicarHospedagem() {
+    var modal = document.getElementById('modal-publicar-hospedagem');
+    if (!modal) {
+      executarPublicacaoFunil();
+      return;
+    }
+
+    publishSelectedDomainId = state.customDomainId;
+    publishSelectedDomainName = state.customDomainName;
+
+    if (!publishSelectedDomainId && state.availableDomains && state.availableDomains.length > 0) {
+      var act = state.availableDomains.find(function(d) { return d.status === 'active'; }) || state.availableDomains[0];
+      if (act) {
+        publishSelectedDomainId = act.id;
+        publishSelectedDomainName = act.domain;
+      }
+    }
+
+    var slugInput = document.getElementById('publish-funnel-slug');
+    if (slugInput) slugInput.value = state.slug || 'minha-campanha';
+
+    renderizarHostingCards('publish-hosting-cards-grid', publishSelectedDomainId, state.slug);
+    atualizarPublishUrlPreview();
+
+    if (typeof modal.showModal === 'function') modal.showModal();
+    else modal.style.display = 'block';
+  }
+
+  function fecharModalPublicarHospedagem() {
+    var modal = document.getElementById('modal-publicar-hospedagem');
+    if (!modal) return;
+    if (typeof modal.close === 'function') modal.close();
+    else modal.style.display = 'none';
+  }
+
+  function onPublishSlugInput(val) {
+    atualizarPublishUrlPreview();
+  }
+
+  function atualizarPublishUrlPreview() {
+    var slugInput = document.getElementById('publish-funnel-slug');
+    var rawSlug = slugInput ? slugInput.value : state.slug;
+    var safeSlug = sanitizeSlug(rawSlug) || 'minha-campanha';
+
+    var domainText = publishSelectedDomainName;
+    if (!domainText && publishSelectedDomainId && state.availableDomains) {
+      var d = state.availableDomains.find(function(x) { return String(x.id) === String(publishSelectedDomainId); });
+      if (d) domainText = d.domain;
+    }
+    if (!domainText) domainText = window.location.host;
+
+    var previewEl = document.getElementById('publish-funnel-url-preview');
+    if (previewEl) {
+      previewEl.textContent = 'https://' + domainText + '/f/' + safeSlug;
+    }
+
+    renderizarHostingCards('publish-hosting-cards-grid', publishSelectedDomainId, safeSlug);
+  }
+
+  function confirmarPublicacaoHospedagem(event) {
+    if (event && event.preventDefault) event.preventDefault();
+
+    var slugInput = document.getElementById('publish-funnel-slug');
+    var rawSlug = slugInput ? slugInput.value : state.slug;
+    var safeSlug = sanitizeSlug(rawSlug) || 'pagina';
+
+    state.slug = safeSlug;
+    state.customDomainId = publishSelectedDomainId ? parseInt(publishSelectedDomainId, 10) : null;
+    state.customDomainName = publishSelectedDomainName || '';
+
+    // Sincroniza campos do topo
+    var topSlug = document.getElementById('funnel-slug');
+    if (topSlug) topSlug.value = state.slug;
+
+    var topDom = document.getElementById('builder-funnel-domain-select');
+    if (topDom) topDom.value = state.customDomainId ? String(state.customDomainId) : '';
+
+    fecharModalPublicarHospedagem();
+    executarPublicacaoFunil();
+  }
+
+  function executarPublicacaoFunil() {
     var nameInput = document.getElementById('funnel-name');
     var name = (nameInput ? nameInput.value : state.name) || 'Página';
     var slug = state.slug || 'pagina';
@@ -965,6 +1284,14 @@
         funnel_id: state.funnelId,
         name: name,
         slug: slug,
+        custom_domain_id: state.customDomainId,
+        template_slug: state.templateSlug || 'default',
+        settings_config: {
+          tracking: {
+            meta_pixel_id: state.metaPixelId || '',
+            cta_track_event: state.ctaTrackEvent || 'InitiateCheckout'
+          }
+        },
         html_content: state.currentHtml,
         draft_content: state.currentHtml,
         workspace_id: wsId
@@ -975,8 +1302,9 @@
         state.funnelId = data.funnel_id;
         state.slug = data.slug;
         marcarSalvo('Página no ar');
+        atualizarDisplayLinkPublico();
         
-        var pubUrl = data.public_url || (window.location.origin + '/f/' + data.slug);
+        var pubUrl = data.public_url || getPublicUrl();
         
         // Abre o modal de sucesso com link público pronto
         var modalInput = document.getElementById('modal-published-url-input');
@@ -1039,18 +1367,22 @@
           var isPub = (f.status === 'published');
           var badgeClass = isPub ? 'badge-success' : 'badge-neutral';
           var badgeTxt = isPub ? 'No ar' : 'Rascunho';
+          var tplBadge = f.template_slug === 'pressel-premium' ? '<span style="font-size:10px; background:#fef08a; color:#854d0e; padding:1px 6px; border-radius:4px; font-weight:700; margin-left:4px;">Pressel</span>' : '';
+          var domainBadge = f.domain ? '<span style="font-size:10.5px; color:#3b82f6; display:block; margin-top:2px;">🌐 ' + escapeHtml(f.domain) + '</span>' : '';
           var pubUrl = f.public_url || (window.location.origin + '/f/' + f.slug);
 
           return `
             <div class="elementor-page-item ${isCurrent ? 'active' : ''}" onclick="abrirPaginaElementor(${f.id})">
               <div class="elementor-page-item-top">
-                <span class="elementor-page-item-title">${escapeHtml(f.name || f.slug)}</span>
+                <span class="elementor-page-item-title">${escapeHtml(f.name || f.slug)}${tplBadge}</span>
                 <span class="badge ${badgeClass}" style="font-size:10.5px;"><span class="badge-dot-indicator"></span> ${badgeTxt}</span>
               </div>
               <span class="elementor-page-item-slug">/f/${escapeHtml(f.slug)}</span>
+              ${domainBadge}
               <div class="elementor-page-item-actions" onclick="event.stopPropagation()">
                 <button type="button" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px;" onclick="copiarValor('${pubUrl}')">Copiar Link</button>
                 <a href="${pubUrl}" target="_blank" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px; text-decoration:none;">Abrir</a>
+                <button type="button" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px;" onclick="abrirModalHospedagemParaPagina(${f.id})" title="Alterar domínio de hospedagem desta página">🌐 Hospedagem</button>
                 <button type="button" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px; color:#ef4444;" onclick="excluirPagina(${f.id})">Excluir</button>
               </div>
             </div>
@@ -1072,32 +1404,46 @@
         state.funnelId = f.id;
         state.name = f.name || 'Página';
         state.slug = f.slug || 'pagina';
+        state.templateSlug = f.template_slug || 'default';
+        state.customDomainId = f.custom_domain_id || null;
+        state.customDomainName = f.domain || '';
         state.currentHtml = f.draft_content || f.html_content || getDefaultTemplate();
+
+        if (f.settings_config) {
+          try {
+            var cfg = typeof f.settings_config === 'string' ? JSON.parse(f.settings_config) : f.settings_config;
+            if (cfg && cfg.tracking) {
+              state.metaPixelId = cfg.tracking.meta_pixel_id || '';
+              state.ctaTrackEvent = cfg.tracking.cta_track_event || 'InitiateCheckout';
+            }
+          } catch(e) {}
+        }
 
         var nameInput = document.getElementById('funnel-name');
         if (nameInput) nameInput.value = state.name;
 
+        var slugInput = document.getElementById('funnel-slug');
+        if (slugInput) slugInput.value = state.slug;
+
+        var domSelect = document.getElementById('builder-funnel-domain-select');
+        if (domSelect) domSelect.value = state.customDomainId ? String(state.customDomainId) : '';
+
+        var pixelInput = document.getElementById('builder-pixel-id-input');
+        if (pixelInput) pixelInput.value = state.metaPixelId;
+
+        var pixelEventSel = document.getElementById('builder-pixel-event-select');
+        if (pixelEventSel) pixelEventSel.value = state.ctaTrackEvent || 'InitiateCheckout';
+
         if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
         renderPreview(true);
         marcarSalvo(f.status === 'published' ? 'Página no ar' : 'Rascunho salvo');
+        atualizarDisplayLinkPublico();
         togglePagesDrawer();
       });
   }
 
   function novoFunilElementor() {
-    state.funnelId = null;
-    state.name = 'Nova Página ' + Math.floor(Math.random() * 900 + 100);
-    state.slug = 'oferta-' + Math.floor(Math.random() * 9000 + 1000);
-    state.currentHtml = getDefaultTemplate();
-
-    var nameInput = document.getElementById('funnel-name');
-    if (nameInput) nameInput.value = state.name;
-
-    if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
-    renderPreview(true);
-    marcarModificado();
-    togglePagesDrawer();
-    window.showToast && window.showToast('Nova página criada no editor!', 'success');
+    abrirModalNovoFunil();
   }
 
   function excluirPagina(id) {
@@ -1106,7 +1452,7 @@
     window.apiFetch('../api/admin/funnels.php?id=' + id + '&workspace_id=' + wsId, { method: 'DELETE' })
       .then(function(data) {
         window.showToast && window.showToast('Página removida com sucesso.', 'success');
-        if (state.funnelId === id) novoFunilElementor();
+        if (state.funnelId === id) carregarFunilInicial();
         else carregarListaGaveta();
       });
   }
@@ -1125,10 +1471,36 @@
           state.funnelId = f.id;
           state.name = f.name || 'Oferta Especial';
           state.slug = f.slug || 'oferta-especial';
+          state.templateSlug = f.template_slug || 'default';
+          state.customDomainId = f.custom_domain_id || null;
+          state.customDomainName = f.domain || '';
           state.currentHtml = f.draft_content || f.html_content || getDefaultTemplate();
+
+          if (f.settings_config) {
+            try {
+              var cfg = typeof f.settings_config === 'string' ? JSON.parse(f.settings_config) : f.settings_config;
+              if (cfg && cfg.tracking) {
+                state.metaPixelId = cfg.tracking.meta_pixel_id || '';
+                state.ctaTrackEvent = cfg.tracking.cta_track_event || 'InitiateCheckout';
+              }
+            } catch(e) {}
+          }
           
           var nameInput = document.getElementById('funnel-name');
           if (nameInput) nameInput.value = state.name;
+
+          var slugInput = document.getElementById('funnel-slug');
+          if (slugInput) slugInput.value = state.slug;
+
+          var domSelect = document.getElementById('builder-funnel-domain-select');
+          if (domSelect) domSelect.value = state.customDomainId ? String(state.customDomainId) : '';
+
+          var pixelInput = document.getElementById('builder-pixel-id-input');
+          if (pixelInput) pixelInput.value = state.metaPixelId;
+
+          var pixelEventSel = document.getElementById('builder-pixel-event-select');
+          if (pixelEventSel) pixelEventSel.value = state.ctaTrackEvent || 'InitiateCheckout';
+
           marcarSalvo(f.status === 'published' ? 'Página no ar' : 'Rascunho salvo');
         } else {
           state.currentHtml = getDefaultTemplate();
@@ -1137,12 +1509,383 @@
 
         if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
         renderPreview(true);
+        atualizarDisplayLinkPublico();
       })
       .catch(function(e) {
         state.currentHtml = getDefaultTemplate();
         if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
         renderPreview(true);
+        atualizarDisplayLinkPublico();
       });
+  }
+
+  // ══ COMPONENTE VISUAL DE HOSPEDAGEM (ESTILO HOSPEDAGEM / VERCEL / HOSTINGER) ══
+  function renderizarHostingCards(containerId, currentSelectedId, slug) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    var domains = state.availableDomains || [];
+    var currentHost = window.location.host || 'app.upscale.com.br';
+    var safeSlug = slug ? sanitizeSlug(slug) : (state.slug || 'minha-campanha');
+    var isDefaultPlatformSelected = (!currentSelectedId || currentSelectedId === '' || currentSelectedId === '0');
+
+    var html = '';
+
+    // 1. Cards de cada domínio próprio cadastrado
+    domains.forEach(function(d) {
+      var isSelected = (String(d.id) === String(currentSelectedId));
+      var isOk = (d.status === 'active');
+      var fullUrl = 'https://' + escapeHtml(d.domain) + '/f/' + escapeHtml(safeSlug);
+
+      html += `
+        <div class="hosting-card ${isSelected ? 'selected' : ''}" onclick="selecionarHostingCard('${containerId}', '${d.id}', '${escapeHtml(d.domain)}')">
+          <div class="hosting-card-head">
+            <div class="hosting-card-radio-row">
+              <div class="hosting-radio-dot"></div>
+              <div>
+                <div class="hosting-card-domain-name">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#175CFF" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span>${escapeHtml(d.domain)}</span>
+                  ${d.is_primary ? '<span class="badge badge-primary" style="font-size:10px; padding:1px 5px;">Principal</span>' : ''}
+                </div>
+                <div class="hosting-card-domain-desc">Domínio próprio verificado • Servidor <code>179.198.96.35</code></div>
+              </div>
+            </div>
+            <div class="hosting-card-badges">
+              <span class="badge ${isOk ? 'badge-success' : 'badge-warning'}" style="font-size:11px;">
+                <span class="badge-dot-indicator"></span> ${isOk ? 'DNS Apontado' : 'Pendente DNS'}
+              </span>
+              <span class="badge ${isOk ? 'badge-success' : 'badge-neutral'}" style="font-size:11px;">
+                ${isOk ? '🔒 SSL Ativo' : '⏳ Aguardando'}
+              </span>
+            </div>
+          </div>
+          <div class="hosting-card-url-box">
+            <span>Link: ${fullUrl}</span>
+            <span style="font-size:10.5px; opacity:0.8;">${isSelected ? '✓ Selecionado' : 'Clique para selecionar'}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    // 2. Opção de Hospedagem Padrão da Plataforma
+    var defaultUrl = 'https://' + currentHost + '/f/' + escapeHtml(safeSlug);
+    html += `
+      <div class="hosting-card ${isDefaultPlatformSelected ? 'selected' : ''}" onclick="selecionarHostingCard('${containerId}', '', '')">
+        <div class="hosting-card-head">
+          <div class="hosting-card-radio-row">
+            <div class="hosting-radio-dot"></div>
+            <div>
+              <div class="hosting-card-domain-name">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#64748b" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                <span>Hospedagem Padrão da Plataforma</span>
+              </div>
+              <div class="hosting-card-domain-desc">Subdomínio padrão do sistema • Sem necessidade de configurar DNS</div>
+            </div>
+          </div>
+          <div class="hosting-card-badges">
+            <span class="badge badge-primary" style="font-size:11px;">⚡ Instantâneo</span>
+            <span class="badge badge-neutral" style="font-size:11px;">🔒 HTTPS Seguro</span>
+          </div>
+        </div>
+        <div class="hosting-card-url-box">
+          <span>Link: ${defaultUrl}</span>
+          <span style="font-size:10.5px; opacity:0.8;">${isDefaultPlatformSelected ? '✓ Selecionado' : 'Clique para selecionar'}</span>
+        </div>
+      </div>
+    `;
+
+    // 3. Botão para conectar novo domínio
+    html += `
+      <button type="button" class="btn-hosting-add-inline" onclick="irParaAdicionarDominio()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>+ Conectar Novo Domínio Personalizado (Apontar Tipo A para 179.198.96.35)</span>
+      </button>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  function selecionarHostingCard(containerId, domId, domName) {
+    if (containerId === 'modal-hosting-cards-grid') {
+      var hidId = document.getElementById('modal-funnel-domain-id');
+      var hidName = document.getElementById('modal-funnel-domain-name');
+      var selDom = document.getElementById('modal-funnel-domain');
+      if (hidId) hidId.value = domId || '';
+      if (hidName) hidName.value = domName || '';
+      if (selDom) selDom.value = domId || '';
+      atualizarModalUrlPreview();
+    } else if (containerId === 'publish-hosting-cards-grid') {
+      publishSelectedDomainId = domId || null;
+      publishSelectedDomainName = domName || '';
+      atualizarPublishUrlPreview();
+    }
+  }
+
+  function irParaAdicionarDominio() {
+    fecharModalNovoFunil();
+    fecharModalPublicarHospedagem();
+    if (window.selecionarSubabaDominios) {
+      window.selecionarSubabaDominios('dominios');
+    }
+    var inp = document.getElementById('domain-input');
+    if (inp) {
+      inp.focus();
+      inp.scrollIntoView({ behavior: 'smooth' });
+    }
+    window.showToast && window.showToast('Digite seu novo domínio e clique em "Conectar domínio".', 'info');
+  }
+
+  function abrirModalHospedagemParaPagina(id) {
+    var wsId = window.currentWsId || 2;
+    window.apiFetch('../api/admin/funnels.php?workspace_id=' + wsId)
+      .then(function(data) {
+        var f = (data.funnels || []).find(function(x) { return x.id === id; });
+        if (!f) return;
+        abrirPaginaElementor(id);
+        setTimeout(function() {
+          abrirModalPublicarHospedagem();
+        }, 180);
+      });
+  }
+
+  // ══ MODAL DE CRIAÇÃO COM ESCOLHA DE TEMPLATE, SLUG E HOSPEDAGEM ══
+  var selectedTemplateSlug = 'pressel-premium';
+
+  function abrirModalNovoFunil() {
+    selectedTemplateSlug = 'pressel-premium';
+    var modal = document.getElementById('modal-novo-funil-template');
+    if (!modal) return;
+
+    selecionarCardTemplate('pressel-premium');
+    var rnd = Math.floor(Math.random() * 900 + 100);
+    var nameInput = document.getElementById('modal-funnel-name');
+    var slugInput = document.getElementById('modal-funnel-slug');
+    var pixInput = document.getElementById('modal-funnel-pixel');
+    var hidId = document.getElementById('modal-funnel-domain-id');
+    var hidName = document.getElementById('modal-funnel-domain-name');
+
+    if (nameInput) nameInput.value = 'Ranger V6 Ação Especial';
+    if (slugInput) {
+      slugInput.value = 'ranger-v6-' + rnd;
+      delete slugInput.dataset.manualEdit;
+    }
+    if (pixInput) pixInput.value = state.metaPixelId || '';
+
+    // Escolhe o domínio inicial padrão: o ativo do workspace ou o primário
+    var initialDomId = state.customDomainId;
+    var initialDomName = state.customDomainName;
+    if (!initialDomId && state.availableDomains && state.availableDomains.length > 0) {
+      var act = state.availableDomains.find(function(d) { return d.status === 'active'; }) || state.availableDomains[0];
+      if (act) {
+        initialDomId = act.id;
+        initialDomName = act.domain;
+      }
+    }
+    if (hidId) hidId.value = initialDomId ? String(initialDomId) : '';
+    if (hidName) hidName.value = initialDomName || '';
+
+    var currentSlug = slugInput ? slugInput.value : ('ranger-v6-' + rnd);
+    renderizarHostingCards('modal-hosting-cards-grid', initialDomId, currentSlug);
+    atualizarModalUrlPreview();
+
+    if (typeof modal.showModal === 'function') modal.showModal();
+    else modal.style.display = 'block';
+  }
+
+  function fecharModalNovoFunil() {
+    var modal = document.getElementById('modal-novo-funil-template');
+    if (!modal) return;
+    if (typeof modal.close === 'function') modal.close();
+    else modal.style.display = 'none';
+  }
+
+  function selecionarCardTemplate(tplSlug) {
+    selectedTemplateSlug = tplSlug;
+    document.querySelectorAll('.template-card').forEach(function(card) {
+      card.classList.toggle('active', card.getAttribute('data-template') === tplSlug);
+    });
+
+    var nameInput = document.getElementById('modal-funnel-name');
+    var slugInput = document.getElementById('modal-funnel-slug');
+    var rnd = Math.floor(Math.random() * 900 + 100);
+
+    if (slugInput && !slugInput.dataset.manualEdit) {
+      if (tplSlug === 'pressel-premium') {
+        if (nameInput) nameInput.value = 'Ranger V6 Ação Especial';
+        slugInput.value = 'ranger-v6-' + rnd;
+      } else if (tplSlug === 'default') {
+        if (nameInput) nameInput.value = 'Oferta Booster Especial';
+        slugInput.value = 'oferta-booster-' + rnd;
+      } else {
+        if (nameInput) nameInput.value = 'Página Personalizada';
+        slugInput.value = 'pagina-' + rnd;
+      }
+      atualizarModalUrlPreview();
+    }
+  }
+
+  function onModalFunnelNameInput(val) {
+    var slugInput = document.getElementById('modal-funnel-slug');
+    if (slugInput && !slugInput.dataset.manualEdit) {
+      slugInput.value = sanitizeSlug(val);
+    }
+    atualizarModalUrlPreview();
+  }
+
+  function onModalFunnelSlugInput(val) {
+    var slugInput = document.getElementById('modal-funnel-slug');
+    if (slugInput) slugInput.dataset.manualEdit = '1';
+    atualizarModalUrlPreview();
+  }
+
+  function onModalFunnelDomainChange() {
+    atualizarModalUrlPreview();
+  }
+
+  function atualizarModalUrlPreview() {
+    var slug = sanitizeSlug((document.getElementById('modal-funnel-slug') || {}).value || 'minha-pagina');
+    var hidId = (document.getElementById('modal-funnel-domain-id') || {}).value;
+    var hidName = (document.getElementById('modal-funnel-domain-name') || {}).value;
+
+    var domainText = hidName;
+    if (!domainText && hidId && state.availableDomains) {
+      var d = state.availableDomains.find(function(x) { return String(x.id) === String(hidId); });
+      if (d) domainText = d.domain;
+    }
+    if (!domainText) domainText = window.location.host || 'app.upscale.com.br';
+
+    var previewEl = document.getElementById('modal-funnel-url-preview');
+    if (previewEl) {
+      previewEl.textContent = 'https://' + domainText + '/f/' + slug;
+    }
+
+    renderizarHostingCards('modal-hosting-cards-grid', hidId, slug);
+  }
+
+  function criarNovoFunilConfirmar(event) {
+    if (event && event.preventDefault) event.preventDefault();
+
+    var name = (document.getElementById('modal-funnel-name') || {}).value || 'Nova Página';
+    var rawSlug = (document.getElementById('modal-funnel-slug') || {}).value || 'pagina';
+    var slug = sanitizeSlug(rawSlug) || ('pagina-' + Date.now().toString(36));
+    var hidId = (document.getElementById('modal-funnel-domain-id') || {}).value;
+    var domId = hidId ? parseInt(hidId, 10) : null;
+    var domName = (document.getElementById('modal-funnel-domain-name') || {}).value || '';
+    if (!domName && domId && state.availableDomains) {
+      var d = state.availableDomains.find(function(x) { return String(x.id) === String(domId); });
+      if (d) domName = d.domain;
+    }
+    var pixelId = ((document.getElementById('modal-funnel-pixel') || {}).value || '').trim();
+
+    var initialHtml = '';
+    if (selectedTemplateSlug === 'pressel-premium') {
+      if (window.PresselPremium) {
+        var cfg = window.PresselPremium.getDefaultConfig();
+        cfg.settings.seo.title = name;
+        if (pixelId) cfg.settings.tracking.meta_pixel_id = pixelId;
+        initialHtml = window.PresselPremium.generateHtml(cfg);
+      } else {
+        initialHtml = getDefaultTemplate();
+      }
+    } else if (selectedTemplateSlug === 'blank') {
+      initialHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(name)}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:sans-serif; }
+    body { background:#0b0e12; color:#ffffff; padding:40px 16px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+    .container { max-width:640px; width:100%; text-align:center; padding:40px 20px; }
+    h1 { font-size:32px; margin-bottom:12px; }
+    p { color:#94a3b8; margin-bottom:24px; font-size:16px; }
+    .btn-cta { display:inline-block; background:#175CFF; color:#fff; text-decoration:none; padding:14px 28px; border-radius:10px; font-weight:700; }
+  </style>
+</head>
+<body>
+  <div class="container" data-block-id="blk_main" data-block-type="container">
+    <h1 data-block-id="blk_title" data-block-type="heading">${escapeHtml(name)}</h1>
+    <p data-block-id="blk_desc" data-block-type="text">Comece a personalizar sua nova página no construtor visual.</p>
+    <a href="#participar" class="btn-cta js-buy" data-block-id="blk_btn" data-block-type="button">Participar Agora</a>
+  </div>
+  ${getDefaultTrackingRuntime(pixelId, 'InitiateCheckout', name, 0)}
+</body>
+</html>`;
+    } else {
+      initialHtml = getDefaultTemplate();
+    }
+
+    var wsId = window.currentWsId || 2;
+    window.apiFetch('../api/admin/funnels.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'save',
+        workspace_id: wsId,
+        name: name,
+        slug: slug,
+        custom_domain_id: domId,
+        template_slug: selectedTemplateSlug,
+        settings_config: {
+          tracking: {
+            meta_pixel_id: pixelId,
+            cta_track_event: 'InitiateCheckout'
+          }
+        },
+        draft_content: initialHtml,
+        html_content: initialHtml
+      })
+    })
+    .then(function(data) {
+      if (data.status === 'success') {
+        state.funnelId = data.funnel_id;
+        state.name = name;
+        state.slug = data.slug || slug;
+        state.templateSlug = selectedTemplateSlug;
+        state.customDomainId = domId;
+        state.customDomainName = domName;
+        state.metaPixelId = pixelId;
+        state.currentHtml = initialHtml;
+
+        var nameInput = document.getElementById('funnel-name');
+        if (nameInput) nameInput.value = state.name;
+
+        var slugInput = document.getElementById('funnel-slug');
+        if (slugInput) slugInput.value = state.slug;
+
+        var domTopbar = document.getElementById('builder-funnel-domain-select');
+        if (domTopbar && domId) domTopbar.value = String(domId);
+
+        var pixInput = document.getElementById('builder-pixel-id-input');
+        if (pixInput) pixInput.value = state.metaPixelId;
+
+        if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
+        renderPreview(true);
+        marcarSalvo('Rascunho criado');
+        atualizarDisplayLinkPublico();
+        fecharModalNovoFunil();
+        carregarListaGaveta();
+        window.showToast && window.showToast('Página criada com sucesso! Slug: /f/' + state.slug, 'success');
+      } else {
+        window.showToast && window.showToast(data.message || 'Erro ao criar página.', 'error');
+      }
+    })
+    .catch(function(e) {
+      console.error(e);
+      window.showToast && window.showToast('Erro de comunicação ao criar página.', 'error');
+    });
+  }
+
+  // ══ RASTREAMENTO & META PIXEL ══
+  function atualizarPixelIdTracking(val) {
+    state.metaPixelId = (val || '').trim();
+    marcarModificado();
+  }
+
+  function atualizarPixelEventTracking(val) {
+    state.ctaTrackEvent = val || 'InitiateCheckout';
+    marcarModificado();
   }
 
   // ══ AÇÕES DE CÓDIGO HTML (FORMATAR E COPIAR) ══
@@ -1153,14 +1896,13 @@
 
   function formatarCodigoHtml() {
     if (!state.codeMirror) return;
-    // Indentação básica de tags
     var val = state.codeMirror.getValue();
     state.codeMirror.setValue(val);
     window.showToast && window.showToast('Código formatado com sucesso.', 'success');
   }
 
   function copiarLinkPublicoAtual() {
-    var pubUrl = window.location.origin + '/f/' + (state.slug || 'oferta-especial');
+    var pubUrl = getPublicUrl();
     window.copiarValor && window.copiarValor(pubUrl);
   }
 
@@ -1225,5 +1967,25 @@
   window.copiarLinkPublicoAtual = copiarLinkPublicoAtual;
   window.marcarFunilModificado = marcarModificado;
   window.initElementorBuilder = initBuilder;
+  window.trocarDominioBuilder = trocarDominioBuilder;
+  window.atualizarSlugBuilder = atualizarSlugBuilder;
+  window.abrirModalNovoFunil = abrirModalNovoFunil;
+  window.fecharModalNovoFunil = fecharModalNovoFunil;
+  window.selecionarCardTemplate = selecionarCardTemplate;
+  window.onModalFunnelNameInput = onModalFunnelNameInput;
+  window.onModalFunnelSlugInput = onModalFunnelSlugInput;
+  window.onModalFunnelDomainChange = onModalFunnelDomainChange;
+  window.criarNovoFunilConfirmar = criarNovoFunilConfirmar;
+  window.atualizarPixelIdTracking = atualizarPixelIdTracking;
+  window.atualizarPixelEventTracking = atualizarPixelEventTracking;
+  window.abrirModalPublicarHospedagem = abrirModalPublicarHospedagem;
+  window.fecharModalPublicarHospedagem = fecharModalPublicarHospedagem;
+  window.confirmarPublicacaoHospedagem = confirmarPublicacaoHospedagem;
+  window.selecionarHostingCard = selecionarHostingCard;
+  window.onPublishSlugInput = onPublishSlugInput;
+  window.irParaAdicionarDominio = irParaAdicionarDominio;
+  window.abrirModalHospedagemParaPagina = abrirModalHospedagemParaPagina;
+  window.renderizarHostingCards = renderizarHostingCards;
 
 })(window, document);
+

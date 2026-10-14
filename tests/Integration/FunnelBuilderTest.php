@@ -93,6 +93,67 @@ class FunnelBuilderTest extends TestCase
     {
         $this->assertTrue(file_exists(__DIR__ . '/../../hub/elementor-builder.css'), "elementor-builder.css must exist.");
         $this->assertTrue(file_exists(__DIR__ . '/../../hub/elementor-builder.js'), "elementor-builder.js must exist.");
+        $this->assertTrue(file_exists(__DIR__ . '/../../hub/pressel-premium-builder.js'), "pressel-premium-builder.js must exist.");
         $this->assertTrue(file_exists(__DIR__ . '/../../funnel.php'), "funnel.php must exist.");
+    }
+
+    public function testCreatePresselWithCustomSlugDomainAndFullTracking(): void
+    {
+        $slug = 'acao-ranger-v6-' . time();
+        $pixelId = '987654321012345';
+        $cfg = \App\Templates\TemplateRegistry::getDefaultConfig('pressel-premium');
+        $blocks = $cfg['blocks'];
+        $settings = $cfg['settings'];
+        $settings['tracking']['meta_pixel_id'] = $pixelId;
+        $settings['seo']['title'] = 'Ranger V6 Brayam Braz';
+
+        $renderedHtml = \App\Templates\TemplateRegistry::render('pressel-premium', $blocks, $settings, ['is_editor' => false]);
+
+        $this->assertTrue(str_contains($renderedHtml, 'upscale_campaign_utms'), "Must contain UTM storage key.");
+        $this->assertTrue(str_contains($renderedHtml, 'ScrollDepth'), "Must contain ScrollDepth tracking.");
+        $this->assertTrue(str_contains($renderedHtml, 'TimeOnPage'), "Must contain TimeOnPage tracking.");
+        $this->assertTrue(str_contains($renderedHtml, 'InitiateCheckout'), "Must contain InitiateCheckout tracking.");
+        $this->assertTrue(str_contains($renderedHtml, $pixelId), "Must contain Meta Pixel ID.");
+
+        // Inserir funil vinculado a domínio e slug
+        $stmtDom = $this->pdo->query("SELECT id, domain FROM custom_domains WHERE domain = 'canedo.upscalebrasil.com' LIMIT 1");
+        $domRow = $stmtDom->fetch(PDO::FETCH_ASSOC);
+        $domId = $domRow ? (int)$domRow['id'] : null;
+
+        $stmt = $this->pdo->prepare("
+            INSERT INTO funnels (
+                workspace_id, custom_domain_id, name, slug, template_slug,
+                draft_content, published_content, html_content,
+                blocks_config, settings_config,
+                status, is_home, published_at
+            ) VALUES (1, ?, 'Ação Ranger V6 Brayam Braz', ?, 'pressel-premium', ?, ?, ?, ?, ?, 'published', 0, CURRENT_TIMESTAMP)
+        ");
+        $stmt->execute([
+            $domId,
+            $slug,
+            $renderedHtml,
+            $renderedHtml,
+            $renderedHtml,
+            json_encode($blocks),
+            json_encode($settings),
+        ]);
+        $funnelId = (int)$this->pdo->lastInsertId();
+        $this->assertTrue($funnelId > 0, "Funnel ID must be positive.");
+
+        // Simular requisição ao funnel.php com domínio e slug
+        $_GET['slug'] = $slug;
+        $_SERVER['HTTP_HOST'] = 'canedo.upscalebrasil.com';
+        $_SERVER['REQUEST_URI'] = '/f/' . $slug;
+
+        ob_start();
+        require __DIR__ . '/../../funnel.php';
+        $output = ob_get_clean();
+
+        $this->assertTrue(str_contains($output, 'upscale_campaign_utms'), "Output must contain full UTM tracking.");
+        $this->assertTrue(str_contains($output, $pixelId), "Output must contain Meta Pixel.");
+        $this->assertTrue(str_contains($output, 'Ranger'), "Output must contain campaign title.");
+
+        // Limpeza
+        $this->pdo->prepare("DELETE FROM funnels WHERE id = ?")->execute([$funnelId]);
     }
 }

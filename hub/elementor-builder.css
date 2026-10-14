@@ -1002,3 +1002,361 @@
     border-bottom: 1px solid #e2e8f0;
   }
 }
+
+/* ══ 8. SLUG, DOMÍNIO & NOVAS PÁGINAS NO TOPBAR ══ */
+.elementor-slug-box {
+  display: inline-flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 12.5px;
+  transition: all 0.2s ease;
+  max-width: 190px;
+}
+.elementor-slug-box:focus-within {
+  border-color: #175CFF;
+  box-shadow: 0 0 0 3px rgba(23, 92, 255, 0.12);
+  background: #ffffff;
+}
+.elementor-slug-prefix {
+  font-family: 'Space Grotesk', monospace, sans-serif;
+  font-weight: 700;
+  color: #64748b;
+  margin-right: 3px;
+  font-size: 12px;
+  user-select: none;
+}
+.elementor-slug-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: 'Space Grotesk', monospace, sans-serif;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: #0f172a;
+  width: 100%;
+  min-width: 70px;
+}
+
+.elementor-domain-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+.elementor-domain-select {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  max-width: 170px;
+}
+
+.btn-builder-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #175CFF 0%, #0040df 100%);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(23, 92, 255, 0.28);
+  transition: all 0.2s ease;
+}
+.btn-builder-new:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(23, 92, 255, 0.38);
+}
+
+/* ══ 9. CARDS DE TEMPLATES NO MODAL NOVO FUNIL ══ */
+.template-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 720px) {
+  .template-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.template-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  cursor: pointer;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  text-align: left;
+}
+.template-card:hover {
+  border-color: #93c5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+.template-card.active {
+  border-color: #175CFF;
+  background: #f8faff;
+  box-shadow: 0 0 0 3px rgba(23, 92, 255, 0.15);
+}
+.template-badge-chip {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.template-badge-chip.badge-rec {
+  background: #fef08a;
+  color: #854d0e;
+}
+.template-badge-chip.badge-booster {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.template-badge-chip.badge-blank {
+  background: #f1f5f9;
+  color: #475569;
+}
+.template-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.template-card-desc {
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ══ 10. ABA DE RASTREAMENTO & PIXEL (TRAQUEIE TUDO) ══ */
+.elementor-tracking-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.tracking-card-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tracking-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tracking-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tracking-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.tracking-status-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.4;
+  background: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+.tracking-status-item svg {
+  flex-shrink: 0;
+  color: #10b981;
+  margin-top: 2px;
+}
+
+/* ══ 11. SELETOR DE HOSPEDAGEM & DOMÍNIOS (ESTILO HOSPEDAGEM / VERCEL / HOSTINGER) ══ */
+.hosting-section-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.hosting-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.hosting-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.hosting-section-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+  line-height: 1.45;
+}
+.hosting-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 2px;
+  margin-bottom: 10px;
+}
+.hosting-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  user-select: none;
+  position: relative;
+}
+.hosting-card:hover {
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+.hosting-card.selected {
+  border-color: #175CFF;
+  background: #f8faff;
+  box-shadow: 0 0 0 3px rgba(23, 92, 255, 0.12);
+}
+.hosting-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.hosting-card-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hosting-radio-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.hosting-card.selected .hosting-radio-dot {
+  border-color: #175CFF;
+  background: #175CFF;
+}
+.hosting-card.selected .hosting-radio-dot::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.hosting-card-domain-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hosting-card-domain-desc {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+.hosting-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hosting-card-url-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-family: var(--font-mono, monospace);
+  color: #334155;
+  margin-top: 2px;
+}
+.hosting-card.selected .hosting-card-url-box {
+  background: #e0e7ff;
+  color: #1e40af;
+  font-weight: 600;
+}
+.btn-hosting-add-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: 1px dashed #94a3b8;
+  border-radius: 10px;
+  background: transparent;
+  color: #175CFF;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+.btn-hosting-add-inline:hover {
+  background: #eff6ff;
+  border-color: #175CFF;
+}
+
+

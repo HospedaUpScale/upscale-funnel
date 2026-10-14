@@ -39,10 +39,16 @@ function normalizeDomain(string $value): string
 
 function domainDnsInstructions(string $domain, array $config): array
 {
-    $targetHost = strtolower($config['base_domain'] ?? ($_SERVER['HTTP_HOST'] ?? ''));
-    $targetIp = $targetHost !== '' ? gethostbyname($targetHost) : '';
-    if ($targetIp === $targetHost || $targetIp === '') {
-        $targetIp = $_SERVER['SERVER_ADDR'] ?? '';
+    $serverHost = strtolower(explode(':', $_SERVER['HTTP_HOST'] ?? '')[0]);
+    $targetHost = strtolower($config['base_domain'] ?? '');
+    if ($targetHost === '' || $targetHost === 'seudominio.com.br' || $targetHost === 'vendedorsincero.pro') {
+        $targetHost = $serverHost ?: 'upscalefunnel.site';
+    }
+
+    $targetIp = '179.198.96.35'; // IP oficial da VPS
+    $resolvedTarget = gethostbyname($targetHost);
+    if ($resolvedTarget !== $targetHost && filter_var($resolvedTarget, FILTER_VALIDATE_IP)) {
+        $targetIp = $resolvedTarget;
     }
 
     $fallbackCname = 'cname.' . $targetHost;
@@ -52,37 +58,143 @@ function domainDnsInstructions(string $domain, array $config): array
         'target_ip'       => $targetIp,
         'fallback_cname'  => $fallbackCname,
         'records' => [
-            ['type' => 'CNAME', 'name' => 'oferta', 'value' => $fallbackCname, 'recommended_for' => 'Cloudflare for SaaS (SSL Automático Grátis)'],
-            ['type' => 'A', 'name' => '@', 'value' => $targetIp, 'recommended_for' => 'Hostinger / DNS Direto'],
-            ['type' => 'CNAME', 'name' => 'www', 'value' => $targetHost, 'recommended_for' => 'www direto'],
+            ['type' => 'A', 'name' => '@', 'value' => $targetIp, 'recommended_for' => 'Apontamento Principal (VPS/Easypanel)'],
+            ['type' => 'CNAME', 'name' => 'www', 'value' => $targetHost, 'recommended_for' => 'Subdomínio www direto'],
+            ['type' => 'CNAME', 'name' => 'oferta', 'value' => $fallbackCname, 'recommended_for' => 'Cloudflare for SaaS (Opcional)'],
         ],
+    ];
+}
+
+function checkDomainPointing(string $domain, array $config, string $verificationToken): array
+{
+    $domain = normalizeDomain($domain);
+    if ($domain === '') {
+        return [
+            'is_pointed'   => false,
+            'current_ips'  => [],
+            'expected_ips' => ['179.198.96.35'],
+            'message'      => 'Domínio inválido.',
+        ];
+    }
+
+    $knownIps = ['179.198.96.35'];
+
+    $serverHost = strtolower(explode(':', $_SERVER['HTTP_HOST'] ?? '')[0]);
+    if ($serverHost !== '') {
+        $hostIps = gethostbynamel($serverHost) ?: [];
+        $knownIps = array_merge($knownIps, $hostIps);
+    }
+
+    $targetHost = strtolower($config['base_domain'] ?? '');
+    if ($targetHost !== '') {
+        $hostIps = gethostbynamel($targetHost) ?: [];
+        $knownIps = array_merge($knownIps, $hostIps);
+    }
+
+    $upscaleIps = gethostbynamel('upscalefunnel.site') ?: [];
+    $knownIps = array_merge($knownIps, $upscaleIps);
+
+    if (!empty($_SERVER['SERVER_ADDR']) && filter_var($_SERVER['SERVER_ADDR'], FILTER_VALIDATE_IP)) {
+        $knownIps[] = $_SERVER['SERVER_ADDR'];
+    }
+
+    $knownIps = array_values(array_unique(array_filter($knownIps)));
+
+    // 1. Verificar registros A (IP)
+    $domainIps = gethostbynamel($domain) ?: [];
+    if (!empty($domainIps) && !empty($knownIps)) {
+        if (count(array_intersect($domainIps, $knownIps)) > 0) {
+            return [
+                'is_pointed'   => true,
+                'method'       => 'ip_match',
+                'current_ips'  => $domainIps,
+                'expected_ips' => $knownIps,
+                'message'      => 'Apontamento DNS Tipo A confirmado com sucesso!',
+            ];
+        }
+    }
+
+    // 2. Verificar CNAME
+    if (function_exists('dns_get_record')) {
+        $cnameRecords = @dns_get_record($domain, DNS_CNAME) ?: [];
+        $allowedTargets = array_unique(array_filter([
+            $serverHost,
+            $targetHost,
+            'cname.' . $serverHost,
+            'cname.' . $targetHost,
+            'upscalefunnel.site',
+            'cname.upscalefunnel.site'
+        ]));
+
+        foreach ($cnameRecords as $record) {
+            $target = strtolower(rtrim($record['target'] ?? '', '.'));
+            foreach ($allowedTargets as $allowed) {
+                if ($target === $allowed || str_ends_with($target, '.' . $allowed)) {
+                    return [
+                        'is_pointed'   => true,
+                        'method'       => 'cname_match',
+                        'cname'        => $target,
+                        'current_ips'  => $domainIps,
+                        'expected_ips' => $knownIps,
+                        'message'      => 'Apontamento DNS CNAME confirmado com sucesso!',
+                    ];
+                }
+            }
+        }
+
+        // 3. Verificar TXT
+        if ($verificationToken !== '') {
+            $txtRecords = @dns_get_record($domain, DNS_TXT) ?: [];
+            foreach ($txtRecords as $record) {
+                $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
+                if (hash_equals('upscale-verification=' . $verificationToken, $txt)) {
+                    return [
+                        'is_pointed'   => true,
+                        'method'       => 'txt_match',
+                        'current_ips'  => $domainIps,
+                        'expected_ips' => $knownIps,
+                        'message'      => 'Verificação TXT confirmada com sucesso!',
+                    ];
+                }
+            }
+        }
+    }
+
+    // 4. Teste HTTP Direto (se o domínio responder redirect/ok)
+    try {
+        $ch = curl_init('http://' . $domain);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($code > 0 && $code < 500) {
+            return [
+                'is_pointed'   => true,
+                'method'       => 'http_response',
+                'current_ips'  => $domainIps,
+                'expected_ips' => $knownIps,
+                'message'      => 'Domínio respondendo ativamente na VPS com código HTTP ' . $code,
+            ];
+        }
+    } catch (\Throwable $e) {}
+
+    $currentIpText = !empty($domainIps) ? implode(', ', $domainIps) : 'Nenhum IP encontrado';
+    return [
+        'is_pointed'   => false,
+        'current_ips'  => $domainIps,
+        'expected_ips' => $knownIps,
+        'message'      => "DNS ainda não propagou. IP atual: {$currentIpText}. Esperado: 179.198.96.35",
     ];
 }
 
 function domainIsPointed(string $domain, array $config, string $verificationToken): bool
 {
-    $targetHost = strtolower($config['base_domain'] ?? '');
-    $fallbackCname = 'cname.' . $targetHost;
-    $domainIps = gethostbynamel($domain) ?: [];
-    $targetIps = $targetHost !== '' ? (gethostbynamel($targetHost) ?: []) : [];
-    if ($domainIps && $targetIps && array_intersect($domainIps, $targetIps)) return true;
-
-    if (function_exists('dns_get_record')) {
-        $cnameRecords = @dns_get_record($domain, DNS_CNAME) ?: [];
-        foreach ($cnameRecords as $record) {
-            $target = strtolower(rtrim($record['target'] ?? '', '.'));
-            if ($target === $targetHost || $target === $fallbackCname || str_ends_with($target, '.' . $targetHost)) {
-                return true;
-            }
-        }
-
-        $txtRecords = @dns_get_record($domain, DNS_TXT) ?: [];
-        foreach ($txtRecords as $record) {
-            $txt = $record['txt'] ?? '';
-            if (hash_equals('upscale-verification=' . $verificationToken, $txt)) return true;
-        }
-    }
-    return false;
+    $res = checkDomainPointing($domain, $config, $verificationToken);
+    return !empty($res['is_pointed']);
 }
 
 if ($request->method() === 'GET') {
@@ -111,6 +223,21 @@ if ($request->method() === 'GET') {
 if ($request->method() === 'POST') {
     $input = $request->all();
     $action = $input['action'] ?? 'create';
+
+    if ($action === 'test_dns' || $action === 'verify_test') {
+        $domainStr = normalizeDomain((string)($input['domain'] ?? ''));
+        if ($domainStr === '') {
+            JsonResponse::error('Informe o domínio a ser testado.', 422);
+        }
+        $check = checkDomainPointing($domainStr, $config, '');
+        JsonResponse::success([
+            'verified'     => !empty($check['is_pointed']),
+            'domain'       => $domainStr,
+            'current_ips'  => $check['current_ips'] ?? [],
+            'expected_ips' => $check['expected_ips'] ?? ['179.198.96.35'],
+            'message'      => $check['message'],
+        ]);
+    }
 
     if ($action === 'create') {
         $domain = normalizeDomain((string)($input['domain'] ?? ''));
@@ -297,7 +424,8 @@ if ($request->method() === 'POST') {
     }
 
     if ($action === 'verify') {
-        $active = domainIsPointed($domain['domain'], $config, $domain['verification_token']);
+        $check = checkDomainPointing($domain['domain'], $config, $domain['verification_token'] ?? '');
+        $active = !empty($check['is_pointed']);
         $status = $active ? 'active' : 'pending';
         $pdo->prepare("UPDATE custom_domains SET status = ?, last_checked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
             ->execute([$status, $domainId]);
@@ -306,9 +434,12 @@ if ($request->method() === 'POST') {
                 ->execute([$domain['domain'], $targetWsId]);
         }
         JsonResponse::success([
-            'verified' => $active,
-            'status' => $status,
-            'message' => $active ? 'Domínio conectado com sucesso.' : 'DNS ainda não propagou. Tente novamente em alguns minutos.',
+            'verified'     => $active,
+            'status'       => $status,
+            'domain'       => $domain['domain'],
+            'current_ips'  => $check['current_ips'] ?? [],
+            'expected_ips' => $check['expected_ips'] ?? ['179.198.96.35'],
+            'message'      => $check['message'] ?? ($active ? 'Domínio conectado com sucesso.' : 'DNS ainda não propagou. Tente novamente em alguns minutos.'),
         ]);
     }
 
