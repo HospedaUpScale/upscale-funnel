@@ -1784,7 +1784,13 @@
         var cfg = window.PresselPremium.getDefaultConfig();
         cfg.settings.seo.title = name;
         if (pixelId) cfg.settings.tracking.meta_pixel_id = pixelId;
-        initialHtml = window.PresselPremium.generateHtml(cfg);
+        if (typeof window.PresselPremium.renderHtml === 'function') {
+          initialHtml = window.PresselPremium.renderHtml(cfg.blocks || {}, cfg.settings || {}, { is_editor: false });
+        } else if (typeof window.PresselPremium.generateHtml === 'function') {
+          initialHtml = window.PresselPremium.generateHtml(cfg);
+        } else {
+          initialHtml = getDefaultTemplate();
+        }
       } else {
         initialHtml = getDefaultTemplate();
       }
@@ -1936,9 +1942,18 @@
     }
   };
 
+  var currentPreviewModelId = null;
+  var lastFocusedElement = null;
+
   function abrirTelaSelecaoModelos(origem) {
     templatePickerOrigin = origem || 'editor';
     selecionarModeloPicker('pressel-premium-campanhas');
+
+    // Fechar prévia caso estivesse aberta
+    fecharPreviaModal();
+
+    // Ativar modo de tela cheia dentro da área principal
+    document.body.classList.add('in-template-picker');
 
     // Ocultar todas as outras view-panes e exibir a tela dedicada
     document.querySelectorAll('.view-pane').forEach(function(p) {
@@ -1951,6 +1966,13 @@
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
+    // Manter navegação de 'Domínios e funis' destacada na sidebar
+    var navBtnSites = document.getElementById('nav-btn-sites');
+    if (navBtnSites) {
+      document.querySelectorAll('.nav-item-btn').forEach(function(btn) { btn.classList.remove('active'); });
+      navBtnSites.classList.add('active');
+    }
+
     // Fechar drawer caso estivesse aberto
     var drawer = document.getElementById('builder-pages-drawer');
     var backdrop = document.getElementById('builder-drawer-backdrop');
@@ -1961,6 +1983,9 @@
   }
 
   function voltarOrigemTemplatePicker() {
+    fecharPreviaModal();
+    document.body.classList.remove('in-template-picker');
+
     var pickerPane = document.getElementById('view-template-picker');
     if (pickerPane) pickerPane.classList.remove('active');
 
@@ -2022,11 +2047,19 @@
     if (modelId === 'pressel-premium-campanhas' || modelId === 'pressel-premium') {
       if (window.PresselPremium) {
         var cfg = window.PresselPremium.getDefaultConfig();
-        cfg.settings.seo.title = 'Ranger V6 Brayam Braz';
-        if (sanitizeForPreview) {
+        if (cfg && cfg.settings && cfg.settings.seo) {
+          cfg.settings.seo.title = 'Ranger V6 Brayam Braz';
+        }
+        if (sanitizeForPreview && cfg && cfg.settings && cfg.settings.tracking) {
           cfg.settings.tracking.meta_pixel_id = '';
         }
-        html = window.PresselPremium.generateHtml(cfg);
+        if (typeof window.PresselPremium.renderHtml === 'function') {
+          html = window.PresselPremium.renderHtml(cfg.blocks || {}, cfg.settings || {}, { is_editor: false });
+        } else if (typeof window.PresselPremium.generateHtml === 'function') {
+          html = window.PresselPremium.generateHtml(cfg);
+        } else {
+          html = getDefaultTemplate();
+        }
       } else {
         html = getDefaultTemplate();
       }
@@ -2039,9 +2072,9 @@
   <title>Página em Branco — upScale</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background:#F8FAFC; color:#0F172A; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; }
+    body { background:#F8FAFC; color:#0F172A; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; }
     .blank-wrap { max-width:540px; width:100%; text-align:center; background:#ffffff; border:1px dashed #CBD5E1; border-radius:16px; padding:48px 32px; box-shadow:0 4px 16px rgba(0,0,0,0.03); }
-    .blank-icon { width:52px; height:52px; border-radius:12px; background:#EFF6FF; color:#205BFF; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px; font-weight:800; font-family:monospace; font-size:20px; }
+    .blank-icon { width:52px; height:52px; border-radius:12px; background:#EFF6FF; color:#205BFF; display:inline-flex; align-items:center; justify-content:center; margin:0 auto 16px auto; font-weight:800; font-family:monospace; font-size:20px; }
     h1 { font-size:22px; font-weight:800; color:#0F172A; margin-bottom:8px; }
     p { font-size:14px; color:#64748B; margin-bottom:24px; line-height:1.5; }
     .btn-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; background:#205BFF; color:#ffffff; font-weight:700; font-size:14px; padding:12px 24px; border-radius:8px; text-decoration:none; }
@@ -2050,7 +2083,7 @@
 <body>
   <div class="blank-wrap" data-block-id="blk_blank_box" data-block-type="container">
     <div class="blank-icon">&lt;/&gt;</div>
-    <h1 data-block-id="blk_title" data-block-type="heading">Seu layout começa aqui</h1>
+    <h1 data-block-id="blk_title" data-block-type="heading">Página em branco — pronta para personalizar</h1>
     <p data-block-id="blk_desc" data-block-type="text">Insira títulos, textos, cards de oferta, cronômetro e depoimentos no editor visual.</p>
     <a href="#comecar" class="btn-action js-buy" data-block-id="blk_cta" data-block-type="button">Personalizar no Editor</a>
   </div>
@@ -2069,6 +2102,30 @@
         }
         return match;
       });
+
+      // Injetar desativador de pixels e links/botões para que a prévia nunca gere conversões ou navegações
+      var safeGuardScript = `
+        <script>
+          window.fbq = function() {};
+          window.gtag = function() {};
+          document.addEventListener('click', function(e) {
+            var el = e.target.closest('a, button, [onclick], input[type="submit"]');
+            if (el) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }, true);
+          document.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }, true);
+        <\/script>
+      `;
+      if (html.indexOf('</body>') !== -1) {
+        html = html.replace('</body>', safeGuardScript + '</body>');
+      } else {
+        html += safeGuardScript;
+      }
     }
 
     return html;
@@ -2077,42 +2134,91 @@
   function ampliarPreviaModal(modelId, event) {
     if (event && event.stopPropagation) event.stopPropagation();
 
+    // Guardar elemento acionador para restaurar foco ao fechar
+    lastFocusedElement = (event && event.currentTarget) ? event.currentTarget : document.activeElement;
+    currentPreviewModelId = modelId;
+
     var def = TEMPLATE_PICKER_DEFS[modelId] || TEMPLATE_PICKER_DEFS['pressel-premium-campanhas'];
     var titleEl = document.getElementById('tp-modal-preview-name');
     if (titleEl) {
       titleEl.textContent = 'Prévia — ' + def.name;
     }
 
+    var modal = document.getElementById('modal-template-preview-large');
+    var loadingEl = document.getElementById('tp-modal-loading');
+    var errorEl = document.getElementById('tp-modal-error');
     var iframe = document.getElementById('tp-modal-preview-iframe');
-    if (iframe) {
-      var html = getTemplateHtmlForModel(modelId, true);
-      iframe.srcdoc = html;
+
+    if (errorEl) errorEl.style.display = 'none';
+    if (loadingEl) loadingEl.style.display = 'flex';
+
+    if (modal) {
+      modal.classList.add('open');
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
     }
+    document.body.classList.add('tp-modal-open');
 
     setPreviaModalDevice('desktop');
 
-    var modal = document.getElementById('modal-template-preview-large');
-    if (modal) {
-      if (typeof modal.showModal === 'function') {
-        modal.showModal();
-      } else {
-        modal.style.display = 'flex';
+    try {
+      var html = getTemplateHtmlForModel(modelId, true);
+      if (!html || html.length < 30) {
+        throw new Error('Conteúdo do template não encontrado ou vazio');
       }
+
+      if (iframe) {
+        iframe.onload = function() {
+          if (loadingEl) loadingEl.style.display = 'none';
+        };
+        iframe.srcdoc = html;
+      }
+    } catch (err) {
+      console.error('[Prévia do Modelo] Falha ao renderizar:', err);
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'flex';
     }
+
+    // Foco acessível no botão de fechar do modal
+    setTimeout(function() {
+      if (modal) {
+        var closeBtn = modal.querySelector('.tp-modal-close-btn');
+        if (closeBtn) closeBtn.focus();
+      }
+    }, 80);
   }
 
   function fecharPreviaModal() {
     var modal = document.getElementById('modal-template-preview-large');
     if (modal) {
-      if (typeof modal.close === 'function') {
-        modal.close();
-      } else {
-        modal.style.display = 'none';
-      }
+      modal.classList.remove('open');
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
     }
+    document.body.classList.remove('tp-modal-open');
+
     var iframe = document.getElementById('tp-modal-preview-iframe');
     if (iframe) {
       iframe.srcdoc = 'about:blank';
+    }
+
+    var loadingEl = document.getElementById('tp-modal-loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    var errorEl = document.getElementById('tp-modal-error');
+    if (errorEl) errorEl.style.display = 'none';
+
+    // Restaurar foco no botão que abriu a prévia
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+      try {
+        lastFocusedElement.focus();
+      } catch (e) {}
+    }
+  }
+
+  function recarregarPreviaAtual() {
+    if (currentPreviewModelId) {
+      ampliarPreviaModal(currentPreviewModelId);
     }
   }
 
@@ -2200,6 +2306,9 @@
         if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
 
         // Voltar para a visualização do editor
+        fecharPreviaModal();
+        document.body.classList.remove('in-template-picker');
+
         var pickerPane = document.getElementById('view-template-picker');
         if (pickerPane) pickerPane.classList.remove('active');
 
@@ -2249,22 +2358,43 @@
       }
     });
 
-    // Fechar prévia ampliada ao clicar no backdrop do dialog
-    var prevModal = document.getElementById('modal-template-preview-large');
-    if (prevModal) {
-      prevModal.addEventListener('click', function(e) {
-        if (e.target === prevModal) {
-          fecharPreviaModal();
-        }
+    // Fechar prévia ampliada ao clicar no backdrop
+    var prevBackdrop = document.querySelector('.tp-modal-backdrop');
+    if (prevBackdrop) {
+      prevBackdrop.addEventListener('click', function() {
+        fecharPreviaModal();
       });
     }
 
-    // Atalhos Ctrl+Z, Ctrl+Y e Esc
+    // Atalhos Ctrl+Z, Ctrl+Y, Esc e Focus Trap no modal de prévia
     document.addEventListener('keydown', function(e) {
+      var modal = document.getElementById('modal-template-preview-large');
+      var isModalOpen = modal && modal.classList.contains('open');
+
       if (e.key === 'Escape') {
-        var modal = document.getElementById('modal-template-preview-large');
-        if (modal && (modal.open || modal.style.display === 'flex')) {
+        if (isModalOpen) {
+          e.preventDefault();
           fecharPreviaModal();
+          return;
+        }
+      }
+
+      if (e.key === 'Tab' && isModalOpen) {
+        var focusables = modal.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        if (focusables.length > 0) {
+          var first = focusables[0];
+          var last = focusables[focusables.length - 1];
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
         }
       }
 
@@ -2341,6 +2471,7 @@
   window.fecharPreviaModal = fecharPreviaModal;
   window.setPreviaModalDevice = setPreviaModalDevice;
   window.confirmarUsoModelo = confirmarUsoModelo;
+  window.recarregarPreviaAtual = recarregarPreviaAtual;
 
 })(window, document);
 

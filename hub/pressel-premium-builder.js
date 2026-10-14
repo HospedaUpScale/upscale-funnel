@@ -896,6 +896,11 @@ ${stickyHtml}
 <\/script>
 </body>
 </html>`;
+    },
+
+    generateHtml: function (cfg, options) {
+      if (!cfg) cfg = this.getDefaultConfig();
+      return this.renderHtml(cfg.blocks || {}, cfg.settings || {}, options || {});
     }
   };
 

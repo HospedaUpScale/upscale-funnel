@@ -2095,7 +2095,13 @@
               </div>
 
               <!-- Miniatura Visual Fiel do Brayam Braz / Ranger V6 -->
-              <div class="tp-card-preview-box">
+              <div class="tp-card-preview-box" onclick="ampliarPreviaModal('pressel-premium-campanhas', event)" title="Clique para ampliar a prévia deste modelo">
+                <div class="tp-preview-hover-hint">
+                  <span class="tp-preview-hint-btn">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                    Ampliar prévia
+                  </span>
+                </div>
                 <div class="tp-mini-pressel">
                   <div class="tp-mini-pressel-nav">
                     <span class="tp-mini-pressel-brand">
@@ -2184,7 +2190,13 @@
               </div>
 
               <!-- Miniatura Visual Fiel da Oferta Booster -->
-              <div class="tp-card-preview-box">
+              <div class="tp-card-preview-box" onclick="ampliarPreviaModal('booster-padrao', event)" title="Clique para ampliar a prévia deste modelo">
+                <div class="tp-preview-hover-hint">
+                  <span class="tp-preview-hint-btn">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                    Ampliar prévia
+                  </span>
+                </div>
                 <div class="tp-mini-booster">
                   <span class="tp-mini-booster-badge">OFERTA ESPECIAL</span>
                   <span class="tp-mini-booster-title">Aproveite sua oferta</span>
@@ -2266,7 +2278,13 @@
               </div>
 
               <!-- Miniatura Visual Fiel da Página em Branco -->
-              <div class="tp-card-preview-box">
+              <div class="tp-card-preview-box" onclick="ampliarPreviaModal('pagina-em-branco', event)" title="Clique para ampliar a prévia deste modelo">
+                <div class="tp-preview-hover-hint">
+                  <span class="tp-preview-hint-btn">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                    Ampliar prévia
+                  </span>
+                </div>
                 <div class="tp-mini-blank">
                   <div class="tp-mini-blank-icon-box">
                     <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -3194,30 +3212,6 @@
   </div>
 </dialog>
 
-<!-- MODAL 10: PRÉVIA AMPLIADA DE TEMPLATES (ISOLADO EM SANDBOX) -->
-<dialog class="tp-modal-preview-dialog" id="modal-template-preview-large">
-  <div class="tp-modal-header">
-    <div class="tp-modal-title" id="tp-modal-preview-title">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#205BFF" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      <span id="tp-modal-preview-name">Prévia do Modelo</span>
-    </div>
-    <div class="tp-modal-devices">
-      <button type="button" class="tp-modal-dev-btn active" id="tp-preview-dev-desktop" onclick="setPreviaModalDevice('desktop')">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        Desktop
-      </button>
-      <button type="button" class="tp-modal-dev-btn" id="tp-preview-dev-mobile" onclick="setPreviaModalDevice('mobile')">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        Mobile
-      </button>
-    </div>
-    <button type="button" class="tp-modal-close-btn" onclick="fecharPreviaModal()" aria-label="Fechar prévia">&times;</button>
-  </div>
-  <div class="tp-modal-iframe-wrap" id="tp-modal-iframe-wrap">
-    <iframe class="tp-modal-iframe" id="tp-modal-preview-iframe" sandbox="allow-scripts allow-same-origin" title="Prévia do modelo selecionado"></iframe>
-  </div>
-</dialog>
-
 <!-- TOASTS DE NOTIFICAÇÃO -->
 <div class="toast-container" id="toast-container"></div>
 
@@ -3510,6 +3504,9 @@
 
   /* ═══ NAVEGAÇÃO ENTRE TELAS ═══ */
   function navigate(viewId) {
+    document.body.classList.remove('in-template-picker');
+    if (window.fecharPreviaModal) window.fecharPreviaModal();
+
     // Aliases para compatibilidade retroativa
     if (viewId === 'gateway' || viewId === 'simulator' || viewId === 'logs') {
       viewId = 'settings';
@@ -5385,5 +5382,53 @@
     atualizarTudo();
   });
 </script>
+<!-- ══════════════════════════════════════════════════════════════════
+     PORTAL DE PRÉVIA AMPLIADA DE TEMPLATES (NÍVEL DO BODY)
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-template-preview-large" class="tp-modal-portal tp-modal-preview-dialog" style="display: none !important;" role="dialog" aria-modal="true" aria-labelledby="tp-modal-preview-name" aria-hidden="true">
+  <div class="tp-modal-backdrop" onclick="fecharPreviaModal()"></div>
+  <div class="tp-modal-dialog-wrap">
+    <div class="tp-modal-window">
+      <div class="tp-modal-header">
+        <div class="tp-modal-title" id="tp-modal-preview-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#205BFF" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="tp-modal-preview-name">Prévia do Modelo</span>
+        </div>
+        <div class="tp-modal-devices">
+          <button type="button" class="tp-modal-dev-btn active" id="tp-preview-dev-desktop" onclick="setPreviaModalDevice('desktop')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Desktop
+          </button>
+          <button type="button" class="tp-modal-dev-btn" id="tp-preview-dev-mobile" onclick="setPreviaModalDevice('mobile')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            Mobile
+          </button>
+        </div>
+        <button type="button" class="tp-modal-close-btn" onclick="fecharPreviaModal()" aria-label="Fechar prévia">&times;</button>
+      </div>
+
+      <div class="tp-modal-body">
+        <!-- Spinner de carregamento -->
+        <div class="tp-modal-loading" id="tp-modal-loading" style="display: none;">
+          <div class="tp-modal-spinner"></div>
+          <span>Carregando prévia do modelo…</span>
+        </div>
+
+        <!-- Mensagem de erro caso o template falhe -->
+        <div class="tp-modal-error" id="tp-modal-error" style="display: none;">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Não foi possível carregar a prévia deste modelo.</p>
+          <button type="button" class="tp-btn-retry" onclick="recarregarPreviaAtual()">Tentar novamente</button>
+        </div>
+
+        <!-- Container do iframe de prévia -->
+        <div class="tp-modal-iframe-wrap" id="tp-modal-iframe-wrap">
+          <iframe class="tp-modal-iframe" id="tp-modal-preview-iframe" sandbox="allow-scripts allow-same-origin" title="Prévia do modelo selecionado"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
