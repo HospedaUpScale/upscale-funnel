@@ -111,21 +111,35 @@ if ($request->method() === 'POST') {
 
     $input = $request->all();
     $name = trim($input['name'] ?? '');
-    $slug = strtolower(trim(preg_replace('/[^a-z0-9\-]/i', '', $input['slug'] ?? '')));
     $accountType = trim($input['account_type'] ?? $input['type'] ?? 'merchant');
 
-    if (empty($name) || empty($slug)) {
-        JsonResponse::error('Nome e Slug são obrigatórios.', 400);
+    if (empty($name)) {
+        JsonResponse::error('O Nome do cliente/workspace é obrigatório.', 400);
     }
 
-    // Check if slug exists
+    $rawSlug = trim($input['slug'] ?? '');
+    if ($rawSlug === '') {
+        $rawSlug = $name;
+    }
+    $rawSlug = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $rawSlug) ?: $rawSlug;
+    $slug = strtolower(trim(preg_replace('/[^a-z0-9\-]+/i', '-', str_replace(' ', '-', $rawSlug)), '-'));
+    if ($slug === '') {
+        $slug = 'cliente-' . substr(md5(uniqid('', true)), 0, 6);
+    }
+
+    // Se o slug já existir, gera sufixo numérico
     if ($wsRepo->findBySlug($slug)) {
-        JsonResponse::error('O Slug "' . $slug . '" já está em uso.', 409);
+        $candidate = $slug;
+        $suffix = 2;
+        while ($wsRepo->findBySlug($candidate . '-' . $suffix) && $suffix < 100) {
+            $suffix++;
+        }
+        $slug = $candidate . '-' . $suffix;
     }
 
     // Login opcional do cliente/parceiro (e-mail + senha), validado antes de criar qualquer coisa
-    $adminEmail = strtolower(trim((string) ($input['admin_email'] ?? '')));
-    $adminPassword = (string) ($input['admin_password'] ?? '');
+    $adminEmail = strtolower(trim((string) ($input['initial_user_email'] ?? $input['admin_email'] ?? '')));
+    $adminPassword = (string) ($input['initial_user_password'] ?? $input['admin_password'] ?? '');
     $userRepo = new \App\Repositories\UserRepository($pdo);
     if ($adminEmail !== '') {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
@@ -334,6 +348,19 @@ if ($request->method() === 'POST') {
                 'role'     => $accessRole,
             ];
         }
+
+        // Vincular usuário master ao novo workspace com papel super_admin
+        try {
+            $masterUserRow = $pdo->query("SELECT id FROM users WHERE email = 'isaiasmktd@gmail.com' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            if ($masterUserRow) {
+                $checkStmt = $pdo->prepare("SELECT id FROM workspace_memberships WHERE workspace_id = ? AND user_id = ?");
+                $checkStmt->execute([$created->id, (int)$masterUserRow['id']]);
+                if (!$checkStmt->fetch()) {
+                    $pdo->prepare("INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, 'super_admin')")
+                        ->execute([$created->id, (int)$masterUserRow['id']]);
+                }
+            }
+        } catch (\Throwable $ignored) {}
 
         $pdo->commit();
     } catch (\Throwable $e) {

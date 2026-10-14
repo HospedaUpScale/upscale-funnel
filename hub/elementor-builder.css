@@ -1,0 +1,1004 @@
+/* ══════════════════════════════════════════════════════════════════
+   UPSCALE FUNNEL BUILDER — ESTILO ELEMENTOR PROFISSIONAL
+   Inspirado na referência visual oficial upScale
+   ══════════════════════════════════════════════════════════════════ */
+
+.elementor-shell {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  min-height: 860px;
+  position: relative;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ══ 1. BARRA SUPERIOR (TOPBAR) ══ */
+.elementor-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 64px;
+  padding: 0 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #edf2f7;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.elementor-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.elementor-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.elementor-topbar-brand-logo {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #175CFF;
+  letter-spacing: -0.03em;
+}
+
+.elementor-topbar-sep {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.elementor-topbar-crumb {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.elementor-page-title-input {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+  outline: none;
+  transition: all 0.2s ease;
+  max-width: 220px;
+}
+.elementor-page-title-input:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+.elementor-page-title-input:focus {
+  background: #ffffff;
+  border-color: #175CFF;
+  box-shadow: 0 0 0 3px rgba(23, 92, 255, 0.12);
+}
+
+.elementor-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  padding: 4px 10px;
+  background: #f8fafc;
+  border-radius: 999px;
+  border: 1px solid #f1f5f9;
+}
+.elementor-status-pill .status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #12b76a;
+}
+.elementor-status-pill.modified .status-dot {
+  background: #f79009;
+}
+.elementor-status-pill.saving .status-dot {
+  background: #175CFF;
+  animation: elementorPulse 1s infinite;
+}
+@keyframes elementorPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+.elementor-topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.elementor-history-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #f8fafc;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+.elementor-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.elementor-icon-btn:hover:not(:disabled) {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.elementor-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.elementor-device-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #f8fafc;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+.elementor-device-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.elementor-device-btn:hover {
+  color: #0f172a;
+}
+.elementor-device-btn.active {
+  background: #ffffff;
+  color: #175CFF;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.elementor-zoom-select {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+}
+
+.elementor-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-pages-drawer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-pages-drawer:hover {
+  background: #ffffff;
+  border-color: #175CFF;
+  color: #175CFF;
+}
+.btn-pages-drawer .badge-count {
+  background: #edf2fe;
+  color: #175CFF;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.btn-builder-draft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-builder-draft:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.btn-builder-publish {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #175CFF;
+  border: 1px solid #175CFF;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(23, 92, 255, 0.25);
+  transition: all 0.2s ease;
+}
+.btn-builder-publish:hover {
+  background: #0f4de6;
+  box-shadow: 0 4px 10px rgba(23, 92, 255, 0.35);
+}
+
+/* ══ 2. CORPO PRINCIPAL DO BUILDER (SIDEBAR + CANVAS) ══ */
+.elementor-body {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  flex: 1;
+  min-height: 800px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+/* ══ 3. PAINEL LATERAL ESQUERDO (SIDEBAR) ══ */
+.elementor-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  height: 100%;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.elementor-sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.elementor-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.elementor-tab-btn:hover {
+  color: #0f172a;
+}
+.elementor-tab-btn.active {
+  color: #175CFF;
+  border-bottom-color: #175CFF;
+  background: rgba(23, 92, 255, 0.03);
+}
+
+.elementor-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Barra de Busca de Elementos */
+.elementor-search-box {
+  position: relative;
+  width: 100%;
+}
+.elementor-search-box svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+.elementor-search-input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  font-size: 12.5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+.elementor-search-input:focus {
+  background: #ffffff;
+  border-color: #175CFF;
+  box-shadow: 0 0 0 3px rgba(23, 92, 255, 0.12);
+}
+
+.elementor-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+/* Grid de Blocos Básicos */
+.elementor-blocks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.elementor-block-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+.elementor-block-card:hover {
+  border-color: #175CFF;
+  background: rgba(23, 92, 255, 0.02);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(23, 92, 255, 0.08);
+}
+.elementor-block-card:active {
+  transform: translateY(0);
+}
+.elementor-block-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+.elementor-block-card:hover .elementor-block-icon {
+  background: #edf2fe;
+  color: #175CFF;
+}
+.elementor-block-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: center;
+}
+
+/* Inspector de Elemento Selecionado */
+.elementor-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.elementor-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.elementor-inspector-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.elementor-inspector-close {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+}
+.elementor-inspector-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.elementor-prop-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.elementor-prop-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+.elementor-prop-input,
+.elementor-prop-select,
+.elementor-prop-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+.elementor-prop-input:focus,
+.elementor-prop-select:focus,
+.elementor-prop-textarea:focus {
+  background: #ffffff;
+  border-color: #175CFF;
+  box-shadow: 0 0 0 2px rgba(23, 92, 255, 0.12);
+}
+
+.elementor-switch-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.elementor-switch-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.elementor-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+}
+.elementor-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.elementor-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #cbd5e1;
+  transition: .3s;
+  border-radius: 22px;
+}
+.elementor-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+.elementor-toggle-switch input:checked + .elementor-toggle-slider {
+  background-color: #175CFF;
+}
+.elementor-toggle-switch input:checked + .elementor-toggle-slider:before {
+  transform: translateX(16px);
+}
+
+.elementor-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Card Fixo de Link Público na base da Sidebar */
+.elementor-public-link-card {
+  padding: 12px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.elementor-public-link-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.elementor-public-link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.elementor-public-link-url {
+  flex: 1;
+  font-size: 11.5px;
+  font-family: var(--font-mono, monospace);
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.elementor-copy-icon-btn {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+.elementor-copy-icon-btn:hover {
+  color: #175CFF;
+}
+
+/* ══ 4. ÁREA PRINCIPAL DA PRÉVIA (CANVAS) ══ */
+.elementor-canvas-area {
+  display: flex;
+  flex-direction: column;
+  background: #f1f5f9;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Toolbar Flutuante Superior da Prévia */
+.elementor-canvas-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.elementor-canvas-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.elementor-canvas-live-badge svg {
+  color: #175CFF;
+}
+
+.elementor-mode-segmented {
+  display: flex;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 2px;
+}
+.elementor-mode-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.elementor-mode-btn.active {
+  background: #ffffff;
+  color: #175CFF;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  font-weight: 700;
+}
+
+.elementor-canvas-scrollable {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 20px;
+}
+
+/* Viewport Containers */
+.elementor-viewport-wrap {
+  position: relative;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s ease;
+  margin: 0 auto;
+}
+
+/* 1. MODO DESKTOP */
+.elementor-viewport-wrap.device-desktop {
+  width: 100%;
+  max-width: 1200px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  min-height: 750px;
+}
+
+/* 2. MODO TABLET */
+.elementor-viewport-wrap.device-tablet {
+  width: 768px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  min-height: 750px;
+}
+
+/* 3. MODO MOBILE (MOLDURA IPHONE 15 - 393 × 852 px) */
+.elementor-viewport-wrap.device-mobile {
+  width: 413px;
+  height: 872px;
+  background: #111827;
+  border-radius: 54px;
+  padding: 10px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35), 0 0 0 1px #374151;
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.elementor-iphone-screen {
+  position: relative;
+  width: 393px;
+  height: 852px;
+  border-radius: 44px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Dynamic Island */
+.elementor-iphone-island {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 115px;
+  height: 30px;
+  background: #000000;
+  border-radius: 20px;
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+}
+.elementor-iphone-island:after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #101827;
+}
+
+/* iPhone Home Bar */
+.elementor-iphone-home-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 4.5px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Iframe Isolado */
+.elementor-iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 750px;
+  border: none;
+  display: block;
+  background: #ffffff;
+}
+.device-mobile .elementor-iframe {
+  min-height: 852px;
+  height: 852px;
+}
+
+/* Barra Inferior da Prévia */
+.elementor-canvas-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  font-size: 11.5px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+.elementor-bottom-device-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.elementor-bottom-sync-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.elementor-bottom-sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #12b76a;
+}
+
+/* ══ 5. DRAWER LATERAL DE MINHAS PÁGINAS ══ */
+.elementor-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+}
+.elementor-drawer-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.elementor-pages-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  max-width: 90vw;
+  background: #ffffff;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+.elementor-pages-drawer.open {
+  transform: translateX(0);
+}
+
+.elementor-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.elementor-drawer-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.elementor-drawer-close {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+}
+.elementor-drawer-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.elementor-drawer-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.elementor-page-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.elementor-page-item:hover {
+  border-color: #175CFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.elementor-page-item.active {
+  border-color: #175CFF;
+  background: rgba(23, 92, 255, 0.03);
+}
+.elementor-page-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.elementor-page-item-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.elementor-page-item-slug {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: #64748b;
+}
+.elementor-page-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* ══ 6. ABA DE CÓDIGO (CODEMIRROR INTEGRADO) ══ */
+.elementor-code-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.elementor-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 10px;
+}
+.elementor-code-editor-box {
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 480px;
+  background: #ffffff;
+}
+.elementor-code-editor-box .CodeMirror {
+  height: 100%;
+  min-height: 480px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ══ 7. ABA DE ESTILO ══ */
+.elementor-style-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.elementor-style-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.elementor-style-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.elementor-color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.elementor-color-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+}
+.elementor-color-circle input[type="color"] {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 1080px) {
+  .elementor-body {
+    grid-template-columns: 1fr;
+  }
+  .elementor-sidebar {
+    height: 420px;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}

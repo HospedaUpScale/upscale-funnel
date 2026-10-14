@@ -57,7 +57,11 @@ if ($request->method() === 'GET') {
             ->execute([$newCampId, $targetWsId]);
     }
 
-    // Busca campanhas com detalhes da oferta vinculada e volume de vendas
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8000';
+    $baseUrl = $scheme . '://' . $host;
+
+    // Busca campanhas com detalhes da oferta vinculada, funil/pressel e volume de vendas
     $stmt = $pdo->prepare("
         SELECT 
             c.*,
@@ -67,10 +71,16 @@ if ($request->method() === 'GET') {
             o.quota_count as offer_quotas,
             o.is_active as offer_is_active,
             o.checkout_mode,
+            f.id as funnel_id,
+            f.name as funnel_name,
+            f.slug as funnel_slug,
+            f.status as funnel_status,
+            f.template_slug as funnel_template_slug,
             (SELECT COUNT(*) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_orders_paid,
             (SELECT COALESCE(SUM(ord.total_amount), 0) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_volume_paid
         FROM campaigns c
         LEFT JOIN upsell_offers o ON o.campaign_id = c.id
+        LEFT JOIN funnels f ON f.campaign_id = c.id
         WHERE c.workspace_id = ?
         ORDER BY 
             CASE 
@@ -83,7 +93,7 @@ if ($request->method() === 'GET') {
     $stmt->execute([$targetWsId]);
     $campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $formatted = array_map(function($c) {
+    $formatted = array_map(function($c) use ($baseUrl) {
         $statusNormalized = in_array($c['status'], ['active', 'published']) ? 'published' : ($c['status'] === 'ended' ? 'ended' : 'draft');
         return [
             'id'                   => (int)$c['id'],
@@ -105,6 +115,14 @@ if ($request->method() === 'GET') {
                 'quota_count'   => (int)$c['offer_quotas'],
                 'is_active'     => (bool)$c['offer_is_active'],
                 'checkout_mode' => $c['checkout_mode']
+            ] : null,
+            'funnel'               => $c['funnel_id'] ? [
+                'id'            => (int)$c['funnel_id'],
+                'name'          => $c['funnel_name'],
+                'slug'          => $c['funnel_slug'],
+                'status'        => $c['funnel_status'],
+                'template_slug' => $c['funnel_template_slug'] ?? 'default',
+                'public_url'    => $baseUrl . '/f/' . $c['funnel_slug'],
             ] : null,
             'metrics'              => [
                 'total_orders' => (int)$c['total_orders_paid'],
@@ -235,6 +253,82 @@ if ($request->method() === 'POST') {
             'campaign_id'  => $campaignId,
             'workspace_id' => $targetWsId,
             'message'      => 'Dados da ação atualizados com sucesso!'
+        ]);
+    }
+
+    // 3.4 DUPLICAR AÇÃO (Cria cópia independente da campanha e de sua pressel)
+    if ($action === 'duplicate') {
+        if (!$campaignId) {
+            JsonResponse::error('ID da campanha não especificado para duplicação.', 422);
+        }
+
+        $stmtOrig = $pdo->prepare("SELECT * FROM campaigns WHERE id = ? AND workspace_id = ?");
+        $stmtOrig->execute([$campaignId, $targetWsId]);
+        $orig = $stmtOrig->fetch(PDO::FETCH_ASSOC);
+        if (!$orig) {
+            JsonResponse::error('Campanha original não encontrada.', 404);
+        }
+
+        $newTitle = $orig['title'] . ' (Cópia)';
+        $newExtId = 'camp_' . uniqid();
+
+        $stmtIns = $pdo->prepare("
+            INSERT INTO campaigns (workspace_id, title, ticket_price, external_platform, external_campaign_id, status, published_at)
+            VALUES (?, ?, ?, ?, ?, 'draft', NULL)
+        ");
+        $stmtIns->execute([$targetWsId, $newTitle, $orig['ticket_price'], $orig['external_platform'], $newExtId]);
+        $newCampId = (int)$pdo->lastInsertId();
+
+        // Se houver funil/pressel vinculado, duplica também de forma independente
+        $stmtFunnel = $pdo->prepare("SELECT * FROM funnels WHERE campaign_id = ? AND workspace_id = ? LIMIT 1");
+        $stmtFunnel->execute([$campaignId, $targetWsId]);
+        $origFunnel = $stmtFunnel->fetch(PDO::FETCH_ASSOC);
+
+        $newFunnelId = null;
+        if ($origFunnel) {
+            $baseSlug = $origFunnel['slug'] . '-copia';
+            $candidateSlug = $baseSlug;
+            $suffix = 2;
+            $slugCheck = $pdo->prepare("SELECT id FROM funnels WHERE workspace_id = ? AND slug = ? LIMIT 1");
+            do {
+                $slugCheck->execute([$targetWsId, $candidateSlug]);
+                $hasConflict = (bool)$slugCheck->fetchColumn();
+                if ($hasConflict) {
+                    $candidateSlug = $baseSlug . '-' . $suffix;
+                    $suffix++;
+                }
+            } while ($hasConflict && $suffix < 100);
+
+            $stmtDupFunnel = $pdo->prepare("
+                INSERT INTO funnels (
+                    workspace_id, campaign_id, custom_domain_id, name, slug, template_slug,
+                    draft_content, published_content, html_content,
+                    blocks_config, settings_config,
+                    status, is_home, published_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, 'draft', 0, NULL)
+            ");
+            $stmtDupFunnel->execute([
+                $targetWsId,
+                $newCampId,
+                $origFunnel['custom_domain_id'],
+                $origFunnel['name'] . ' (Cópia)',
+                $candidateSlug,
+                $origFunnel['template_slug'] ?? 'default',
+                $origFunnel['draft_content'],
+                $origFunnel['draft_content'],
+                $origFunnel['blocks_config'],
+                $origFunnel['settings_config'],
+            ]);
+            $newFunnelId = (int)$pdo->lastInsertId();
+        }
+
+        JsonResponse::send([
+            'status'       => 'success',
+            'action'       => 'duplicated',
+            'campaign_id'  => $newCampId,
+            'funnel_id'    => $newFunnelId,
+            'workspace_id' => $targetWsId,
+            'message'      => 'Campanha duplicada com sucesso com configuração 100% independente!'
         ]);
     }
 

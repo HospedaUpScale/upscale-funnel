@@ -1,5 +1,7 @@
 # Ambiente e secrets
 .env
+.env.*
+.env.production
 *.sqlite
 storage/database.sqlite
 

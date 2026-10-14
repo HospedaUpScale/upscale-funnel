@@ -12,6 +12,17 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css">
+  <link rel="stylesheet" href="elementor-builder.css">
+
+  <!-- CodeMirror para o Editor de Código do Funil -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="elementor-builder.js" defer></script>
 </head>
 <body>
 
@@ -254,10 +265,10 @@
         <span>Transações e Pix</span>
       </button>
 
-      <!-- 4. Clientes / Workspaces -->
+      <!-- 4. Workspaces & Clientes -->
       <button class="nav-item-btn" id="nav-btn-customers" onclick="navigate('customers')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span>Clientes</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Workspaces</span>
       </button>
 
       <!-- 5. Parceiros e comissões -->
@@ -327,6 +338,12 @@
         <button type="button" class="header-icon-btn" onclick="showToast('Sistema operando com integridade 100%. Nenhuma notificação crítica pendente.', 'success')" title="Notificações da Operação">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span class="badge-dot"></span>
+        </button>
+
+        <!-- Botão Novo Workspace Global no Topo -->
+        <button type="button" class="btn-primary" style="min-height:36px; padding:0 14px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px;" onclick="abrirModalNovoWorkspace()" title="Criar um novo workspace para outro cliente">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>+ Novo Workspace</span>
         </button>
 
         <!-- Badge de Perfil do Topbar -->
@@ -1466,48 +1483,418 @@
           </div>
         </div>
 
-        <!-- ABA 2: EDITOR DE FUNIS HTML (PRESERVADO) -->
+        <!-- ABA 2: EDITOR DE FUNIS VISUAL ESTILO ELEMENTOR -->
         <div id="sites-subtab-funis" class="subtab-pane">
-          <div style="display:grid; grid-template-columns:260px 1fr; gap:20px; align-items:start;">
-            <!-- Lista lateral de funis -->
-            <div class="card">
-              <div class="card-header-clean">
-                <h4 style="font-size:13px; font-weight:700;">Páginas Criadas</h4>
-                <button type="button" class="btn-secondary" style="min-height:28px; padding:2px 8px; font-size:11px;" onclick="novoFunil()">+ Nova</button>
+          <div class="elementor-shell">
+
+            <!-- 1. BARRA SUPERIOR (TOPBAR) -->
+            <header class="elementor-topbar">
+              <div class="elementor-topbar-left">
+                <div class="elementor-topbar-brand">
+                  <span class="elementor-topbar-brand-logo">upScale</span>
+                  <span class="elementor-topbar-sep">&gt;</span>
+                  <span class="elementor-topbar-crumb">Domínios e funis</span>
+                  <span class="elementor-topbar-sep">/</span>
+                </div>
+                <input type="text" id="funnel-name" class="elementor-page-title-input" value="Oferta especial" placeholder="Nome da página..." oninput="marcarFunilModificado()" title="Clique para editar o nome da página">
+                <input type="hidden" id="funnel-slug" value="oferta-especial">
+                
+                <div class="elementor-status-pill" id="funnel-status-pill">
+                  <span class="status-dot"></span>
+                  <span id="funnel-status-text">Rascunho salvo</span>
+                </div>
               </div>
-              <div id="funnel-list-container" style="display:flex; flex-direction:column; gap:4px;">
-                <!-- Carregado via JS -->
+
+              <div class="elementor-topbar-center">
+                <!-- Desfazer / Refazer -->
+                <div class="elementor-history-group">
+                  <button type="button" class="elementor-icon-btn" id="btn-builder-undo" onclick="builderUndo()" title="Desfazer (Ctrl+Z)" disabled>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                  </button>
+                  <button type="button" class="elementor-icon-btn" id="btn-builder-redo" onclick="builderRedo()" title="Refazer (Ctrl+Y)" disabled>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+                  </button>
+                </div>
+
+                <!-- Alternância de Viewport (Desktop / Tablet / Mobile) -->
+                <div class="elementor-device-switcher">
+                  <button type="button" class="elementor-device-btn active" id="btn-device-desktop" onclick="setBuilderDevice('desktop')" title="Desktop (1200px - 1440px)">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  </button>
+                  <button type="button" class="elementor-device-btn" id="btn-device-tablet" onclick="setBuilderDevice('tablet')" title="Tablet (768px)">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </button>
+                  <button type="button" class="elementor-device-btn" id="btn-device-mobile" onclick="setBuilderDevice('mobile')" title="Mobile (iPhone 15 - 393 × 852 px)">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </button>
+                </div>
+
+                <!-- Seletor de Escala/Zoom -->
+                <select class="elementor-zoom-select" id="builder-zoom-select" onchange="setBuilderZoom(this.value)" title="Zoom da visualização">
+                  <option value="100">100%</option>
+                  <option value="85">85%</option>
+                  <option value="75" selected>75%</option>
+                  <option value="50">50%</option>
+                </select>
               </div>
+
+              <div class="elementor-topbar-right">
+                <!-- Botão de Gaveta de Páginas -->
+                <button type="button" class="btn-pages-drawer" onclick="togglePagesDrawer()" title="Ver lista de todas as páginas">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span>Minhas páginas</span>
+                  <span class="badge-count" id="builder-pages-count">0</span>
+                </button>
+
+                <!-- Salvar Rascunho -->
+                <button type="button" class="btn-builder-draft" onclick="salvarFunilRascunho()" title="Salvar alterações sem alterar a página no ar">
+                  Salvar rascunho
+                </button>
+
+                <!-- Publicar Página -->
+                <button type="button" class="btn-builder-publish" onclick="publicarFunilCompleto()" title="Publicar página no ar no link público">
+                  Publicar página
+                </button>
+              </div>
+            </header>
+
+            <!-- 2. CORPO PRINCIPAL (SIDEBAR + CANVAS) -->
+            <div class="elementor-body">
+              
+              <!-- PAINEL LATERAL ESQUERDO (SIDEBAR 350px) -->
+              <aside class="elementor-sidebar">
+                <!-- Abas da Sidebar -->
+                <div class="elementor-sidebar-tabs">
+                  <button type="button" class="elementor-tab-btn active" id="tab-btn-elements" onclick="switchSidebarTab('elements')">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Elementos</span>
+                  </button>
+                  <button type="button" class="elementor-tab-btn" id="tab-btn-style" onclick="switchSidebarTab('style')">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+                    <span>Estilo</span>
+                  </button>
+                  <button type="button" class="elementor-tab-btn" id="tab-btn-code" onclick="switchSidebarTab('code')">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    <span>Código</span>
+                  </button>
+                </div>
+
+                <!-- CONTEÚDO DA SIDEBAR -->
+                <div class="elementor-sidebar-content">
+                  
+                  <!-- ── ABA 1: ELEMENTOS ── -->
+                  <div id="pane-elements" class="elementor-tab-pane">
+                    
+                    <!-- Busca de Blocos -->
+                    <div class="elementor-search-box" style="margin-bottom:14px;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <input type="text" id="builder-search-elements" class="elementor-search-input" placeholder="Buscar elemento..." oninput="filtrarBlocos(this.value)">
+                    </div>
+
+                    <!-- Paleta de Blocos Básicos -->
+                    <div id="builder-palette-section">
+                      <div class="elementor-section-title">Básicos</div>
+                      <div class="elementor-blocks-grid">
+                        
+                        <!-- 1. Título -->
+                        <div class="elementor-block-card" onclick="inserirBloco('heading')" title="Adicionar título">
+                          <div class="elementor-block-icon">
+                            <span style="font-family:serif; font-size:18px; font-weight:700;">T</span>
+                          </div>
+                          <span class="elementor-block-name">Título</span>
+                        </div>
+
+                        <!-- 2. Texto -->
+                        <div class="elementor-block-card" onclick="inserirBloco('text')" title="Adicionar parágrafo de texto">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Texto</span>
+                        </div>
+
+                        <!-- 3. Imagem -->
+                        <div class="elementor-block-card" onclick="inserirBloco('image')" title="Adicionar imagem">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Imagem</span>
+                        </div>
+
+                        <!-- 4. Vídeo -->
+                        <div class="elementor-block-card" onclick="inserirBloco('video')" title="Adicionar vídeo do YouTube/Vimeo">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Vídeo</span>
+                        </div>
+
+                        <!-- 5. Botão / Link -->
+                        <div class="elementor-block-card" onclick="inserirBloco('button')" title="Adicionar botão com link ou checkout">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Botão</span>
+                        </div>
+
+                        <!-- 6. Container -->
+                        <div class="elementor-block-card" onclick="inserirBloco('container')" title="Adicionar caixa de agrupamento">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Container</span>
+                        </div>
+
+                        <!-- 7. HTML Personalizado -->
+                        <div class="elementor-block-card" onclick="inserirBloco('html')" title="Adicionar código HTML livre">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                          </div>
+                          <span class="elementor-block-name">HTML</span>
+                        </div>
+
+                        <!-- 8. Temporizador -->
+                        <div class="elementor-block-card" onclick="inserirBloco('timer')" title="Adicionar contagem regressiva">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M10 2h4"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Temporizador</span>
+                        </div>
+
+                        <!-- 9. Oferta -->
+                        <div class="elementor-block-card" onclick="inserirBloco('offer')" title="Adicionar card de oferta com checkout">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Oferta</span>
+                        </div>
+
+                        <!-- 10. Espaçador -->
+                        <div class="elementor-block-card" onclick="inserirBloco('spacer')" title="Adicionar espaçamento vertical">
+                          <div class="elementor-block-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+                          </div>
+                          <span class="elementor-block-name">Espaçador</span>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    <!-- INSPECTOR DE PROPRIEDADES (QUANDO UM ELEMENTO ESTÁ SELECIONADO) -->
+                    <div id="builder-inspector-box" class="elementor-inspector" style="display:none; margin-top:16px;">
+                      <div class="elementor-inspector-head">
+                        <span class="elementor-inspector-title" id="inspector-element-type-title">
+                          <span id="inspector-element-icon"></span>
+                          <span id="inspector-element-name">Elemento Selecionado</span>
+                        </span>
+                        <button type="button" class="elementor-inspector-close" onclick="desmarcarElemento()" title="Fechar propriedades">✕</button>
+                      </div>
+
+                      <div id="inspector-fields-container" style="display:flex; flex-direction:column; gap:12px;">
+                        <!-- Injetado dinamicamente via JS conforme o bloco -->
+                      </div>
+
+                      <div class="elementor-actions-grid">
+                        <button type="button" class="btn-secondary" style="min-height:30px; font-size:11px;" onclick="duplicarElementoSelecionado()">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Duplicar
+                        </button>
+                        <button type="button" class="btn-secondary" style="min-height:30px; font-size:11px; color:#ef4444; border-color:#fecaca;" onclick="excluirElementoSelecionado()">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Excluir
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- ── ABA 2: ESTILO ── -->
+                  <div id="pane-style" class="elementor-tab-pane" style="display:none;">
+                    <div class="elementor-style-pane">
+                      
+                      <!-- Tipografia -->
+                      <div class="elementor-style-group">
+                        <div class="elementor-style-group-title">Tipografia</div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Tamanho da fonte</label>
+                          <input type="range" min="12" max="64" value="16" class="form-input" id="style-font-size-slider" oninput="aplicarEstiloRapido('fontSize', this.value + 'px')">
+                        </div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Peso da fonte</label>
+                          <select class="elementor-prop-select" id="style-font-weight-select" onchange="aplicarEstiloRapido('fontWeight', this.value)">
+                            <option value="400">Normal (400)</option>
+                            <option value="500">Médio (500)</option>
+                            <option value="600">Semibold (600)</option>
+                            <option value="700" selected>Bold (700)</option>
+                            <option value="800">Extrabold (800)</option>
+                          </select>
+                        </div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Alinhamento</label>
+                          <div style="display:flex; gap:4px;">
+                            <button type="button" class="elementor-icon-btn" onclick="aplicarEstiloRapido('textAlign', 'left')" title="Esquerda"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+                            <button type="button" class="elementor-icon-btn" onclick="aplicarEstiloRapido('textAlign', 'center')" title="Centro"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg></button>
+                            <button type="button" class="elementor-icon-btn" onclick="aplicarEstiloRapido('textAlign', 'right')" title="Direita"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg></button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Cores -->
+                      <div class="elementor-style-group">
+                        <div class="elementor-style-group-title">Cores & Fundo</div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Cor do texto</label>
+                          <div class="elementor-color-picker-row">
+                            <input type="color" id="style-text-color-picker" value="#0f172a" onchange="aplicarEstiloRapido('color', this.value)">
+                            <input type="text" id="style-text-color-hex" class="elementor-prop-input" value="#0f172a" style="width:110px;" onchange="aplicarEstiloRapido('color', this.value)">
+                          </div>
+                        </div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Cor de fundo</label>
+                          <div class="elementor-color-picker-row">
+                            <input type="color" id="style-bg-color-picker" value="#175cff" onchange="aplicarEstiloRapido('backgroundColor', this.value)">
+                            <input type="text" id="style-bg-color-hex" class="elementor-prop-input" value="#175cff" style="width:110px;" onchange="aplicarEstiloRapido('backgroundColor', this.value)">
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Espaçamento & Bordas -->
+                      <div class="elementor-style-group">
+                        <div class="elementor-style-group-title">Espaçamento & Borda</div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Arredondamento (border-radius)</label>
+                          <select class="elementor-prop-select" id="style-border-radius-select" onchange="aplicarEstiloRapido('borderRadius', this.value)">
+                            <option value="0px">Quadrado (0px)</option>
+                            <option value="6px">Leve (6px)</option>
+                            <option value="12px" selected>Médio (12px)</option>
+                            <option value="24px">Arredondado (24px)</option>
+                            <option value="999px">Pílula (999px)</option>
+                          </select>
+                        </div>
+                        <div class="elementor-prop-row">
+                          <label class="elementor-prop-label">Espaçamento interno (padding)</label>
+                          <input type="range" min="0" max="60" value="14" class="form-input" id="style-padding-slider" oninput="aplicarEstiloRapido('padding', this.value + 'px')">
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <!-- ── ABA 3: CÓDIGO HTML/CSS/JS ── -->
+                  <div id="pane-code" class="elementor-tab-pane" style="display:none; height:100%;">
+                    <div class="elementor-code-pane">
+                      <div class="elementor-code-toolbar">
+                        <span style="font-size:12px; font-weight:700; color:#0f172a;">HTML / CSS / JS</span>
+                        <div style="display:flex; gap:6px;">
+                          <button type="button" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px;" onclick="formatarCodigoHtml()" title="Indentação e formatação">Formatar</button>
+                          <button type="button" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px;" onclick="copiarCodigoHtml()" title="Copiar código para a área de transferência">Copiar</button>
+                        </div>
+                      </div>
+                      
+                      <!-- Editor CodeMirror com Line Numbers -->
+                      <div class="elementor-code-editor-box">
+                        <textarea id="funnel-code-editor" style="display:none;"></textarea>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- CARD FIXO DE LINK PÚBLICO NO RODAPÉ DA SIDEBAR -->
+                <div class="elementor-public-link-card">
+                  <div class="elementor-public-link-header">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <span>Link público</span>
+                  </div>
+                  <div class="elementor-public-link-row">
+                    <span class="elementor-public-link-url" id="sidebar-public-url-display">seu-dominio.com/oferta-especial</span>
+                    <button type="button" class="elementor-copy-icon-btn" onclick="copiarLinkPublicoAtual()" title="Copiar link público">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                    <a href="javascript:void(0)" id="sidebar-open-url-btn" target="_blank" class="elementor-copy-icon-btn" title="Abrir página pública">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                  </div>
+                </div>
+              </aside>
+
+              <!-- ÁREA PRINCIPAL DA PRÉVIA (CANVAS) -->
+              <main class="elementor-canvas-area">
+                <!-- Toolbar da Prévia -->
+                <div class="elementor-canvas-top-bar">
+                  <div class="elementor-canvas-live-badge">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                    <span>Prévia ao vivo</span>
+                  </div>
+
+                  <!-- Alternador de Modos: Editar vs Testar -->
+                  <div class="elementor-mode-segmented">
+                    <button type="button" class="elementor-mode-btn active" id="btn-mode-edit" onclick="setCanvasMode('edit')" title="Modo Editar: Selecione e configure propriedades dos elementos">
+                      Editar
+                    </button>
+                    <button type="button" class="elementor-mode-btn" id="btn-mode-test" onclick="setCanvasMode('test')" title="Modo Testar: Interaja livremente com botões, links e temporizador">
+                      Testar
+                    </button>
+                  </div>
+
+                  <!-- Ações rápidas da prévia -->
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" class="btn-secondary" style="min-height:30px; padding:0 10px; font-size:11.5px;" onclick="recarregarPreview()" title="Recarregar renderização da prévia">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                      <span>Recarregar</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Canvas Scrollable com Moldura de Dispositivo -->
+                <div class="elementor-canvas-scrollable" id="elementor-scroll-canvas">
+                  <div class="elementor-viewport-wrap device-desktop" id="elementor-viewport-wrap">
+                    
+                    <!-- Container especial do iPhone quando no modo mobile -->
+                    <div class="elementor-iphone-screen" id="iphone-screen-box" style="display:none;">
+                      <div class="elementor-iphone-island"></div>
+                      <iframe id="builder-iframe-mobile" class="elementor-iframe" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+                      <div class="elementor-iphone-home-bar"></div>
+                    </div>
+
+                    <!-- Container Padrão (Desktop / Tablet) -->
+                    <div id="standard-screen-box" style="width:100%; height:100%;">
+                      <iframe id="builder-iframe" class="elementor-iframe" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Rodapé da Prévia -->
+                <footer class="elementor-canvas-bottom-bar">
+                  <div class="elementor-bottom-device-info" id="bottom-device-info-text">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <span>Desktop — 1440 px</span>
+                  </div>
+                  <div class="elementor-bottom-sync-info">
+                    <span class="elementor-bottom-sync-dot"></span>
+                    <span>Alterações aparecem na prévia</span>
+                  </div>
+                </footer>
+              </main>
+
             </div>
 
-            <!-- Editor e Prévia Split -->
-            <div class="card">
-              <div class="card-header-clean">
-                <h3 class="card-title-clean" id="funnel-editor-heading">Editar Página HTML</h3>
-                <div style="display:flex; gap:8px;">
-                  <button type="button" class="btn-secondary" onclick="salvarFunil()">Salvar Funil</button>
-                  <button type="button" class="btn-primary" onclick="publicarFunil()">Publicar Página</button>
-                </div>
-              </div>
-
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
-                <div>
-                  <label class="form-label" for="funnel-name">Nome da Página</label>
-                  <input type="text" class="form-input" id="funnel-name" placeholder="Página de Vendas">
-                </div>
-                <div>
-                  <label class="form-label" for="funnel-slug">URL Slug</label>
-                  <input type="text" class="form-input" id="funnel-slug" placeholder="minha-pagina">
-                </div>
-              </div>
-
-              <div>
-                <label class="form-label" for="funnel-html-code">Código HTML Completo</label>
-                <textarea id="funnel-html-code" class="form-input" style="height:320px; font-family:var(--font-mono); font-size:12px; line-height:1.5;" oninput="atualizarPreviewFunil()"></textarea>
-              </div>
-            </div>
           </div>
         </div>
+
+        <!-- ══ GAVETA LATERAL DESLIZANTE DE MINHAS PÁGINAS (DRAWER) ══ -->
+        <div id="builder-drawer-backdrop" class="elementor-drawer-backdrop" onclick="togglePagesDrawer()"></div>
+        <div id="builder-pages-drawer" class="elementor-pages-drawer">
+          <div class="elementor-drawer-head">
+            <h3 class="elementor-drawer-title">Minhas Páginas</h3>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn-primary" style="min-height:30px; padding:0 12px; font-size:12px;" onclick="novoFunilElementor()">+ Nova</button>
+              <button type="button" class="elementor-drawer-close" onclick="togglePagesDrawer()">✕</button>
+            </div>
+          </div>
+          <div class="elementor-drawer-list" id="builder-drawer-list">
+            <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Carregando páginas...</div>
+          </div>
+        </div>
+
       </div>
 
 
@@ -1558,35 +1945,102 @@
       <!-- ══════════════════════════════════════════════════════════════════
            TELA 7: CLIENTES / WORKSPACES
            ══════════════════════════════════════════════════════════════════ -->
+      <!-- ══ TELA 7: CLIENTES & USUÁRIOS (MASTER) ══ -->
       <div id="view-customers" class="view-pane">
         <div class="page-header-row">
           <div class="page-header-info">
-            <h1>Clientes / Workspaces</h1>
-            <p>Gerenciamento de contas e acessos dos organizadores de rifas.</p>
+            <h1>Clientes & Usuários</h1>
+            <p>Gerenciamento de workspaces, organizadores de rifas e usuários do sistema.</p>
           </div>
-          <div class="page-header-actions">
-            <button type="button" class="btn-primary" onclick="abrirModalAcessos()">
-              Gerenciar Acessos de Login
+          <div class="page-header-actions" style="display:flex; gap:8px;">
+            <button type="button" class="btn-primary" onclick="abrirModalNovoWorkspace()">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Novo Workspace</span>
+            </button>
+            <button type="button" class="btn-secondary" onclick="abrirModalNovoUsuario()">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              <span>Novo Usuário</span>
+            </button>
+            <button type="button" class="btn-secondary" onclick="abrirModalAcessos()">
+              Acessos por Workspace
             </button>
           </div>
         </div>
 
-        <div class="card">
-          <div class="table-responsive">
-            <table class="clean-table">
-              <thead>
-                <tr>
-                  <th>Workspace</th>
-                  <th>Slug Identificador</th>
-                  <th>Tipo de Conta</th>
-                  <th>Status</th>
-                  <th style="text-align:right;">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="customers-table-body">
-                <!-- Preenchido dinamicamente via JS com base em accessibleWorkspaces -->
-              </tbody>
-            </table>
+        <!-- Sub-Abas: Workspaces vs Todos os Usuários -->
+        <div class="subtabs-nav" style="margin-bottom:20px;">
+          <button type="button" class="subtab-btn active" id="subtab-btn-ws" onclick="selecionarSubabaClientes('workspaces', this)">
+            Subcontas & Workspaces (<span id="count-workspaces-badge">0</span>)
+          </button>
+          <button type="button" class="subtab-btn" id="subtab-btn-users" onclick="selecionarSubabaClientes('users', this)">
+            Todos os Usuários do Sistema (<span id="count-users-badge">0</span>)
+          </button>
+        </div>
+
+        <!-- ABA 1: WORKSPACES -->
+        <div id="customers-subtab-workspaces" class="subtab-pane active">
+          <div class="card">
+            <div class="table-filter-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="form-input" id="search-workspaces-input" placeholder="Buscar workspace por nome ou slug..." oninput="filtrarWorkspacesNaTabela()">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="clean-table">
+                <thead>
+                  <tr>
+                    <th>Workspace</th>
+                    <th>Slug Identificador</th>
+                    <th>Tipo de Conta</th>
+                    <th>Vinculação / Parceiro</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="customers-table-body">
+                  <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Carregando workspaces...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: TODOS OS USUÁRIOS CADASTRADOS NO SISTEMA -->
+        <div id="customers-subtab-users" class="subtab-pane" style="display:none;">
+          <div class="card">
+            <div class="table-filter-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="form-input" id="search-users-input" placeholder="Buscar usuário por nome, e-mail ou workspace..." oninput="filtrarUsuariosNaTabela()">
+              </div>
+              <div style="margin-left:auto;">
+                <button type="button" class="btn-primary" style="min-height:34px; font-size:12px;" onclick="abrirModalNovoUsuario()">
+                  + Adicionar Usuário
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="clean-table">
+                <thead>
+                  <tr>
+                    <th>Usuário</th>
+                    <th>E-mail</th>
+                    <th>Telefone</th>
+                    <th>Workspaces & Permissões</th>
+                    <th>Cadastro</th>
+                    <th style="text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body">
+                  <tr>
+                    <td colspan="6" style="text-align:center; padding:28px; color:var(--text-muted);">Carregando usuários do sistema...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -1793,9 +2247,9 @@
      ══════════════════════════════════════════════════════════════════ -->
 
 <!-- MODAL 1: AUTH / TOKEN / TROCA DE CONTA -->
-<dialog class="win-clean" id="modal-auth">
+<dialog class="win-clean" id="modal-auth" style="max-width:540px;">
   <div class="modal-header-clean">
-    <h3 class="modal-title-clean">Perfil de Acesso & Token</h3>
+    <h3 class="modal-title-clean">Workspaces & Perfil de Acesso</h3>
     <button type="button" class="modal-close-icon" onclick="fecharModalAuth()">&times;</button>
   </div>
   <div style="margin-bottom:16px;">
@@ -1803,12 +2257,25 @@
       <div class="sidebar-ws-avatar" id="auth-current-avatar">VS</div>
       <div>
         <strong id="auth-current-name" style="display:block; font-size:14px;">Vendedor Sincero</strong>
-        <span id="auth-current-role" style="font-size:12px; color:var(--text-muted);">Organizador da Rifa</span>
+        <span id="auth-current-role" style="font-size:12px; color:var(--text-muted);">Workspace Ativo</span>
       </div>
-      <span class="badge badge-primary" id="auth-current-tag" style="margin-left:auto;">SUBCONTA</span>
+      <span class="badge badge-primary" id="auth-current-tag" style="margin-left:auto;">ATIVO</span>
     </div>
 
-    <label class="form-label" for="custom-token-input">Inserir Token Manualmente</label>
+    <!-- Lista de Workspaces Disponíveis com Botão de Criar -->
+    <div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:12px; margin-bottom:16px; background:var(--bg-card);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-size:12.5px; font-weight:700; color:var(--text-main);">Alternar Workspace:</span>
+        <button type="button" class="btn-primary" style="min-height:28px; padding:0 10px; font-size:11.5px;" onclick="fecharModalAuth(); abrirModalNovoWorkspace();">
+          + Novo Workspace
+        </button>
+      </div>
+      <div id="modal-auth-workspaces-list" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+        <div style="font-size:12px; color:var(--text-muted);">Carregando workspaces...</div>
+      </div>
+    </div>
+
+    <label class="form-label" for="custom-token-input">Token Administrativo (Bearer)</label>
     <input type="text" class="form-input" id="custom-token-input" placeholder="Cole sua chave de autenticação aqui..." style="font-family:var(--font-mono); margin-bottom:12px;">
   </div>
   <div style="display:flex; justify-content:space-between; gap:10px;">
@@ -1945,6 +2412,191 @@
   </div>
 </dialog>
 
+<!-- MODAL 7: NOVO WORKSPACE / CLIENTE -->
+<dialog class="win-clean" id="modal-novo-workspace" style="max-width:580px;">
+  <div class="modal-header-clean">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <h3 class="modal-title-clean">Criar Novo Workspace de Cliente</h3>
+    </div>
+    <button type="button" class="modal-close-icon" onclick="fecharModalNovoWorkspace()">&times;</button>
+  </div>
+  <form id="form-novo-workspace" onsubmit="salvarNovoWorkspace(event)">
+    <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:18px;">
+      <div>
+        <label class="form-label" for="new-ws-name">Nome do Workspace / Lojista <span style="color:var(--red-500);">*</span></label>
+        <input type="text" class="form-input" id="new-ws-name" placeholder="ex: Rifas do Paulinho" required oninput="onNovoWsNomeInput(this.value)">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label" for="new-ws-slug">Slug Identificador</label>
+          <input type="text" class="form-input" id="new-ws-slug" placeholder="ex: rifas-paulinho" oninput="marcarSlugCustomizado()">
+          <span style="font-size:11px; color:var(--text-muted); display:block; margin-top:4px;">Gera URLs automáticas. Deixe vazio para slug automático.</span>
+        </div>
+        <div>
+          <label class="form-label" for="new-ws-type">Tipo de Conta</label>
+          <select class="form-select" id="new-ws-type">
+            <option value="merchant" selected>Cliente Lojista (Rifas)</option>
+            <option value="partner_whitelabel">Parceiro White-Label</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label" for="new-ws-platform">Plataforma de Rifas</label>
+          <select class="form-select" id="new-ws-platform">
+            <option value="sorteime" selected>SorteiMe</option>
+            <option value="play55">Play55</option>
+            <option value="sorteamos">Sorteamos</option>
+            <option value="custom">Outra / Personalizada</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="new-ws-domain">Domínio Inicial (Opcional)</label>
+          <input type="text" class="form-input" id="new-ws-domain" placeholder="rifa.cliente.com.br">
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border-light); padding-top:14px;">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:13px; cursor:pointer; margin-bottom:10px;">
+          <input type="checkbox" id="check-create-initial-user" onchange="toggleInitialUserFields(this.checked)" checked style="accent-color:var(--primary);">
+          <span>Criar usuário de acesso inicial para este cliente</span>
+        </label>
+        
+        <div id="initial-user-fields" style="display:flex; flex-direction:column; gap:12px; background:var(--bg-subtle); padding:12px; border-radius:var(--radius-md);">
+          <div>
+            <label class="form-label" for="new-ws-user-email">E-mail de Login do Cliente</label>
+            <input type="email" class="form-input" id="new-ws-user-email" placeholder="cliente@rifa.com">
+          </div>
+          <div>
+            <label class="form-label" for="new-ws-user-password">Senha Provisória</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" class="form-input" id="new-ws-user-password" placeholder="Defina ou gere uma senha">
+              <button type="button" class="btn-secondary" style="min-height:36px; padding:0 12px; font-size:12px;" onclick="gerarSenhaAleatoria('new-ws-user-password')">Gerar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border-light); padding-top:14px;">
+      <button type="button" class="btn-secondary" onclick="fecharModalNovoWorkspace()">Cancelar</button>
+      <button type="submit" class="btn-primary" id="btn-submit-novo-ws">Criar Workspace</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- MODAL 8: USUÁRIO GLOBAL DO SISTEMA (CRIAR / EDITAR) -->
+<dialog class="win-clean" id="modal-usuario-global" style="max-width:580px;">
+  <div class="modal-header-clean">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      <h3 class="modal-title-clean" id="modal-usuario-global-title">Cadastrar Novo Usuário</h3>
+    </div>
+    <button type="button" class="modal-close-icon" onclick="fecharModalNovoUsuario()">&times;</button>
+  </div>
+  <form id="form-usuario-global" onsubmit="salvarUsuarioGlobal(event)">
+    <input type="hidden" id="user-global-id" value="">
+    <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:18px;">
+      <div>
+        <label class="form-label" for="user-global-name">Nome Completo</label>
+        <input type="text" class="form-input" id="user-global-name" placeholder="ex: Roberto Oliveira" required>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label" for="user-global-email">E-mail de Acesso <span style="color:var(--red-500);">*</span></label>
+          <input type="email" class="form-input" id="user-global-email" placeholder="usuario@email.com" required>
+        </div>
+        <div>
+          <label class="form-label" for="user-global-phone">Telefone / WhatsApp</label>
+          <input type="text" class="form-input" id="user-global-phone" placeholder="(11) 99999-8888">
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label" for="user-global-password" id="label-user-password">Senha de Acesso</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" class="form-input" id="user-global-password" placeholder="Defina ou gere uma senha">
+          <button type="button" class="btn-secondary" style="min-height:36px; padding:0 12px; font-size:12px;" onclick="gerarSenhaAleatoria('user-global-password')">Gerar</button>
+        </div>
+        <span style="font-size:11px; color:var(--text-muted); display:block; margin-top:4px;" id="help-user-password">Mínimo de 6 caracteres.</span>
+      </div>
+
+      <div style="border-top:1px solid var(--border-light); padding-top:14px;">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:13px; cursor:pointer; margin-bottom:8px;">
+          <input type="checkbox" id="user-global-superadmin" onchange="toggleSuperAdminOptions(this.checked)" style="accent-color:var(--primary);">
+          <span>⭐ Acesso Super Administrador (Acessa tudo no sistema)</span>
+        </label>
+        <span style="font-size:11.5px; color:var(--text-muted); display:block; margin-bottom:12px;">
+          Super Admins podem gerenciar todos os workspaces, usuários, chaves e parametrizações da plataforma.
+        </span>
+
+        <div id="user-workspaces-assign-box">
+          <label class="form-label" style="margin-bottom:6px;">Vincular aos Workspaces:</label>
+          <div id="user-workspaces-checklist" style="max-height:180px; overflow-y:auto; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:10px; display:flex; flex-direction:column; gap:8px; background:var(--bg-subtle);">
+            <!-- Carregado via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border-light); padding-top:14px;">
+      <button type="button" class="btn-secondary" onclick="fecharModalNovoUsuario()">Cancelar</button>
+      <button type="submit" class="btn-primary" id="btn-submit-usuario-global">Salvar Usuário</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- MODAL 9: CREDENCIAIS E TOKENS DO WORKSPACE -->
+<dialog class="win-clean" id="modal-tokens-workspace" style="max-width:560px;">
+  <div class="modal-header-clean">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--green-500)" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <h3 class="modal-title-clean">Workspace Criado com Sucesso!</h3>
+    </div>
+    <button type="button" class="modal-close-icon" onclick="fecharModalTokensWorkspace()">&times;</button>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:18px;">
+    <p style="font-size:13px; color:var(--text-muted); margin:0;">
+      O workspace <strong id="token-modal-ws-name" style="color:var(--text-main);">-</strong> foi configurado. Guarde ou compartilhe as chaves de acesso com o cliente:
+    </p>
+
+    <div>
+      <label class="form-label">Token de Administração (Bearer)</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" class="form-input" id="token-modal-admin-token" readonly onclick="this.select()" style="font-family:var(--font-mono);">
+        <button type="button" class="btn-secondary" onclick="copiarValor(document.getElementById('token-modal-admin-token').value)">Copiar</button>
+      </div>
+    </div>
+
+    <div>
+      <label class="form-label">Chave de API / Webhook</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" class="form-input" id="token-modal-api-key" readonly onclick="this.select()" style="font-family:var(--font-mono);">
+        <button type="button" class="btn-secondary" onclick="copiarValor(document.getElementById('token-modal-api-key').value)">Copiar</button>
+      </div>
+    </div>
+
+    <div id="token-modal-user-box" style="display:none; background:var(--bg-subtle); padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-light);">
+      <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:4px;">Acesso Inicial do Cliente:</div>
+      <div style="font-size:12.5px; color:var(--text-muted);">
+        E-mail: <strong id="token-modal-user-email" style="color:var(--text-main);">-</strong><br>
+        Senha: <strong id="token-modal-user-password" style="color:var(--text-main);">-</strong>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:14px;">
+    <button type="button" class="btn-secondary" onclick="fecharModalTokensWorkspace()">Fechar</button>
+    <button type="button" class="btn-primary" id="token-modal-btn-access" onclick="acessarWorkspaceCriado()">
+      Acessar Workspace Agora &rarr;
+    </button>
+  </div>
+</dialog>
+
 <!-- TOASTS DE NOTIFICAÇÃO -->
 <div class="toast-container" id="toast-container"></div>
 
@@ -1971,6 +2623,10 @@
   var sessionHandled = false;
   var temAlteracoesPendentes = false;
   var previewScreen = 'scratch';
+  var allSystemUsers = [];
+  var allWorkspacesList = [];
+  var createdWorkspaceData = null;
+  var novoWsSlugTouched = false;
 
   function getAdminToken() {
     return localStorage.getItem('upscale_admin_token') || '';
@@ -2146,6 +2802,27 @@
     var modal = document.getElementById('modal-auth');
     var tokenDisplay = document.getElementById('settings-token-display');
     if (tokenDisplay) tokenDisplay.value = getAdminToken();
+
+    // Atualiza lista rápida de workspaces no modal
+    var wsBox = document.getElementById('modal-auth-workspaces-list');
+    if (wsBox) {
+      var list = (allWorkspacesList && allWorkspacesList.length) ? allWorkspacesList : (accessibleWorkspaces || []);
+      if (!list.length) {
+        wsBox.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:6px 0;">Nenhum workspace carregado no momento.</div>';
+      } else {
+        wsBox.innerHTML = list.map(function(w) {
+          var isCurrent = w.id === currentWsId;
+          return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:${isCurrent ? 'rgba(23,92,255,0.08)' : 'var(--bg-subtle)'}; border-radius:6px; border:1px solid ${isCurrent ? 'var(--primary-light)' : 'transparent'};">
+            <div>
+              <strong style="font-size:12.5px; color:${isCurrent ? 'var(--primary)' : 'var(--text-main)'};">${escapeHtml(w.name)}</strong>
+              <span style="font-size:11px; color:var(--text-muted); margin-left:6px;">#${w.id}</span>
+            </div>
+            ${isCurrent ? '<span style="font-size:11px; font-weight:700; color:var(--primary);">● Ativo</span>' : `<button type="button" class="btn-secondary" style="min-height:24px; padding:0 8px; font-size:11px;" onclick="fecharModalAuth(); selecionarWorkspacePorId(${w.id});">Alternar</button>`}
+          </div>`;
+        }).join('');
+      }
+    }
+
     if (modal.showModal) modal.showModal();
     else modal.style.display = 'block';
   }
@@ -2779,6 +3456,9 @@
     document.querySelectorAll('#view-sites .subtab-pane').forEach(function(p) { p.classList.remove('active'); });
     var pane = document.getElementById('sites-subtab-' + tabKey);
     if (pane) pane.classList.add('active');
+    if (tabKey === 'funis') {
+      if (window.initElementorBuilder) window.initElementorBuilder();
+    }
   }
 
   function selecionarSubabaConfig(tabKey, btn) {
@@ -2949,38 +3629,122 @@
     });
   }
 
-  /* ═══ CLIENTES / WORKSPACES ═══ */
+  /* ═══ CLIENTES / WORKSPACES & USUÁRIOS GLOBAIS ═══ */
+  function selecionarSubabaClientes(subaba, btn) {
+    document.querySelectorAll('#view-customers .subtabs-nav .subtab-btn').forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+
+    var paneWs = document.getElementById('customers-subtab-workspaces');
+    var paneUsers = document.getElementById('customers-subtab-users');
+
+    if (subaba === 'workspaces') {
+      if (paneWs) paneWs.style.display = 'block';
+      if (paneUsers) paneUsers.style.display = 'none';
+      carregarWorkspacesTabela();
+    } else {
+      if (paneWs) paneWs.style.display = 'none';
+      if (paneUsers) paneUsers.style.display = 'block';
+      carregarTodosUsuarios();
+    }
+  }
+
   function renderizarClientesTabela() {
+    carregarWorkspacesTabela();
+    carregarTodosUsuarios();
+  }
+
+  function carregarWorkspacesTabela() {
     var tbody = document.getElementById('customers-table-body');
     if (!tbody) return;
-    var list = accessibleWorkspaces || [];
-    if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:28px; color:var(--text-muted);">Nenhum workspace disponível para esta sessão.</td></tr>';
+
+    apiFetch('../api/admin/workspaces.php')
+    .then(function(data) {
+      if (data.status !== 'success') {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Não foi possível carregar os workspaces.</td></tr>';
+        return;
+      }
+      allWorkspacesList = data.workspaces || [];
+      accessibleWorkspaces = allWorkspacesList;
+
+      var badgeCount = document.getElementById('count-workspaces-badge');
+      if (badgeCount) badgeCount.textContent = allWorkspacesList.length;
+
+      // Atualiza também o select de workspace no header se estiver vazio ou desatualizado
+      var sel = document.getElementById('workspace-select');
+      if (sel && sel.options.length !== allWorkspacesList.length) {
+        var prevVal = sel.value;
+        sel.innerHTML = allWorkspacesList.map(function(w) {
+          return `<option value="${w.id}">${escapeHtml(w.name)}</option>`;
+        }).join('');
+        if (prevVal) sel.value = prevVal;
+      }
+
+      renderizarListaWorkspacesHtml(allWorkspacesList);
+    })
+    .catch(function(err) {
+      console.error('Erro ao listar workspaces:', err);
+      renderizarListaWorkspacesHtml(accessibleWorkspaces || []);
+    });
+  }
+
+  function renderizarListaWorkspacesHtml(lista) {
+    var tbody = document.getElementById('customers-table-body');
+    if (!tbody) return;
+
+    if (!lista || !lista.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:28px; color:var(--text-muted);">Nenhum workspace cadastrado ou encontrado.</td></tr>';
       return;
     }
-    tbody.innerHTML = list.map(function(w) {
-      var initials = (w.name || 'US').substring(0, 2).toUpperCase();
+
+    tbody.innerHTML = lista.map(function(w) {
+      var initials = (w.name || 'WS').substring(0, 2).toUpperCase();
       var isPartner = w.type === 'partner_whitelabel';
+      var isCurrent = w.id === currentWsId;
+
       return `<tr>
         <td>
           <div class="table-user-cell">
             <div class="user-avatar-initials">${initials}</div>
             <div>
-              <div class="table-user-name">${escapeHtml(w.name)}</div>
-              <div class="table-user-sub">ID #${w.id}</div>
+              <div class="table-user-name">${escapeHtml(w.name)} ${isCurrent ? '<span style="font-size:10.5px; color:var(--primary); font-weight:700;">(Ativo)</span>' : ''}</div>
+              <div class="table-user-sub">ID #${w.id} &bull; Criado em ${w.created_at ? w.created_at.substring(0, 10) : 'Recente'}</div>
             </div>
           </div>
         </td>
         <td><code>${escapeHtml(w.slug || 'padrao')}</code></td>
-        <td><span class="badge ${isPartner ? 'badge-primary' : 'badge-neutral'}">${isPartner ? 'Parceiro White-Label' : 'Cliente Rifa'}</span></td>
+        <td><span class="badge ${isPartner ? 'badge-primary' : 'badge-neutral'}">${isPartner ? 'Parceiro White-Label' : 'Cliente Lojista'}</span></td>
+        <td>
+          <span style="font-size:12.5px; color:var(--text-main); font-weight:500;">
+            ${escapeHtml((w.external_platform || 'sorteime').toUpperCase())}
+          </span>
+        </td>
         <td><span class="badge badge-success"><span class="badge-dot-indicator"></span> Ativo</span></td>
         <td style="text-align:right;">
-          <button type="button" class="btn-secondary" style="min-height:30px; font-size:12px; padding:0 10px;" onclick="selecionarWorkspacePorId(${w.id})">
-            Acessar Workspace
-          </button>
+          <div style="display:flex; justify-content:flex-end; gap:6px;">
+            <button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="abrirModalTokensPorWorkspace(${w.id})" title="Ver chaves de acesso deste workspace">
+              Chaves
+            </button>
+            <button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="abrirModalAcessos(${w.id})" title="Gerenciar logins deste cliente">
+              Logins
+            </button>
+            <button type="button" class="btn-primary" style="min-height:28px; font-size:11.5px; padding:0 10px;" onclick="selecionarWorkspacePorId(${w.id})">
+              Acessar
+            </button>
+          </div>
         </td>
       </tr>`;
     }).join('');
+  }
+
+  function filtrarWorkspacesNaTabela() {
+    var q = (document.getElementById('search-workspaces-input').value || '').toLowerCase().trim();
+    if (!q) { renderizarListaWorkspacesHtml(allWorkspacesList); return; }
+    var filtrados = allWorkspacesList.filter(function(w) {
+      return (w.name && w.name.toLowerCase().includes(q)) ||
+             (w.slug && w.slug.toLowerCase().includes(q)) ||
+             String(w.id).includes(q);
+    });
+    renderizarListaWorkspacesHtml(filtrados);
   }
 
   function selecionarWorkspacePorId(id) {
@@ -2991,6 +3755,405 @@
       navigate('dash');
       showToast('Workspace alternado com sucesso.', 'success');
     }
+  }
+
+  /* ─── GERENCIAMENTO DE TODOS OS USUÁRIOS DO SISTEMA ─── */
+  function carregarTodosUsuarios() {
+    var tbody = document.getElementById('users-table-body');
+    if (!tbody) return;
+
+    apiFetch('../api/admin/users.php?action=list_all')
+    .then(function(data) {
+      if (data.status !== 'success') {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Não foi possível carregar os usuários.</td></tr>';
+        return;
+      }
+      allSystemUsers = data.users || [];
+      var badgeCount = document.getElementById('count-users-badge');
+      if (badgeCount) badgeCount.textContent = allSystemUsers.length;
+      renderizarListaUsuariosHtml(allSystemUsers);
+    })
+    .catch(function(err) {
+      console.error('Erro ao listar usuários do sistema:', err);
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Erro de conexão ao buscar usuários.</td></tr>';
+    });
+  }
+
+  function renderizarListaUsuariosHtml(lista) {
+    var tbody = document.getElementById('users-table-body');
+    if (!tbody) return;
+
+    if (!lista || !lista.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:28px; color:var(--text-muted);">Nenhum usuário cadastrado ou encontrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = lista.map(function(u) {
+      var initials = (u.name || u.email || 'US').substring(0, 2).toUpperCase();
+      var wList = u.workspaces || [];
+      var isSuper = wList.some(function(w) { return w.role === 'super_admin'; });
+
+      var membershipsBadges = '';
+      if (isSuper) {
+        membershipsBadges = '<span class="badge badge-primary" style="font-weight:700;">⭐ Super Admin Global</span>';
+      } else if (wList.length > 0) {
+        membershipsBadges = wList.map(function(m) {
+          var roleName = m.role === 'merchant_admin' ? 'Admin' : (m.role === 'partner_admin' ? 'Parceiro' : 'Operador');
+          return `<span class="badge badge-neutral" style="margin-right:4px; margin-bottom:4px; display:inline-block;">${escapeHtml(m.workspace_name)} <strong style="color:var(--text-main); font-size:11px;">(${roleName})</strong></span>`;
+        }).join('');
+      } else {
+        membershipsBadges = '<span style="font-size:11.5px; color:var(--text-muted);">Sem workspace vinculado</span>';
+      }
+
+      var dataCad = u.created_at ? u.created_at.substring(0, 10) : '-';
+
+      return `<tr>
+        <td>
+          <div class="table-user-cell">
+            <div class="user-avatar-initials">${initials}</div>
+            <div>
+              <div class="table-user-name">${escapeHtml(u.name || 'Sem nome')}</div>
+              <div class="table-user-sub">ID #${u.id}</div>
+            </div>
+          </div>
+        </td>
+        <td><strong>${escapeHtml(u.email)}</strong></td>
+        <td>${escapeHtml(u.phone || '-')}</td>
+        <td style="max-width:280px;">${membershipsBadges}</td>
+        <td style="font-size:12px; color:var(--text-muted);">${dataCad}</td>
+        <td style="text-align:right;">
+          <div style="display:flex; justify-content:flex-end; gap:6px;">
+            <button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="abrirModalEditarUsuario(${u.id})">
+              Editar
+            </button>
+            <button type="button" class="btn-danger-ghost" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="removerUsuarioGlobal(${u.id})">
+              Remover
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filtrarUsuariosNaTabela() {
+    var q = (document.getElementById('search-users-input').value || '').toLowerCase().trim();
+    if (!q) { renderizarListaUsuariosHtml(allSystemUsers); return; }
+    var filtrados = allSystemUsers.filter(function(u) {
+      var matchName = u.name && u.name.toLowerCase().includes(q);
+      var matchEmail = u.email && u.email.toLowerCase().includes(q);
+      var matchPhone = u.phone && u.phone.includes(q);
+      var matchWs = (u.workspaces || []).some(function(w) {
+        return w.workspace_name && w.workspace_name.toLowerCase().includes(q);
+      });
+      return matchName || matchEmail || matchPhone || matchWs;
+    });
+    renderizarListaUsuariosHtml(filtrados);
+  }
+
+  /* ─── MODAL: NOVO WORKSPACE DE CLIENTE ─── */
+  function abrirModalNovoWorkspace() {
+    novoWsSlugTouched = false;
+    document.getElementById('form-novo-workspace').reset();
+    document.getElementById('check-create-initial-user').checked = true;
+    toggleInitialUserFields(true);
+    var modal = document.getElementById('modal-novo-workspace');
+    if (modal && typeof modal.showModal === 'function') modal.showModal();
+  }
+
+  function fecharModalNovoWorkspace() {
+    var modal = document.getElementById('modal-novo-workspace');
+    if (modal && typeof modal.close === 'function') modal.close();
+  }
+
+  function onNovoWsNomeInput(val) {
+    if (!novoWsSlugTouched) {
+      var slug = val.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      var inpSlug = document.getElementById('new-ws-slug');
+      if (inpSlug) inpSlug.value = slug;
+    }
+  }
+
+  function marcarSlugCustomizado() {
+    novoWsSlugTouched = true;
+  }
+
+  function toggleInitialUserFields(show) {
+    var box = document.getElementById('initial-user-fields');
+    if (box) box.style.display = show ? 'flex' : 'none';
+  }
+
+  function salvarNovoWorkspace(ev) {
+    ev.preventDefault();
+    var btn = document.getElementById('btn-submit-novo-ws');
+    if (btn) btn.disabled = true;
+
+    var name = document.getElementById('new-ws-name').value.trim();
+    var slug = document.getElementById('new-ws-slug').value.trim();
+    var type = document.getElementById('new-ws-type').value;
+    var platform = document.getElementById('new-ws-platform').value;
+    var domain = document.getElementById('new-ws-domain').value.trim();
+
+    var createInitialUser = document.getElementById('check-create-initial-user').checked;
+    var userEmail = createInitialUser ? document.getElementById('new-ws-user-email').value.trim() : '';
+    var userPassword = createInitialUser ? document.getElementById('new-ws-user-password').value : '';
+
+    var payload = {
+      action: 'create',
+      name: name,
+      slug: slug,
+      type: type,
+      external_platform: platform,
+      domain: domain,
+      initial_user_email: userEmail,
+      initial_user_password: userPassword
+    };
+
+    apiFetch('../api/admin/workspaces.php', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    .then(function(data) {
+      if (btn) btn.disabled = false;
+      if (data.status === 'success') {
+        fecharModalNovoWorkspace();
+        showToast('Novo workspace criado com sucesso!', 'success');
+        createdWorkspaceData = data.workspace;
+
+        // Atualiza tabelas
+        carregarWorkspacesTabela();
+        carregarTodosUsuarios();
+
+        // Abre modal de tokens com as credenciais geradas
+        abrirModalTokensSucesso(data.workspace, userEmail, userPassword);
+      } else {
+        showToast(data.message || 'Erro ao criar workspace.', 'error');
+      }
+    })
+    .catch(function(err) {
+      if (btn) btn.disabled = false;
+      showToast('Erro de conexão ao criar workspace: ' + err.message, 'error');
+    });
+  }
+
+  function abrirModalTokensSucesso(ws, userEmail, userPassword) {
+    document.getElementById('token-modal-ws-name').textContent = ws.name + ' (#' + ws.id + ')';
+    document.getElementById('token-modal-admin-token').value = ws.admin_token || 'upscale_admin_sec_' + ws.slug;
+    document.getElementById('token-modal-api-key').value = ws.api_key || 'upscale_live_' + ws.slug;
+
+    var userBox = document.getElementById('token-modal-user-box');
+    if (userEmail && userPassword) {
+      document.getElementById('token-modal-user-email').textContent = userEmail;
+      document.getElementById('token-modal-user-password').textContent = userPassword;
+      userBox.style.display = 'block';
+    } else {
+      userBox.style.display = 'none';
+    }
+
+    var modal = document.getElementById('modal-tokens-workspace');
+    if (modal && typeof modal.showModal === 'function') modal.showModal();
+  }
+
+  function abrirModalTokensPorWorkspace(wsId) {
+    var ws = allWorkspacesList.find(function(w) { return w.id === wsId; });
+    if (!ws) return;
+    createdWorkspaceData = ws;
+    document.getElementById('token-modal-ws-name').textContent = ws.name + ' (#' + ws.id + ')';
+    document.getElementById('token-modal-admin-token').value = ws.admin_token || 'upscale_admin_sec_' + ws.slug;
+    document.getElementById('token-modal-api-key').value = ws.api_key || 'upscale_live_' + ws.slug;
+    document.getElementById('token-modal-user-box').style.display = 'none';
+
+    var modal = document.getElementById('modal-tokens-workspace');
+    if (modal && typeof modal.showModal === 'function') modal.showModal();
+  }
+
+  function fecharModalTokensWorkspace() {
+    var modal = document.getElementById('modal-tokens-workspace');
+    if (modal && typeof modal.close === 'function') modal.close();
+  }
+
+  function acessarWorkspaceCriado() {
+    fecharModalTokensWorkspace();
+    if (createdWorkspaceData && createdWorkspaceData.id) {
+      selecionarWorkspacePorId(createdWorkspaceData.id);
+    }
+  }
+
+  /* ─── MODAL: USUÁRIO GLOBAL DO SISTEMA ─── */
+  function gerarSenhaAleatoria(targetId) {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
+    var pwd = '';
+    for (var i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    var inp = document.getElementById(targetId);
+    if (inp) {
+      inp.value = pwd;
+      inp.type = 'text';
+      showToast('Senha gerada com sucesso!', 'success');
+    }
+  }
+
+  function toggleSuperAdminOptions(isSuper) {
+    var box = document.getElementById('user-workspaces-assign-box');
+    if (box) box.style.opacity = isSuper ? '0.4' : '1';
+  }
+
+  function renderizarChecklistWorkspacesUsuario(userMemberships) {
+    var container = document.getElementById('user-workspaces-checklist');
+    if (!container) return;
+
+    var memMap = {};
+    (userMemberships || []).forEach(function(m) {
+      memMap[m.workspace_id] = m.role;
+    });
+
+    if (!allWorkspacesList.length) {
+      container.innerHTML = '<div style="font-size:12px; color:var(--text-muted);">Nenhum workspace disponível para vincular.</div>';
+      return;
+    }
+
+    container.innerHTML = allWorkspacesList.map(function(w) {
+      var isChecked = !!memMap[w.id];
+      var currentRole = memMap[w.id] || (w.type === 'partner_whitelabel' ? 'partner_admin' : 'merchant_admin');
+
+      return `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid var(--border-light);">
+        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;">
+          <input type="checkbox" class="chk-ws-membership" data-ws-id="${w.id}" ${isChecked ? 'checked' : ''} style="accent-color:var(--primary);">
+          <span><strong>${escapeHtml(w.name)}</strong> <code style="font-size:11px;">#${w.id}</code></span>
+        </label>
+        <select class="form-select sel-ws-role" data-ws-id="${w.id}" style="font-size:11.5px; height:28px; width:140px; padding:2px 6px;">
+          <option value="merchant_admin" ${currentRole === 'merchant_admin' ? 'selected' : ''}>Administrador</option>
+          <option value="merchant_operator" ${currentRole === 'merchant_operator' ? 'selected' : ''}>Operador</option>
+          <option value="partner_admin" ${currentRole === 'partner_admin' ? 'selected' : ''}>Parceiro</option>
+        </select>
+      </div>`;
+    }).join('');
+  }
+
+  function abrirModalNovoUsuario() {
+    document.getElementById('form-usuario-global').reset();
+    document.getElementById('user-global-id').value = '';
+    document.getElementById('modal-usuario-global-title').textContent = 'Cadastrar Novo Usuário';
+    document.getElementById('label-user-password').innerHTML = 'Senha de Acesso <span style="color:var(--red-500);">*</span>';
+    document.getElementById('help-user-password').textContent = 'Mínimo de 6 caracteres.';
+    document.getElementById('user-global-password').required = true;
+    document.getElementById('user-global-superadmin').checked = false;
+    toggleSuperAdminOptions(false);
+
+    renderizarChecklistWorkspacesUsuario([]);
+
+    var modal = document.getElementById('modal-usuario-global');
+    if (modal && typeof modal.showModal === 'function') modal.showModal();
+  }
+
+  function abrirModalEditarUsuario(userId) {
+    var u = allSystemUsers.find(function(user) { return user.id === userId; });
+    if (!u) return;
+
+    document.getElementById('form-usuario-global').reset();
+    document.getElementById('user-global-id').value = u.id;
+    document.getElementById('modal-usuario-global-title').textContent = 'Editar Usuário: ' + (u.name || u.email);
+    document.getElementById('user-global-name').value = u.name || '';
+    document.getElementById('user-global-email').value = u.email || '';
+    document.getElementById('user-global-phone').value = u.phone || '';
+    document.getElementById('user-global-password').value = '';
+    document.getElementById('user-global-password').required = false;
+    document.getElementById('label-user-password').textContent = 'Nova Senha (Opcional)';
+    document.getElementById('help-user-password').textContent = 'Deixe em branco para manter a senha atual.';
+
+    var isSuper = (u.workspaces || []).some(function(w) { return w.role === 'super_admin'; });
+    document.getElementById('user-global-superadmin').checked = isSuper;
+    toggleSuperAdminOptions(isSuper);
+
+    renderizarChecklistWorkspacesUsuario(u.workspaces || []);
+
+    var modal = document.getElementById('modal-usuario-global');
+    if (modal && typeof modal.showModal === 'function') modal.showModal();
+  }
+
+  function fecharModalNovoUsuario() {
+    var modal = document.getElementById('modal-usuario-global');
+    if (modal && typeof modal.close === 'function') modal.close();
+  }
+
+  function salvarUsuarioGlobal(ev) {
+    ev.preventDefault();
+    var btn = document.getElementById('btn-submit-usuario-global');
+    if (btn) btn.disabled = true;
+
+    var userId = document.getElementById('user-global-id').value;
+    var name = document.getElementById('user-global-name').value.trim();
+    var email = document.getElementById('user-global-email').value.trim();
+    var phone = document.getElementById('user-global-phone').value.trim();
+    var password = document.getElementById('user-global-password').value;
+    var isSuperAdmin = document.getElementById('user-global-superadmin').checked;
+
+    var memberships = [];
+    if (isSuperAdmin) {
+      memberships.push({
+        workspace_id: currentWsId || 2,
+        role: 'super_admin'
+      });
+    } else {
+      document.querySelectorAll('#user-workspaces-checklist .chk-ws-membership:checked').forEach(function(chk) {
+        var wsId = parseInt(chk.dataset.wsId);
+        var roleSel = document.querySelector(`#user-workspaces-checklist .sel-ws-role[data-ws-id="${wsId}"]`);
+        var role = roleSel ? roleSel.value : 'merchant_admin';
+        memberships.push({ workspace_id: wsId, role: role });
+      });
+    }
+
+    var payload = {
+      action: userId ? 'update_global' : 'create_global',
+      name: name,
+      email: email,
+      phone: phone,
+      password: password,
+      memberships: memberships
+    };
+    if (userId) payload.user_id = parseInt(userId);
+
+    apiFetch('../api/admin/users.php', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    .then(function(data) {
+      if (btn) btn.disabled = false;
+      if (data.status === 'success') {
+        fecharModalNovoUsuario();
+        showToast(userId ? 'Usuário atualizado com sucesso!' : 'Usuário cadastrado com sucesso!', 'success');
+        carregarTodosUsuarios();
+      } else {
+        showToast(data.message || 'Erro ao salvar usuário.', 'error');
+      }
+    })
+    .catch(function(err) {
+      if (btn) btn.disabled = false;
+      showToast('Erro de conexão: ' + err.message, 'error');
+    });
+  }
+
+  function removerUsuarioGlobal(userId) {
+    if (!confirm('Deseja realmente remover este usuário do sistema e revogar todos os seus acessos?')) return;
+
+    apiFetch('../api/admin/users.php', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete_global', user_id: userId })
+    })
+    .then(function(data) {
+      if (data.status === 'success') {
+        showToast('Usuário removido com sucesso.', 'success');
+        carregarTodosUsuarios();
+      } else {
+        showToast(data.message || 'Erro ao remover usuário.', 'error');
+      }
+    })
+    .catch(function(err) {
+      showToast('Erro de conexão: ' + err.message, 'error');
+    });
   }
 
   /* ═══ MÉTRICAS E TRANSAÇÕES ═══ */
@@ -3183,78 +4346,36 @@
     showToast('Oferta vinculada ao domínio ' + dom + ' com sucesso!', 'success');
   }
 
-  /* ═══ FUNIS HTML ═══ */
+  /* ═══ FUNIS HTML & CONSTRUTOR ELEMENTOR ═══ */
   function carregarFunis() {
-    apiFetch('../api/admin/funnels.php?workspace_id=' + (currentWsId || 2))
-    .then(function(data) {
-      allFunnelsData = data.funnels || [];
-      renderizarFunis();
-    })
-    .catch(function(e) { console.error('Erro ao carregar funis:', e); });
-  }
-
-  function renderizarFunis() {
-    var box = document.getElementById('funnel-list-container');
-    if (!box) return;
-    if (!allFunnelsData.length) {
-      box.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:10px;">Nenhum funil criado.</div>';
-      return;
+    if (window.initElementorBuilder) {
+      window.initElementorBuilder();
     }
-    box.innerHTML = allFunnelsData.map(function(f) {
-      return `<button type="button" class="nav-item-btn ${f.id === selectedFunnelId ? 'active' : ''}" style="width:100%;" onclick="selecionarFunil(${f.id})">
-        <span>${escapeHtml(f.name || f.slug)}</span>
-      </button>`;
-    }).join('');
   }
 
   function selecionarFunil(id) {
-    selectedFunnelId = id;
-    var f = allFunnelsData.find(function(x) { return x.id === id; });
-    if (!f) return;
-    document.getElementById('funnel-name').value = f.name || '';
-    document.getElementById('funnel-slug').value = f.slug || '';
-    document.getElementById('funnel-html-code').value = f.html || '';
-    renderizarFunis();
+    if (window.abrirPaginaElementor) window.abrirPaginaElementor(id);
   }
 
   function novoFunil() {
-    selectedFunnelId = null;
-    document.getElementById('funnel-name').value = 'Nova Página';
-    document.getElementById('funnel-slug').value = 'oferta-' + Math.floor(Math.random() * 900 + 100);
-    document.getElementById('funnel-html-code').value = '<h1>Oferta Especial</h1>\n<p>Compre agora suas cotas com desconto!</p>';
-    renderizarFunis();
+    if (window.novoFunilElementor) window.novoFunilElementor();
   }
 
   function salvarFunil() {
-    var name = document.getElementById('funnel-name').value.trim();
-    var slug = document.getElementById('funnel-slug').value.trim();
-    var html = document.getElementById('funnel-html-code').value;
-
-    apiFetch('../api/admin/funnels.php', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'save', funnel_id: selectedFunnelId, name: name, slug: slug, html: html, workspace_id: currentWsId || 2 })
-    })
-    .then(function(data) {
-      if (data.status === 'success') {
-        showToast('Página salva com sucesso!', 'success');
-        carregarFunis();
-      } else showToast(data.message || 'Erro ao salvar funil.', 'error');
-    });
+    if (window.salvarFunilRascunho) window.salvarFunilRascunho();
   }
 
   function publicarFunil() {
-    salvarFunil();
-    var slug = document.getElementById('funnel-slug').value.trim();
-    var pubUrl = window.location.origin + '/f/' + slug;
-    document.getElementById('modal-published-url-input').value = pubUrl;
-    document.getElementById('btn-modal-open-link').href = pubUrl;
-    document.getElementById('modal-funnel-published').showModal();
+    if (window.publicarFunilCompleto) window.publicarFunilCompleto();
   }
+
   function fecharModalFunilPublicado() {
-    document.getElementById('modal-funnel-published').close();
+    var modal = document.getElementById('modal-funnel-published');
+    if (modal && typeof modal.close === 'function') modal.close();
   }
   function copiarLinkModalPublicado() {
-    copiarValor(document.getElementById('modal-published-url-input').value);
+    var inp = document.getElementById('modal-published-url-input');
+    if (inp) copiarValor(inp.value);
   }
 
   /* ═══ PARCEIROS E SUBCONTAS ═══ */

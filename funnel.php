@@ -58,7 +58,8 @@ $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
 $scheme = $isHttps ? 'https' : 'http';
 $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? $host);
-$html = strtr($funnel['html_content'], [
+$rawHtml = !empty($funnel['published_content']) ? $funnel['published_content'] : $funnel['html_content'];
+$html = strtr($rawHtml, [
     '{{workspace_id}}' => (string)$workspace->id,
     '{{workspace_slug}}' => $workspace->slug,
     '{{workspace_name}}' => htmlspecialchars($workspace->name, ENT_QUOTES, 'UTF-8'),
