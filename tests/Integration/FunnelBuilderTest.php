@@ -156,4 +156,82 @@ class FunnelBuilderTest extends TestCase
         // Limpeza
         $this->pdo->prepare("DELETE FROM funnels WHERE id = ?")->execute([$funnelId]);
     }
+
+    public function testTemplatePickerMarkupAndStylesExist(): void
+    {
+        $html = file_get_contents(__DIR__ . '/../../hub/index.html');
+        $this->assertTrue(str_contains($html, 'id="view-template-picker"'), "Dedicated template picker view pane must exist.");
+        $this->assertTrue(str_contains($html, 'id="modal-template-preview-large"'), "Enlarged sandboxed preview dialog must exist.");
+        $this->assertTrue(str_contains($html, 'id="tp-card-pressel-premium-campanhas"'), "Pressel Premium card must exist.");
+        $this->assertTrue(str_contains($html, 'id="tp-card-booster-padrao"'), "Booster Padrao card must exist.");
+        $this->assertTrue(str_contains($html, 'id="tp-card-pagina-em-branco"'), "Pagina em Branco card must exist.");
+
+        $css = file_get_contents(__DIR__ . '/../../hub/elementor-builder.css');
+        $this->assertTrue(str_contains($css, '.template-picker-screen'), "CSS must include .template-picker-screen.");
+        $this->assertTrue(str_contains($css, '.tp-card'), "CSS must include .tp-card.");
+        $this->assertTrue(str_contains($css, '.tp-mini-pressel'), "CSS must include .tp-mini-pressel.");
+        $this->assertTrue(str_contains($css, '.tp-mini-booster'), "CSS must include .tp-mini-booster.");
+        $this->assertTrue(str_contains($css, '.tp-mini-blank'), "CSS must include .tp-mini-blank.");
+        $this->assertTrue(str_contains($css, '.tp-modal-preview-dialog'), "CSS must include .tp-modal-preview-dialog.");
+
+        $js = file_get_contents(__DIR__ . '/../../hub/elementor-builder.js');
+        $this->assertTrue(str_contains($js, 'abrirTelaSelecaoModelos'), "JS must expose abrirTelaSelecaoModelos.");
+        $this->assertTrue(str_contains($js, 'selecionarModeloPicker'), "JS must expose selecionarModeloPicker.");
+        $this->assertTrue(str_contains($js, 'ampliarPreviaModal'), "JS must expose ampliarPreviaModal.");
+        $this->assertTrue(str_contains($js, 'fecharPreviaModal'), "JS must expose fecharPreviaModal.");
+        $this->assertTrue(str_contains($js, 'confirmarUsoModelo'), "JS must expose confirmarUsoModelo.");
+    }
+
+    public function testIndependentDraftCreationFromTemplatePicker(): void
+    {
+        $templates = [
+            ['slug_prefix' => 'ranger-v6', 'tpl' => 'pressel-premium', 'name' => 'Pressel Premium — Campanhas'],
+            ['slug_prefix' => 'booster', 'tpl' => 'default', 'name' => 'Página Booster Padrão'],
+            ['slug_prefix' => 'pagina', 'tpl' => 'blank', 'name' => 'Página em Branco'],
+        ];
+
+        $createdIds = [];
+
+        foreach ($templates as $t) {
+            $uniqueSlug = $t['slug_prefix'] . '-' . bin2hex(random_bytes(3));
+            $initialContent = "<!-- Template {$t['tpl']} content -->";
+
+            $stmt = $this->pdo->prepare("
+                INSERT INTO funnels (
+                    workspace_id, name, slug, template_slug,
+                    draft_content, published_content, html_content,
+                    status
+                ) VALUES (1, ?, ?, ?, ?, NULL, ?, 'draft')
+            ");
+            $stmt->execute([
+                $t['name'],
+                $uniqueSlug,
+                $t['tpl'],
+                $initialContent,
+                $initialContent
+            ]);
+
+            $id = (int)$this->pdo->lastInsertId();
+            $this->assertTrue($id > 0, "Created draft funnel ID must be positive.");
+            $this->assertFalse(in_array($id, $createdIds, true), "Each created draft must have a unique ID.");
+            $createdIds[] = $id;
+
+            // Verificar persistência independente
+            $stmtVerify = $this->pdo->prepare("SELECT id, name, slug, template_slug, status, published_content, draft_content FROM funnels WHERE id = ?");
+            $stmtVerify->execute([$id]);
+            $row = $stmtVerify->fetch(PDO::FETCH_ASSOC);
+
+            $this->assertEquals($t['name'], $row['name']);
+            $this->assertEquals($uniqueSlug, $row['slug']);
+            $this->assertEquals($t['tpl'], $row['template_slug']);
+            $this->assertEquals('draft', $row['status']);
+            $this->assertTrue($row['published_content'] === null, "Draft published_content must be null.");
+            $this->assertEquals($initialContent, $row['draft_content']);
+        }
+
+        // Limpeza dos 3 funis criados
+        foreach ($createdIds as $id) {
+            $this->pdo->prepare("DELETE FROM funnels WHERE id = ?")->execute([$id]);
+        }
+    }
 }

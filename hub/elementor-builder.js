@@ -1443,7 +1443,7 @@
   }
 
   function novoFunilElementor() {
-    abrirModalNovoFunil();
+    abrirTelaSelecaoModelos('drawer');
   }
 
   function excluirPagina(id) {
@@ -1906,6 +1906,335 @@
     window.copiarValor && window.copiarValor(pubUrl);
   }
 
+  // ══════════════════════════════════════════════════════════════════
+  // 12. TELA DEDICADA DE SELEÇÃO DE MODELOS DE PÁGINA (DESIGN OFICIAL)
+  // ══════════════════════════════════════════════════════════════════
+  var selectedTemplatePickerId = 'pressel-premium-campanhas';
+  var templatePickerOrigin = 'editor';
+
+  var TEMPLATE_PICKER_DEFS = {
+    'pressel-premium-campanhas': {
+      id: 'pressel-premium-campanhas',
+      name: 'Pressel Premium — Campanhas',
+      templateSlug: 'pressel-premium',
+      defaultSlugPrefix: 'ranger-v6',
+      cardId: 'tp-card-pressel-premium-campanhas'
+    },
+    'booster-padrao': {
+      id: 'booster-padrao',
+      name: 'Página Booster Padrão',
+      templateSlug: 'default',
+      defaultSlugPrefix: 'booster',
+      cardId: 'tp-card-booster-padrao'
+    },
+    'pagina-em-branco': {
+      id: 'pagina-em-branco',
+      name: 'Página em Branco',
+      templateSlug: 'blank',
+      defaultSlugPrefix: 'pagina',
+      cardId: 'tp-card-pagina-em-branco'
+    }
+  };
+
+  function abrirTelaSelecaoModelos(origem) {
+    templatePickerOrigin = origem || 'editor';
+    selecionarModeloPicker('pressel-premium-campanhas');
+
+    // Ocultar todas as outras view-panes e exibir a tela dedicada
+    document.querySelectorAll('.view-pane').forEach(function(p) {
+      p.classList.remove('active');
+    });
+
+    var pickerPane = document.getElementById('view-template-picker');
+    if (pickerPane) {
+      pickerPane.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    // Fechar drawer caso estivesse aberto
+    var drawer = document.getElementById('builder-pages-drawer');
+    var backdrop = document.getElementById('builder-drawer-backdrop');
+    if (drawer && drawer.classList.contains('open')) {
+      drawer.classList.remove('open');
+      if (backdrop) backdrop.classList.remove('open');
+    }
+  }
+
+  function voltarOrigemTemplatePicker() {
+    var pickerPane = document.getElementById('view-template-picker');
+    if (pickerPane) pickerPane.classList.remove('active');
+
+    if (templatePickerOrigin === 'drawer') {
+      if (window.navigate) window.navigate('sites');
+      var funisTab = document.getElementById('sites-subtab-funis');
+      if (funisTab && window.selecionarSubabaDominios) {
+        window.selecionarSubabaDominios('funis');
+      }
+      setTimeout(function() {
+        togglePagesDrawer(true);
+      }, 50);
+    } else if (templatePickerOrigin === 'dash') {
+      if (window.navigate) window.navigate('dash');
+    } else {
+      if (window.navigate) window.navigate('sites');
+      if (window.selecionarSubabaDominios) {
+        window.selecionarSubabaDominios('funis');
+      }
+    }
+  }
+
+  function selecionarModeloPicker(modelId) {
+    if (!TEMPLATE_PICKER_DEFS[modelId]) modelId = 'pressel-premium-campanhas';
+    selectedTemplatePickerId = modelId;
+
+    var def = TEMPLATE_PICKER_DEFS[modelId];
+
+    // Atualizar classes e botões nos 3 cards
+    ['pressel-premium-campanhas', 'booster-padrao', 'pagina-em-branco'].forEach(function(id) {
+      var cardDef = TEMPLATE_PICKER_DEFS[id];
+      var cardEl = document.getElementById(cardDef.cardId);
+      if (!cardEl) return;
+
+      var isSelected = (id === modelId);
+      cardEl.classList.toggle('selected', isSelected);
+
+      var btn = cardEl.querySelector('.tp-btn-select');
+      if (btn) {
+        if (isSelected) {
+          btn.classList.add('selected');
+          btn.textContent = '✓ Selecionado';
+        } else {
+          btn.classList.remove('selected');
+          btn.textContent = 'Selecionar';
+        }
+      }
+    });
+
+    // Atualizar nome na barra inferior fixa
+    var bottomName = document.getElementById('tp-bottom-selected-name');
+    if (bottomName) {
+      bottomName.textContent = def.name;
+    }
+  }
+
+  function getTemplateHtmlForModel(modelId, sanitizeForPreview) {
+    var html = '';
+    if (modelId === 'pressel-premium-campanhas' || modelId === 'pressel-premium') {
+      if (window.PresselPremium) {
+        var cfg = window.PresselPremium.getDefaultConfig();
+        cfg.settings.seo.title = 'Ranger V6 Brayam Braz';
+        if (sanitizeForPreview) {
+          cfg.settings.tracking.meta_pixel_id = '';
+        }
+        html = window.PresselPremium.generateHtml(cfg);
+      } else {
+        html = getDefaultTemplate();
+      }
+    } else if (modelId === 'pagina-em-branco' || modelId === 'blank') {
+      html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Página em Branco — upScale</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background:#F8FAFC; color:#0F172A; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; }
+    .blank-wrap { max-width:540px; width:100%; text-align:center; background:#ffffff; border:1px dashed #CBD5E1; border-radius:16px; padding:48px 32px; box-shadow:0 4px 16px rgba(0,0,0,0.03); }
+    .blank-icon { width:52px; height:52px; border-radius:12px; background:#EFF6FF; color:#205BFF; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px; font-weight:800; font-family:monospace; font-size:20px; }
+    h1 { font-size:22px; font-weight:800; color:#0F172A; margin-bottom:8px; }
+    p { font-size:14px; color:#64748B; margin-bottom:24px; line-height:1.5; }
+    .btn-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; background:#205BFF; color:#ffffff; font-weight:700; font-size:14px; padding:12px 24px; border-radius:8px; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="blank-wrap" data-block-id="blk_blank_box" data-block-type="container">
+    <div class="blank-icon">&lt;/&gt;</div>
+    <h1 data-block-id="blk_title" data-block-type="heading">Seu layout começa aqui</h1>
+    <p data-block-id="blk_desc" data-block-type="text">Insira títulos, textos, cards de oferta, cronômetro e depoimentos no editor visual.</p>
+    <a href="#comecar" class="btn-action js-buy" data-block-id="blk_cta" data-block-type="button">Personalizar no Editor</a>
+  </div>
+</body>
+</html>`;
+    } else {
+      // booster-padrao ou default
+      html = getDefaultTemplate();
+    }
+
+    if (sanitizeForPreview) {
+      // Neutralizar scripts de checkout e tracking externo no modo preview ampliado
+      html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, function(match) {
+        if (/connect\.facebook\.net|fbevents\.js|gtag|clarity/i.test(match)) {
+          return '<!-- tracking disabled in preview -->';
+        }
+        return match;
+      });
+    }
+
+    return html;
+  }
+
+  function ampliarPreviaModal(modelId, event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+
+    var def = TEMPLATE_PICKER_DEFS[modelId] || TEMPLATE_PICKER_DEFS['pressel-premium-campanhas'];
+    var titleEl = document.getElementById('tp-modal-preview-name');
+    if (titleEl) {
+      titleEl.textContent = 'Prévia — ' + def.name;
+    }
+
+    var iframe = document.getElementById('tp-modal-preview-iframe');
+    if (iframe) {
+      var html = getTemplateHtmlForModel(modelId, true);
+      iframe.srcdoc = html;
+    }
+
+    setPreviaModalDevice('desktop');
+
+    var modal = document.getElementById('modal-template-preview-large');
+    if (modal) {
+      if (typeof modal.showModal === 'function') {
+        modal.showModal();
+      } else {
+        modal.style.display = 'flex';
+      }
+    }
+  }
+
+  function fecharPreviaModal() {
+    var modal = document.getElementById('modal-template-preview-large');
+    if (modal) {
+      if (typeof modal.close === 'function') {
+        modal.close();
+      } else {
+        modal.style.display = 'none';
+      }
+    }
+    var iframe = document.getElementById('tp-modal-preview-iframe');
+    if (iframe) {
+      iframe.srcdoc = 'about:blank';
+    }
+  }
+
+  function setPreviaModalDevice(device) {
+    var wrap = document.getElementById('tp-modal-iframe-wrap');
+    var btnDesktop = document.getElementById('tp-preview-dev-desktop');
+    var btnMobile = document.getElementById('tp-preview-dev-mobile');
+
+    if (device === 'mobile') {
+      if (wrap) wrap.classList.add('device-mobile');
+      if (btnMobile) btnMobile.classList.add('active');
+      if (btnDesktop) btnDesktop.classList.remove('active');
+    } else {
+      if (wrap) wrap.classList.remove('device-mobile');
+      if (btnDesktop) btnDesktop.classList.add('active');
+      if (btnMobile) btnMobile.classList.remove('active');
+    }
+  }
+
+  function confirmarUsoModelo() {
+    var btn = document.getElementById('btn-tp-confirmar');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="status-dot" style="background:#fff; animation:pulse 0.8s infinite;"></span><span>Criando página…</span>';
+    }
+
+    var modelId = selectedTemplatePickerId || 'pressel-premium-campanhas';
+    var def = TEMPLATE_PICKER_DEFS[modelId] || TEMPLATE_PICKER_DEFS['pressel-premium-campanhas'];
+    
+    var rndSuffix = Math.random().toString(36).substring(2, 7);
+    var generatedSlug = def.defaultSlugPrefix + '-' + rndSuffix;
+    var generatedName = def.name;
+
+    var initialHtml = getTemplateHtmlForModel(modelId, false);
+    var wsId = window.currentWsId || 2;
+
+    window.apiFetch('../api/admin/funnels.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'save',
+        workspace_id: wsId,
+        name: generatedName,
+        slug: generatedSlug,
+        custom_domain_id: null,
+        template_slug: def.templateSlug,
+        settings_config: {
+          tracking: {
+            meta_pixel_id: '',
+            cta_track_event: 'InitiateCheckout'
+          }
+        },
+        draft_content: initialHtml,
+        html_content: initialHtml
+      })
+    })
+    .then(function(data) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Usar este modelo</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+      }
+
+      if (data.status === 'success') {
+        state.funnelId = data.funnel_id;
+        state.name = generatedName;
+        state.slug = data.slug || generatedSlug;
+        state.templateSlug = def.templateSlug;
+        state.customDomainId = null;
+        state.customDomainName = '';
+        state.metaPixelId = '';
+        state.currentHtml = initialHtml;
+
+        // Atualizar inputs no editor
+        var nameInput = document.getElementById('funnel-name');
+        if (nameInput) nameInput.value = state.name;
+
+        var slugInput = document.getElementById('funnel-slug');
+        if (slugInput) slugInput.value = state.slug;
+
+        var domTopbar = document.getElementById('builder-funnel-domain-select');
+        if (domTopbar) domTopbar.value = '';
+
+        var pixInput = document.getElementById('builder-pixel-id-input');
+        if (pixInput) pixInput.value = '';
+
+        if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
+
+        // Voltar para a visualização do editor
+        var pickerPane = document.getElementById('view-template-picker');
+        if (pickerPane) pickerPane.classList.remove('active');
+
+        if (window.navigate) {
+          window.navigate('sites');
+        } else {
+          document.querySelectorAll('.view-pane').forEach(function(p) { p.classList.remove('active'); });
+          var sitesView = document.getElementById('view-sites');
+          if (sitesView) sitesView.classList.add('active');
+        }
+
+        if (window.selecionarSubabaDominios) {
+          window.selecionarSubabaDominios('funis');
+        }
+
+        renderPreview(true);
+        marcarSalvo('Rascunho criado');
+        atualizarDisplayLinkPublico();
+        carregarListaGaveta();
+
+        window.showToast && window.showToast('Página "' + generatedName + '" criada com sucesso a partir do modelo selecionado!', 'success');
+      } else {
+        window.showToast && window.showToast(data.message || 'Erro ao criar página com modelo.', 'error');
+      }
+    })
+    .catch(function(e) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Usar este modelo</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+      }
+      console.error(e);
+      window.showToast && window.showToast('Erro de comunicação ao criar página.', 'error');
+    });
+  }
+
   // ══ EVENT LISTENERS DE POSTMESSAGE E ATALHOS ══
   function setupEventListeners() {
     window.addEventListener('message', function(event) {
@@ -1920,8 +2249,25 @@
       }
     });
 
-    // Atalhos Ctrl+Z e Ctrl+Y
+    // Fechar prévia ampliada ao clicar no backdrop do dialog
+    var prevModal = document.getElementById('modal-template-preview-large');
+    if (prevModal) {
+      prevModal.addEventListener('click', function(e) {
+        if (e.target === prevModal) {
+          fecharPreviaModal();
+        }
+      });
+    }
+
+    // Atalhos Ctrl+Z, Ctrl+Y e Esc
     document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var modal = document.getElementById('modal-template-preview-large');
+        if (modal && (modal.open || modal.style.display === 'flex')) {
+          fecharPreviaModal();
+        }
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         if (!e.shiftKey) {
           e.preventDefault();
@@ -1986,6 +2332,15 @@
   window.irParaAdicionarDominio = irParaAdicionarDominio;
   window.abrirModalHospedagemParaPagina = abrirModalHospedagemParaPagina;
   window.renderizarHostingCards = renderizarHostingCards;
+
+  // Tela dedicada de seleção de modelos
+  window.abrirTelaSelecaoModelos = abrirTelaSelecaoModelos;
+  window.voltarOrigemTemplatePicker = voltarOrigemTemplatePicker;
+  window.selecionarModeloPicker = selecionarModeloPicker;
+  window.ampliarPreviaModal = ampliarPreviaModal;
+  window.fecharPreviaModal = fecharPreviaModal;
+  window.setPreviaModalDevice = setPreviaModalDevice;
+  window.confirmarUsoModelo = confirmarUsoModelo;
 
 })(window, document);
 

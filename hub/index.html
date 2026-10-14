@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   
   <!-- Novo Design System Oficial -->
-  <link rel="stylesheet" href="hub-redesign.css">
-  <link rel="stylesheet" href="elementor-builder.css">
+  <link rel="stylesheet" href="hub-redesign.css?v=2.2">
+  <link rel="stylesheet" href="elementor-builder.css?v=2.2">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -22,8 +22,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
-  <script src="pressel-premium-builder.js" defer></script>
-  <script src="elementor-builder.js" defer></script>
+  <script src="pressel-premium-builder.js?v=2.2" defer></script>
+  <script src="elementor-builder.js?v=2.2" defer></script>
 </head>
 <body>
 
@@ -1419,6 +1419,12 @@
             <h1>Domínios e funis</h1>
             <p>Gerencie domínios externos e publique páginas de alta conversão.</p>
           </div>
+          <div class="page-header-actions">
+            <button type="button" class="btn-primary" onclick="abrirTelaSelecaoModelos('sites')" style="min-height:36px; padding:0 16px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ Nova Página</span>
+            </button>
+          </div>
         </div>
 
         <!-- Abas Principais: Domínios Conectados vs Editor de Funis HTML -->
@@ -1568,8 +1574,8 @@
               </div>
 
               <div class="elementor-topbar-right">
-                <!-- Botão Criar Nova Página / Pressel -->
-                <button type="button" class="btn-builder-new" onclick="abrirModalNovoFunil()" title="Criar nova página ou pressel com modelo de alta conversão">
+                <!-- Botão Criar Nova Página / Pressel (Abre tela dedicada de seleção de modelos) -->
+                <button type="button" class="btn-builder-new" onclick="abrirTelaSelecaoModelos('editor')" title="Criar nova página escolhendo um modelo oficial">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   <span>+ Nova Página</span>
                 </button>
@@ -2015,7 +2021,7 @@
           <div class="elementor-drawer-head">
             <h3 class="elementor-drawer-title">Minhas Páginas</h3>
             <div style="display:flex; align-items:center; gap:8px;">
-              <button type="button" class="btn-primary" style="min-height:30px; padding:0 12px; font-size:12px;" onclick="novoFunilElementor()">+ Nova</button>
+              <button type="button" class="btn-primary" style="min-height:30px; padding:0 12px; font-size:12px;" onclick="abrirTelaSelecaoModelos('drawer')">+ Nova</button>
               <button type="button" class="elementor-drawer-close" onclick="togglePagesDrawer()">✕</button>
             </div>
           </div>
@@ -2025,6 +2031,310 @@
         </div>
 
       </div>
+
+
+      <!-- ══════════════════════════════════════════════════════════════════
+           TELA: SELEÇÃO DE MODELOS DE PÁGINA (ESTILO OFICIAL UPSCALE)
+           ══════════════════════════════════════════════════════════════════ -->
+      <div id="view-template-picker" class="view-pane template-picker-screen">
+        <!-- Topbar idêntica à referência visual -->
+        <header class="tp-topbar">
+          <div class="tp-topbar-left">
+            <a href="javascript:void(0)" class="tp-brand-logo" onclick="voltarOrigemTemplatePicker()">
+              upScale
+            </a>
+            <div class="tp-topbar-sep"></div>
+            <div class="tp-breadcrumb">
+              <span>Funis</span>
+              <span>/</span>
+              <strong>Nova página</strong>
+            </div>
+          </div>
+          <div class="tp-topbar-right">
+            <button type="button" class="tp-btn-back" onclick="voltarOrigemTemplatePicker()">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Voltar ao editor</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <div class="tp-container">
+          <!-- Cabeçalho com Título e Indicador de Etapas -->
+          <div class="tp-main-header">
+            <div>
+              <span class="tp-tag">NOVA PÁGINA</span>
+              <h1 class="tp-heading">Escolha o modelo da sua página</h1>
+              <p class="tp-desc">Comece com uma estrutura pronta ou crie sua página do zero.</p>
+            </div>
+            <!-- Stepper -->
+            <div class="tp-stepper">
+              <div class="tp-step active">
+                <span class="tp-step-num">1</span>
+                <span>Modelo</span>
+              </div>
+              <div class="tp-step-divider"></div>
+              <div class="tp-step">
+                <span class="tp-step-num">2</span>
+                <span>Personalização</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid dos 3 Modelos Lado a Lado -->
+          <div class="tp-cards-grid">
+            
+            <!-- ── CARD 1: PRESSEL PREMIUM — CAMPANHAS (SELECIONADO POR PADRÃO) ── -->
+            <div class="tp-card selected" id="tp-card-pressel-premium-campanhas" data-template-id="pressel-premium-campanhas" onclick="selecionarModeloPicker('pressel-premium-campanhas')">
+              <span class="tp-badge-rec">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Recomendado
+              </span>
+              <div class="tp-card-selected-badge">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+
+              <!-- Miniatura Visual Fiel do Brayam Braz / Ranger V6 -->
+              <div class="tp-card-preview-box">
+                <div class="tp-mini-pressel">
+                  <div class="tp-mini-pressel-nav">
+                    <span class="tp-mini-pressel-brand">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                      BRAYAM BRAZ
+                    </span>
+                    <div style="display:flex; gap:6px; font-size:7px; color:#94A3B8;">
+                      <span>Início</span>
+                      <span>Como funciona</span>
+                      <span>Depoimentos</span>
+                      <span>FAQ</span>
+                    </div>
+                    <span class="tp-mini-pressel-btn-gold">Quero participar</span>
+                  </div>
+
+                  <div class="tp-mini-pressel-hero">
+                    <span class="tp-mini-pressel-sub">SUA PRÓXIMA CONQUISTA</span>
+                    <span class="tp-mini-pressel-title">RANGER XLT V6</span>
+                    <span style="font-size:7.5px; color:#94A3B8; max-width:180px;">Força, tecnologia e liberdade em uma lenda sobre rodas.</span>
+                    <span style="display:inline-block; background:#FBBF24; color:#0B0E14; font-size:7.5px; font-weight:800; padding:2px 6px; border-radius:3px; margin-top:2px;">QUERO PARTICIPAR &gt;</span>
+                    
+                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=500&auto=format&fit=crop&q=80" class="tp-mini-pressel-car-img" alt="Ranger V6">
+                  </div>
+
+                  <div class="tp-mini-pressel-marquee">
+                    ★ PRÊMIOS EM PIX &bull; ★ PRÊMIOS EM PIX &bull; ★ PRÊMIOS EM PIX &bull; ★ PRÊMIOS EM PIX
+                  </div>
+
+                  <div class="tp-mini-pressel-entregas">
+                    <span class="tp-mini-pressel-entregas-title">ENTREGAS REAIS &bull; VEJA QUEM JÁ RECEBEU</span>
+                    <div class="tp-mini-pressel-video-grid">
+                      <div class="tp-mini-video-card">
+                        <div class="tp-mini-play-icon">▶</div>
+                      </div>
+                      <div class="tp-mini-video-card">
+                        <div class="tp-mini-play-icon">▶</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tp-mini-pressel-sticky-cta">
+                    <span>QUERO PARTICIPAR AGORA &rarr;</span>
+                    <span style="font-size:8px; opacity:0.8;">🔒 Compra segura</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Informações do Card -->
+              <div class="tp-card-body">
+                <h3 class="tp-card-title">Pressel Premium — Campanhas</h3>
+                <p class="tp-card-desc">Uma apresentação premium para valorizar sua campanha.</p>
+                
+                <ul class="tp-features-list">
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                    <span>Ranger V6 &bull; Brayam Braz &bull; Prêmios em Pix</span>
+                  </li>
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                    <span>Faixa animada e entregas em vídeo</span>
+                  </li>
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>Canais WhatsApp, FAQ e CTA fixo</span>
+                  </li>
+                </ul>
+
+                <div class="tp-card-footer">
+                  <button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('pressel-premium-campanhas', event)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                    <span>Ampliar prévia</span>
+                  </button>
+                  <button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('pressel-premium-campanhas', event)">Selecionar</button>
+                  <span class="tp-selected-indicator">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Selecionado</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── CARD 2: PÁGINA BOOSTER PADRÃO ── -->
+            <div class="tp-card" id="tp-card-booster-padrao" data-template-id="booster-padrao" onclick="selecionarModeloPicker('booster-padrao')">
+              <div class="tp-card-selected-badge">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+
+              <!-- Miniatura Visual Fiel da Oferta Booster -->
+              <div class="tp-card-preview-box">
+                <div class="tp-mini-booster">
+                  <span class="tp-mini-booster-badge">OFERTA ESPECIAL</span>
+                  <span class="tp-mini-booster-title">Aproveite sua oferta</span>
+                  <span class="tp-mini-booster-sub">Escolha o seu pacote e garanta a sua chance agora mesmo.</span>
+
+                  <div class="tp-mini-timer-box">
+                    <div class="tp-mini-timer-block">00<span class="tp-mini-timer-lbl">Horas</span></div>
+                    <span style="font-weight:800; color:#0F172A;">:</span>
+                    <div class="tp-mini-timer-block">14<span class="tp-mini-timer-lbl">Minutos</span></div>
+                    <span style="font-weight:800; color:#0F172A;">:</span>
+                    <div class="tp-mini-timer-block">59<span class="tp-mini-timer-lbl">Segundos</span></div>
+                  </div>
+
+                  <div class="tp-mini-packages-row">
+                    <div class="tp-mini-package-card">
+                      <span class="tp-mini-package-name">Pacote Essencial</span>
+                      <span style="font-size:7px; color:#64748B;">Sua primeira chance</span>
+                      <div class="tp-mini-package-btn">Quero este</div>
+                    </div>
+                    <div class="tp-mini-package-card highlight">
+                      <span class="tp-mini-package-chip">Mais escolhido</span>
+                      <span class="tp-mini-package-name">Pacote Plus</span>
+                      <span style="font-size:7px; color:#175CFF;">Mais chances</span>
+                      <div class="tp-mini-package-btn" style="background:#175CFF;">Quero este</div>
+                    </div>
+                    <div class="tp-mini-package-card">
+                      <span class="tp-mini-package-name">Pacote Premium</span>
+                      <span style="font-size:7px; color:#64748B;">Máxima performance</span>
+                      <div class="tp-mini-package-btn">Quero este</div>
+                    </div>
+                  </div>
+
+                  <div class="tp-mini-trust-row">
+                    <span>🚚 Entrega em todo o Brasil</span>
+                    <span>🔒 100% seguro</span>
+                    <span>💳 Diversas formas</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Informações do Card -->
+              <div class="tp-card-body">
+                <h3 class="tp-card-title">Página Booster Padrão</h3>
+                <p class="tp-card-desc">Uma estrutura direta para apresentar seus pacotes de cotas.</p>
+                
+                <ul class="tp-features-list">
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Temporizador regressivo</span>
+                  </li>
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <span>Pacotes de cotas</span>
+                  </li>
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    <span>Botões de conversão</span>
+                  </li>
+                </ul>
+
+                <div class="tp-card-footer">
+                  <button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('booster-padrao', event)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                    <span>Ampliar prévia</span>
+                  </button>
+                  <button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('booster-padrao', event)">Selecionar</button>
+                  <span class="tp-selected-indicator">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Selecionado</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── CARD 3: PÁGINA EM BRANCO ── -->
+            <div class="tp-card" id="tp-card-pagina-em-branco" data-template-id="pagina-em-branco" onclick="selecionarModeloPicker('pagina-em-branco')">
+              <div class="tp-card-selected-badge">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+
+              <!-- Miniatura Visual Fiel da Página em Branco -->
+              <div class="tp-card-preview-box">
+                <div class="tp-mini-blank">
+                  <div class="tp-mini-blank-icon-box">
+                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  </div>
+                  <h4 class="tp-mini-blank-title">Seu layout começa aqui</h4>
+                  <p class="tp-mini-blank-sub">HTML limpo e editável</p>
+                </div>
+              </div>
+
+              <!-- Informações do Card -->
+              <div class="tp-card-body">
+                <h3 class="tp-card-title">Página em Branco</h3>
+                <p class="tp-card-desc">Liberdade para criar um layout autoral do início ao fim.</p>
+                
+                <ul class="tp-features-list">
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    <span>HTML limpo</span>
+                  </li>
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    <span>Estrutura totalmente editável</span>
+                  </li>
+                  <li class="tp-feature-item">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span>Criação do zero</span>
+                  </li>
+                </ul>
+
+                <div class="tp-card-footer">
+                  <button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('pagina-em-branco', event)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                    <span>Ampliar prévia</span>
+                  </button>
+                  <button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('pagina-em-branco', event)">Selecionar</button>
+                  <span class="tp-selected-indicator">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Selecionado</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Nota Auxiliar Centralizada -->
+          <div class="tp-bottom-note">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#64748B" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Você poderá editar textos, imagens, cores e seções na próxima etapa.</span>
+          </div>
+        </div>
+
+        <!-- Barra Inferior Fixa com Ações -->
+        <div class="tp-bottom-bar">
+          <div class="tp-bottom-bar-left">
+            <span class="tp-bottom-lbl">Modelo selecionado</span>
+            <span class="tp-bottom-name" id="tp-bottom-selected-name">Pressel Premium — Campanhas</span>
+          </div>
+          <div class="tp-bottom-bar-right">
+            <button type="button" class="tp-btn-cancel" onclick="voltarOrigemTemplatePicker()">Cancelar</button>
+            <button type="button" class="tp-btn-confirm" id="btn-tp-confirmar" onclick="confirmarUsoModelo()">
+              <span>Usar este modelo</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
 
 
       <!-- ══════════════════════════════════════════════════════════════════
@@ -2881,6 +3191,30 @@
     <button type="button" class="btn-primary" id="token-modal-btn-access" onclick="acessarWorkspaceCriado()">
       Acessar Workspace Agora &rarr;
     </button>
+  </div>
+</dialog>
+
+<!-- MODAL 10: PRÉVIA AMPLIADA DE TEMPLATES (ISOLADO EM SANDBOX) -->
+<dialog class="tp-modal-preview-dialog" id="modal-template-preview-large">
+  <div class="tp-modal-header">
+    <div class="tp-modal-title" id="tp-modal-preview-title">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#205BFF" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span id="tp-modal-preview-name">Prévia do Modelo</span>
+    </div>
+    <div class="tp-modal-devices">
+      <button type="button" class="tp-modal-dev-btn active" id="tp-preview-dev-desktop" onclick="setPreviaModalDevice('desktop')">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Desktop
+      </button>
+      <button type="button" class="tp-modal-dev-btn" id="tp-preview-dev-mobile" onclick="setPreviaModalDevice('mobile')">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        Mobile
+      </button>
+    </div>
+    <button type="button" class="tp-modal-close-btn" onclick="fecharPreviaModal()" aria-label="Fechar prévia">&times;</button>
+  </div>
+  <div class="tp-modal-iframe-wrap" id="tp-modal-iframe-wrap">
+    <iframe class="tp-modal-iframe" id="tp-modal-preview-iframe" sandbox="allow-scripts allow-same-origin" title="Prévia do modelo selecionado"></iframe>
   </div>
 </dialog>
 
@@ -4753,6 +5087,29 @@
     if (!dom) { showToast('Nenhum domínio selecionado.', 'error'); return; }
     showToast('Oferta vinculada ao domínio ' + dom + ' com sucesso!', 'success');
   }
+
+  /* ═══ SUBABAS DE DOMÍNIOS E FUNIS ═══ */
+  function selecionarSubabaDominios(tabKey, btn) {
+    var isFunis = (tabKey === 'funis');
+    var paneDom = document.getElementById('sites-subtab-dominios');
+    var paneFunis = document.getElementById('sites-subtab-funis');
+    if (paneDom) paneDom.classList.toggle('active', !isFunis);
+    if (paneFunis) paneFunis.classList.toggle('active', isFunis);
+
+    var btns = document.querySelectorAll('#view-sites .subtabs-nav .subtab-btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+    if (btn) {
+      btn.classList.add('active');
+    } else {
+      var targetBtn = isFunis ? btns[1] : btns[0];
+      if (targetBtn) targetBtn.classList.add('active');
+    }
+
+    if (isFunis && window.initElementorBuilder) {
+      window.initElementorBuilder();
+    }
+  }
+  window.selecionarSubabaDominios = selecionarSubabaDominios;
 
   /* ═══ FUNIS HTML & CONSTRUTOR ELEMENTOR ═══ */
   function carregarFunis() {
