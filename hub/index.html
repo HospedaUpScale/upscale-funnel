@@ -12,7 +12,7 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
-  <link rel="stylesheet" href="elementor-builder.css?v=2.2">
+  <link rel="stylesheet" href="elementor-builder.css?v=3.2">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -23,7 +23,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.2" defer></script>
-  <script src="elementor-builder.js?v=2.2" defer></script>
+  <script src="elementor-builder.js?v=3.2" defer></script>
 </head>
 <body>
 
@@ -1508,101 +1508,57 @@
         <div id="sites-subtab-funis" class="subtab-pane">
           <div class="elementor-shell">
 
-            <!-- 1. BARRA SUPERIOR (TOPBAR) -->
+            <!-- 1. BARRA SUPERIOR (TOPBAR — 60px) -->
             <header class="elementor-topbar">
               <div class="elementor-topbar-left">
-                <div class="elementor-topbar-brand">
-                  <span class="elementor-topbar-brand-logo">upScale</span>
-                  <span class="elementor-topbar-sep">&gt;</span>
-                  <span class="elementor-topbar-crumb">Domínios e funis</span>
-                  <span class="elementor-topbar-sep">/</span>
-                </div>
-                <input type="text" id="funnel-name" class="elementor-page-title-input" value="Oferta especial" placeholder="Nome da página..." oninput="marcarFunilModificado()" title="Clique para editar o nome da página">
+                <span class="elementor-topbar-brand-logo">upScale</span>
                 
-                <!-- Slug Customizável da Página -->
-                <div class="elementor-slug-box" title="Slug personalizado da página (/f/[slug])">
-                  <span class="elementor-slug-prefix">/f/</span>
-                  <input type="text" id="funnel-slug" class="elementor-slug-input" value="oferta-especial" placeholder="slug-da-pagina" oninput="atualizarSlugBuilder(this.value)">
+                <button type="button" class="elementor-topbar-back-btn" onclick="voltarParaDominios()" title="Voltar para Domínios">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                </button>
+
+                <div class="elementor-breadcrumb-wrap">
+                  <span class="elementor-crumb-parent">Funis</span>
+                  <span class="elementor-crumb-sep">/</span>
+                  <strong class="elementor-crumb-active" id="builder-crumb-page-title" onclick="focarNomePagina()" title="Clique para editar o nome da página">Oferta especial</strong>
                 </div>
 
-                <!-- Seletor de Domínio Conectado com estilo de hospedagem -->
-                <div class="elementor-domain-box" title="Domínio de hospedagem da página">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#175CFF" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                  <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Hospedagem:</span>
-                  <select id="builder-funnel-domain-select" class="elementor-domain-select" onchange="trocarDominioBuilder(this.value)">
-                    <option value="">(Padrão da Plataforma)</option>
-                  </select>
-                </div>
-                
+                <!-- Input escondido/acessível para título e slug para manter sincronia com backend -->
+                <input type="text" id="funnel-name" class="elementor-page-title-input" value="Oferta especial" oninput="sincronizarTituloPagina(this.value)" style="display:none;">
+                <input type="hidden" id="funnel-slug" value="oferta-especial">
+                <select id="builder-funnel-domain-select" style="display:none;"><option value="">(Padrão da Plataforma)</option></select>
+
+                <!-- Badge Rascunho -->
                 <div class="elementor-status-pill" id="funnel-status-pill">
-                  <span class="status-dot"></span>
-                  <span id="funnel-status-text">Rascunho salvo</span>
+                  <span id="funnel-status-text">Rascunho</span>
                 </div>
-              </div>
-
-              <div class="elementor-topbar-center">
-                <!-- Desfazer / Refazer -->
-                <div class="elementor-history-group">
-                  <button type="button" class="elementor-icon-btn" id="btn-builder-undo" onclick="builderUndo()" title="Desfazer (Ctrl+Z)" disabled>
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-                  </button>
-                  <button type="button" class="elementor-icon-btn" id="btn-builder-redo" onclick="builderRedo()" title="Refazer (Ctrl+Y)" disabled>
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
-                  </button>
-                </div>
-
-                <!-- Alternância de Viewport (Desktop / Tablet / Mobile) -->
-                <div class="elementor-device-switcher">
-                  <button type="button" class="elementor-device-btn active" id="btn-device-desktop" onclick="setBuilderDevice('desktop')" title="Desktop (1200px - 1440px)">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                  </button>
-                  <button type="button" class="elementor-device-btn" id="btn-device-tablet" onclick="setBuilderDevice('tablet')" title="Tablet (768px)">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                  </button>
-                  <button type="button" class="elementor-device-btn" id="btn-device-mobile" onclick="setBuilderDevice('mobile')" title="Mobile (iPhone 15 - 393 × 852 px)">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                  </button>
-                </div>
-
-                <!-- Seletor de Escala/Zoom -->
-                <select class="elementor-zoom-select" id="builder-zoom-select" onchange="setBuilderZoom(this.value)" title="Zoom da visualização">
-                  <option value="100">100%</option>
-                  <option value="85">85%</option>
-                  <option value="75" selected>75%</option>
-                  <option value="50">50%</option>
-                </select>
               </div>
 
               <div class="elementor-topbar-right">
-                <!-- Botão Criar Nova Página / Pressel (Abre tela dedicada de seleção de modelos) -->
-                <button type="button" class="btn-builder-new" onclick="abrirTelaSelecaoModelos('editor')" title="Criar nova página escolhendo um modelo oficial">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  <span>+ Nova Página</span>
+                <!-- Status Salvo Agora -->
+                <div class="elementor-saved-status" id="builder-saved-status">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><polyline points="9 12 11.5 14.5 16 10"/></svg>
+                  <span>Salvo agora</span>
+                </div>
+
+                <!-- Botão Visualizar -->
+                <button type="button" class="btn-builder-view" onclick="abrirPreviaNovaAba()" title="Visualizar página em nova aba">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span>Visualizar</span>
                 </button>
 
-                <!-- Botão de Gaveta de Páginas -->
-                <button type="button" class="btn-pages-drawer" onclick="togglePagesDrawer()" title="Ver lista de todas as páginas">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  <span>Minhas páginas</span>
-                  <span class="badge-count" id="builder-pages-count">0</span>
-                </button>
-
-                <!-- Salvar Rascunho -->
-                <button type="button" class="btn-builder-draft" onclick="salvarFunilRascunho()" title="Salvar alterações sem alterar a página no ar">
-                  Salvar rascunho
-                </button>
-
-                <!-- Publicar Página -->
-                <button type="button" class="btn-builder-publish" onclick="publicarFunilCompleto()" title="Publicar página no ar no link público">
-                  Publicar página
+                <!-- Botão Publicar -->
+                <button type="button" class="btn-builder-publish" onclick="publicarFunilCompleto()" title="Publicar página no ar">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+                  <span>Publicar</span>
                 </button>
               </div>
             </header>
 
-            <!-- 2. CORPO PRINCIPAL (SIDEBAR + CANVAS) -->
+            <!-- 2. CORPO PRINCIPAL (3 COLUNAS: 280px | 1fr | 320px) -->
             <div class="elementor-body">
               
-              <!-- PAINEL LATERAL ESQUERDO (SIDEBAR 350px) -->
+              <!-- ══ COLUNA 1: SIDEBAR ESQUERDA DO BUILDER (280px) ══ -->
               <aside class="elementor-sidebar">
                 <!-- Abas da Sidebar -->
                 <div class="elementor-sidebar-tabs">
@@ -1610,379 +1566,197 @@
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     <span>Elementos</span>
                   </button>
-                  <button type="button" class="elementor-tab-btn" id="tab-btn-style" onclick="switchSidebarTab('style')">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
-                    <span>Estilo</span>
-                  </button>
-                  <button type="button" class="elementor-tab-btn" id="tab-btn-code" onclick="switchSidebarTab('code')">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    <span>Código</span>
-                  </button>
-                  <button type="button" class="elementor-tab-btn" id="tab-btn-tracking" onclick="switchSidebarTab('tracking')" title="Configurações de Rastreamento e Meta Pixel">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                    <span>Rastreamento</span>
+                  <button type="button" class="elementor-tab-btn" id="tab-btn-layers" onclick="switchSidebarTab('layers')">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    <span>Camadas</span>
                   </button>
                 </div>
 
-                <!-- CONTEÚDO DA SIDEBAR -->
-                <div class="elementor-sidebar-content">
-                  
-                  <!-- ── ABA 1: ELEMENTOS ── -->
-                  <div id="pane-elements" class="elementor-tab-pane">
+                <!-- Conteúdo Rolável da Sidebar -->
+                <div class="elementor-sidebar-scroll">
+                  <!-- Barra de Busca -->
+                  <div class="elementor-search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="builder-search-elements" class="elementor-search-input" placeholder="Buscar elemento..." oninput="filtrarBlocos(this.value)">
+                  </div>
+
+                  <!-- Seção BÁSICOS com Grade 2 Colunas -->
+                  <div class="elementor-section-title">BÁSICOS</div>
+                  <div class="elementor-blocks-grid" id="builder-palette-section">
                     
-                    <!-- Busca de Blocos -->
-                    <div class="elementor-search-box" style="margin-bottom:14px;">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                      <input type="text" id="builder-search-elements" class="elementor-search-input" placeholder="Buscar elemento..." oninput="filtrarBlocos(this.value)">
+                    <!-- 1. Título -->
+                    <div class="elementor-block-card" onclick="inserirBloco('heading')" title="Adicionar título">
+                      <div class="elementor-block-icon">
+                        <span style="font-family:serif; font-size:18px; font-weight:700;">T</span>
+                      </div>
+                      <span class="elementor-block-name">Título</span>
                     </div>
 
-                    <!-- Paleta de Blocos Básicos -->
-                    <div id="builder-palette-section">
-                      <div class="elementor-section-title">Básicos</div>
-                      <div class="elementor-blocks-grid">
-                        
-                        <!-- 1. Título -->
-                        <div class="elementor-block-card" onclick="inserirBloco('heading')" title="Adicionar título">
-                          <div class="elementor-block-icon">
-                            <span style="font-family:serif; font-size:18px; font-weight:700;">T</span>
-                          </div>
-                          <span class="elementor-block-name">Título</span>
-                        </div>
-
-                        <!-- 2. Texto -->
-                        <div class="elementor-block-card" onclick="inserirBloco('text')" title="Adicionar parágrafo de texto">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Texto</span>
-                        </div>
-
-                        <!-- 3. Imagem -->
-                        <div class="elementor-block-card" onclick="inserirBloco('image')" title="Adicionar imagem">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Imagem</span>
-                        </div>
-
-                        <!-- 4. Vídeo -->
-                        <div class="elementor-block-card" onclick="inserirBloco('video')" title="Adicionar vídeo do YouTube/Vimeo">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Vídeo</span>
-                        </div>
-
-                        <!-- 5. Botão / Link -->
-                        <div class="elementor-block-card" onclick="inserirBloco('button')" title="Adicionar botão com link ou checkout">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Botão</span>
-                        </div>
-
-                        <!-- 6. Container -->
-                        <div class="elementor-block-card" onclick="inserirBloco('container')" title="Adicionar caixa de agrupamento">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Container</span>
-                        </div>
-
-                        <!-- 7. HTML Personalizado -->
-                        <div class="elementor-block-card" onclick="inserirBloco('html')" title="Adicionar código HTML livre">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                          </div>
-                          <span class="elementor-block-name">HTML</span>
-                        </div>
-
-                        <!-- 8. Temporizador -->
-                        <div class="elementor-block-card" onclick="inserirBloco('timer')" title="Adicionar contagem regressiva">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M10 2h4"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Temporizador</span>
-                        </div>
-
-                        <!-- 9. Oferta -->
-                        <div class="elementor-block-card" onclick="inserirBloco('offer')" title="Adicionar card de oferta com checkout">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Oferta</span>
-                        </div>
-
-                        <!-- 10. Espaçador -->
-                        <div class="elementor-block-card" onclick="inserirBloco('spacer')" title="Adicionar espaçamento vertical">
-                          <div class="elementor-block-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
-                          </div>
-                          <span class="elementor-block-name">Espaçador</span>
-                        </div>
-
+                    <!-- 2. Texto -->
+                    <div class="elementor-block-card" onclick="inserirBloco('text')" title="Adicionar parágrafo de texto">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>
                       </div>
+                      <span class="elementor-block-name">Texto</span>
                     </div>
 
-                    <!-- INSPECTOR DE PROPRIEDADES (QUANDO UM ELEMENTO ESTÁ SELECIONADO) -->
-                    <div id="builder-inspector-box" class="elementor-inspector" style="display:none; margin-top:16px;">
-                      <div class="elementor-inspector-head">
-                        <span class="elementor-inspector-title" id="inspector-element-type-title">
-                          <span id="inspector-element-icon"></span>
-                          <span id="inspector-element-name">Elemento Selecionado</span>
-                        </span>
-                        <button type="button" class="elementor-inspector-close" onclick="desmarcarElemento()" title="Fechar propriedades">✕</button>
+                    <!-- 3. Imagem -->
+                    <div class="elementor-block-card" onclick="inserirBloco('image')" title="Adicionar imagem">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                       </div>
+                      <span class="elementor-block-name">Imagem</span>
+                    </div>
 
-                      <div id="inspector-fields-container" style="display:flex; flex-direction:column; gap:12px;">
-                        <!-- Injetado dinamicamente via JS conforme o bloco -->
+                    <!-- 4. Vídeo -->
+                    <div class="elementor-block-card" onclick="inserirBloco('video')" title="Adicionar vídeo">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
                       </div>
+                      <span class="elementor-block-name">Vídeo</span>
+                    </div>
 
-                      <div class="elementor-actions-grid">
-                        <button type="button" class="btn-secondary" style="min-height:30px; font-size:11px;" onclick="duplicarElementoSelecionado()">
-                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Duplicar
-                        </button>
-                        <button type="button" class="btn-secondary" style="min-height:30px; font-size:11px; color:#ef4444; border-color:#fecaca;" onclick="excluirElementoSelecionado()">
-                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Excluir
-                        </button>
+                    <!-- 5. Botão -->
+                    <div class="elementor-block-card" onclick="inserirBloco('button')" title="Adicionar botão">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
                       </div>
+                      <span class="elementor-block-name">Botão</span>
+                    </div>
+
+                    <!-- 6. Container -->
+                    <div class="elementor-block-card" onclick="inserirBloco('container')" title="Adicionar container">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                      </div>
+                      <span class="elementor-block-name">Container</span>
+                    </div>
+
+                    <!-- 7. HTML -->
+                    <div class="elementor-block-card" onclick="inserirBloco('html')" title="Adicionar HTML livre">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                      </div>
+                      <span class="elementor-block-name">HTML</span>
+                    </div>
+
+                    <!-- 8. Temporizador -->
+                    <div class="elementor-block-card" onclick="inserirBloco('timer')" title="Adicionar temporizador">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M10 2h4"/></svg>
+                      </div>
+                      <span class="elementor-block-name">Temporizador</span>
+                    </div>
+
+                    <!-- 9. Oferta -->
+                    <div class="elementor-block-card" onclick="inserirBloco('offer')" title="Adicionar card de oferta">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                      </div>
+                      <span class="elementor-block-name">Oferta</span>
+                    </div>
+
+                    <!-- 10. Espaçador -->
+                    <div class="elementor-block-card" onclick="inserirBloco('spacer')" title="Adicionar espaçador">
+                      <div class="elementor-block-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+                      </div>
+                      <span class="elementor-block-name">Espaçador</span>
                     </div>
 
                   </div>
 
-                  <!-- ── ABA 2: ESTILO ── -->
-                  <div id="pane-style" class="elementor-tab-pane" style="display:none;">
-                    <div class="elementor-style-pane">
-                      
-                      <!-- Tipografia -->
-                      <div class="elementor-style-group">
-                        <div class="elementor-style-group-title">Tipografia</div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Tamanho da fonte</label>
-                          <input type="range" min="12" max="64" value="16" class="form-input" id="style-font-size-slider" oninput="aplicarEstiloRapido('fontSize', this.value + 'px')">
-                        </div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Peso da fonte</label>
-                          <select class="elementor-prop-select" id="style-font-weight-select" onchange="aplicarEstiloRapido('fontWeight', this.value)">
-                            <option value="400">Normal (400)</option>
-                            <option value="500">Médio (500)</option>
-                            <option value="600">Semibold (600)</option>
-                            <option value="700" selected>Bold (700)</option>
-                            <option value="800">Extrabold (800)</option>
-                          </select>
-                        </div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Alinhamento</label>
-                          <div style="display:flex; gap:4px;">
-                            <button type="button" class="elementor-icon-btn" onclick="aplicarEstiloRapido('textAlign', 'left')" title="Esquerda"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-                            <button type="button" class="elementor-icon-btn" onclick="aplicarEstiloRapido('textAlign', 'center')" title="Centro"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg></button>
-                            <button type="button" class="elementor-icon-btn" onclick="aplicarEstiloRapido('textAlign', 'right')" title="Direita"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg></button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Cores -->
-                      <div class="elementor-style-group">
-                        <div class="elementor-style-group-title">Cores & Fundo</div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Cor do texto</label>
-                          <div class="elementor-color-picker-row">
-                            <input type="color" id="style-text-color-picker" value="#0f172a" onchange="aplicarEstiloRapido('color', this.value)">
-                            <input type="text" id="style-text-color-hex" class="elementor-prop-input" value="#0f172a" style="width:110px;" onchange="aplicarEstiloRapido('color', this.value)">
-                          </div>
-                        </div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Cor de fundo</label>
-                          <div class="elementor-color-picker-row">
-                            <input type="color" id="style-bg-color-picker" value="#175cff" onchange="aplicarEstiloRapido('backgroundColor', this.value)">
-                            <input type="text" id="style-bg-color-hex" class="elementor-prop-input" value="#175cff" style="width:110px;" onchange="aplicarEstiloRapido('backgroundColor', this.value)">
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Espaçamento & Bordas -->
-                      <div class="elementor-style-group">
-                        <div class="elementor-style-group-title">Espaçamento & Borda</div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Arredondamento (border-radius)</label>
-                          <select class="elementor-prop-select" id="style-border-radius-select" onchange="aplicarEstiloRapido('borderRadius', this.value)">
-                            <option value="0px">Quadrado (0px)</option>
-                            <option value="6px">Leve (6px)</option>
-                            <option value="12px" selected>Médio (12px)</option>
-                            <option value="24px">Arredondado (24px)</option>
-                            <option value="999px">Pílula (999px)</option>
-                          </select>
-                        </div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Espaçamento interno (padding)</label>
-                          <input type="range" min="0" max="60" value="14" class="form-input" id="style-padding-slider" oninput="aplicarEstiloRapido('padding', this.value + 'px')">
-                        </div>
-                      </div>
-
+                  <!-- Acordeão: Seções prontas -->
+                  <div class="elementor-accordion-section">
+                    <div class="elementor-accordion-head" onclick="toggleAccordionSecoes()">
+                      <span style="display:flex; align-items:center; gap:6px;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="chevron" id="accordion-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+                        <span>Seções prontas</span>
+                      </span>
                     </div>
-                  </div>
-
-                  <!-- ── ABA 3: CÓDIGO HTML/CSS/JS ── -->
-                  <div id="pane-code" class="elementor-tab-pane" style="display:none; height:100%;">
-                    <div class="elementor-code-pane">
-                      <div class="elementor-code-toolbar">
-                        <span style="font-size:12px; font-weight:700; color:#0f172a;">HTML / CSS / JS</span>
-                        <div style="display:flex; gap:6px;">
-                          <button type="button" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px;" onclick="formatarCodigoHtml()" title="Indentação e formatação">Formatar</button>
-                          <button type="button" class="btn-secondary" style="min-height:26px; padding:2px 8px; font-size:11px;" onclick="copiarCodigoHtml()" title="Copiar código para a área de transferência">Copiar</button>
-                        </div>
+                    <div class="elementor-accordion-list" id="elementor-accordion-content">
+                      <div class="elementor-accordion-item" onclick="inserirSecaoPronta('hero')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span>Hero</span>
                       </div>
-                      
-                      <!-- Editor CodeMirror com Line Numbers -->
-                      <div class="elementor-code-editor-box">
-                        <textarea id="funnel-code-editor" style="display:none;"></textarea>
+                      <div class="elementor-accordion-item" onclick="inserirSecaoPronta('testimonials')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span>Depoimentos</span>
                       </div>
-                    </div>
-                  </div>
-
-                  <!-- ── ABA 4: RASTREAMENTO & PIXEL (TRAQUEIE TUDO) ── -->
-                  <div id="pane-tracking" class="elementor-tab-pane" style="display:none;">
-                    <div class="elementor-tracking-pane">
-                      <div class="tracking-card-box">
-                        <div class="tracking-card-header">
-                          <span class="tracking-card-title">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#175CFF" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            Meta Pixel da Página
-                          </span>
-                          <span class="badge badge-success" style="font-size:10.5px;">Ativo</span>
-                        </div>
-                        <p style="font-size:12px; color:var(--text-muted); margin:0;">Cole o ID do seu Pixel para vincular automaticamente eventos e conversões da campanha.</p>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Meta Pixel ID</label>
-                          <input type="text" id="builder-pixel-id-input" class="elementor-prop-input" placeholder="ex: 184920491823901" oninput="atualizarPixelIdTracking(this.value)">
-                        </div>
-                        <div class="elementor-prop-row">
-                          <label class="elementor-prop-label">Evento do Botão CTA</label>
-                          <select id="builder-pixel-event-select" class="elementor-prop-select" onchange="atualizarPixelEventTracking(this.value)">
-                            <option value="InitiateCheckout" selected>InitiateCheckout (Iniciar Finalização)</option>
-                            <option value="AddToCart">AddToCart (Adicionar ao Carrinho)</option>
-                            <option value="Purchase">Purchase (Compra Concluída)</option>
-                            <option value="Lead">Lead (Contato Gerado)</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <!-- Status do Traqueamento Completo -->
-                      <div class="tracking-card-box">
-                        <div class="tracking-card-header">
-                          <span class="tracking-card-title">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-                            Traqueamento Ativo ("Trakeie Tudo")
-                          </span>
-                        </div>
-                        <ul class="tracking-status-list">
-                          <li class="tracking-status-item">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <div>
-                              <strong>UTM & Parâmetros de Tráfego</strong>
-                              <div style="font-size:11px; color:#64748b;">utm_source, utm_medium, utm_campaign, fbclid, gclid repassados para todos os botões e links.</div>
-                            </div>
-                          </li>
-                          <li class="tracking-status-item">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <div>
-                              <strong>PageView & ViewContent</strong>
-                              <div style="font-size:11px; color:#64748b;">Disparo automático no carregamento da página com título e preço da cota.</div>
-                            </div>
-                          </li>
-                          <li class="tracking-status-item">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <div>
-                              <strong>InitiateCheckout</strong>
-                              <div style="font-size:11px; color:#64748b;">Rastreado no Hero CTA e Sticky CTA fixo sincronizado.</div>
-                            </div>
-                          </li>
-                          <li class="tracking-status-item">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <div>
-                              <strong>Contact (WhatsApp / Redes)</strong>
-                              <div style="font-size:11px; color:#64748b;">Disparo ao clicar em links para grupos de WhatsApp, Instagram ou suporte.</div>
-                            </div>
-                          </li>
-                          <li class="tracking-status-item">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <div>
-                              <strong>Scroll Depth (Profundidade de Rolagem)</strong>
-                              <div style="font-size:11px; color:#64748b;">Disparo nos marcos de 25%, 50%, 75% e 90% da página.</div>
-                            </div>
-                          </li>
-                          <li class="tracking-status-item">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <div>
-                              <strong>Time On Page (Tempo de Permanência)</strong>
-                              <div style="font-size:11px; color:#64748b;">Disparo de engajamento aos 15s, 30s e 60s de leitura.</div>
-                            </div>
-                          </li>
-                          <li class="tracking-status-item">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <div>
-                              <strong>Vídeos & Dúvidas Frequentes</strong>
-                              <div style="font-size:11px; color:#64748b;">Rastreamento de play em entregas reais e cliques no acordeão de FAQ.</div>
-                            </div>
-                          </li>
-                        </ul>
+                      <div class="elementor-accordion-item" onclick="inserirSecaoPronta('faq')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Perguntas frequentes</span>
                       </div>
                     </div>
                   </div>
 
                 </div>
 
-                <!-- CARD FIXO DE LINK PÚBLICO NO RODAPÉ DA SIDEBAR -->
-                <div class="elementor-public-link-card">
-                  <div class="elementor-public-link-header">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    <span>Link público</span>
-                  </div>
-                  <div class="elementor-public-link-row">
-                    <span class="elementor-public-link-url" id="sidebar-public-url-display">seu-dominio.com/oferta-especial</span>
-                    <button type="button" class="elementor-copy-icon-btn" onclick="copiarLinkPublicoAtual()" title="Copiar link público">
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <!-- Rodapé da Sidebar: PÁGINAS DO FUNIL -->
+                <div class="elementor-sidebar-footer-pages">
+                  <div class="elementor-pages-header-row">
+                    <span class="elementor-pages-header-title">PÁGINAS DO FUNIL</span>
+                    <button type="button" class="elementor-btn-nova-pagina" onclick="abrirTelaSelecaoModelos('editor')">
+                      + Nova página
                     </button>
-                    <a href="javascript:void(0)" id="sidebar-open-url-btn" target="_blank" class="elementor-copy-icon-btn" title="Abrir página pública">
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    </a>
+                  </div>
+                  
+                  <div class="elementor-page-item active" id="builder-page-item-current">
+                    <div class="elementor-page-item-left">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <span id="sidebar-page-item-title">Oferta especial</span>
+                    </div>
+                    <button type="button" class="elementor-page-options-btn" onclick="togglePagesDrawer()" title="Ver todas as páginas">•••</button>
                   </div>
                 </div>
               </aside>
 
-              <!-- ÁREA PRINCIPAL DA PRÉVIA (CANVAS) -->
+              <!-- ══ COLUNA 2: ÁREA PRINCIPAL DO CANVAS ══ -->
               <main class="elementor-canvas-area">
-                <!-- Toolbar da Prévia -->
-                <div class="elementor-canvas-top-bar">
-                  <div class="elementor-canvas-live-badge">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
-                    <span>Prévia ao vivo</span>
+                
+                <!-- Toolbar Flutuante Superior -->
+                <div class="elementor-floating-top-toolbar">
+                  <!-- Seletor de Dispositivo (Desktop / Tablet / Mobile) -->
+                  <div class="elementor-device-switcher">
+                    <button type="button" class="elementor-device-btn active" id="btn-device-desktop" onclick="setBuilderDevice('desktop')" title="Desktop (1440px)">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </button>
+                    <button type="button" class="elementor-device-btn" id="btn-device-tablet" onclick="setBuilderDevice('tablet')" title="Tablet (768px)">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    </button>
+                    <button type="button" class="elementor-device-btn" id="btn-device-mobile" onclick="setBuilderDevice('mobile')" title="Mobile (iPhone 15)">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    </button>
                   </div>
 
-                  <!-- Alternador de Modos: Editar vs Testar -->
-                  <div class="elementor-mode-segmented">
-                    <button type="button" class="elementor-mode-btn active" id="btn-mode-edit" onclick="setCanvasMode('edit')" title="Modo Editar: Selecione e configure propriedades dos elementos">
-                      Editar
-                    </button>
-                    <button type="button" class="elementor-mode-btn" id="btn-mode-test" onclick="setCanvasMode('test')" title="Modo Testar: Interaja livremente com botões, links e temporizador">
-                      Testar
-                    </button>
-                  </div>
+                  <span class="canvas-tool-divider"></span>
 
-                  <!-- Ações rápidas da prévia -->
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <button type="button" class="btn-secondary" style="min-height:30px; padding:0 10px; font-size:11.5px;" onclick="recarregarPreview()" title="Recarregar renderização da prévia">
-                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                      <span>Recarregar</span>
-                    </button>
-                  </div>
+                  <!-- Desfazer / Refazer -->
+                  <button type="button" class="elementor-icon-btn" id="btn-builder-undo" onclick="builderUndo()" title="Desfazer (Ctrl+Z)" disabled>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                  </button>
+                  <button type="button" class="elementor-icon-btn" id="btn-builder-redo" onclick="builderRedo()" title="Refazer (Ctrl+Y)" disabled>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+                  </button>
+
+                  <span class="canvas-tool-divider"></span>
+
+                  <!-- Zoom -->
+                  <select class="elementor-zoom-select" id="builder-zoom-select" onchange="setBuilderZoom(this.value)" title="Zoom">
+                    <option value="100">100%</option>
+                    <option value="85">85%</option>
+                    <option value="75" selected>75%</option>
+                    <option value="50">50%</option>
+                  </select>
+
+                  <span class="canvas-device-label" id="canvas-device-label-text">Desktop • 1440 px</span>
                 </div>
 
-                <!-- Canvas Scrollable com Moldura de Dispositivo -->
+                <!-- Canvas Scrollable com a Prévia do Documento -->
                 <div class="elementor-canvas-scrollable" id="elementor-scroll-canvas">
                   <div class="elementor-viewport-wrap device-desktop" id="elementor-viewport-wrap">
                     
-                    <!-- Container especial do iPhone quando no modo mobile -->
+                    <!-- Container especial do iPhone no mobile -->
                     <div class="elementor-iphone-screen" id="iphone-screen-box" style="display:none;">
                       <div class="elementor-iphone-island"></div>
                       <iframe id="builder-iframe-mobile" class="elementor-iframe" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
@@ -1997,19 +1771,230 @@
                   </div>
                 </div>
 
-                <!-- Rodapé da Prévia -->
-                <footer class="elementor-canvas-bottom-bar">
-                  <div class="elementor-bottom-device-info" id="bottom-device-info-text">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                    <span>Desktop — 1440 px</span>
+                <!-- Barra Flutuante Inferior com Link Público e Status de Salvamento -->
+                <div class="elementor-floating-bottom-bar">
+                  <!-- Lado Esquerdo: Link Público com Ícone de Copiar e Abrir -->
+                  <div class="floating-bottom-pill-left">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#64748B" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <span id="floating-public-url-display" class="floating-url-text">canedo.upscalebrasil.com/f/oferta-especial</span>
+                    <button type="button" class="floating-url-btn" id="sidebar-copy-url-btn" onclick="copiarLinkPublicoAtual()" title="Copiar link público">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                    <a href="javascript:void(0)" id="floating-open-url-btn" target="_blank" class="floating-url-btn" title="Abrir página pública">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                    <!-- Mantém elementos com IDs antigos compatíveis para chamadas JS -->
+                    <span id="sidebar-public-url-display" style="display:none;"></span>
+                    <a href="javascript:void(0)" id="sidebar-open-url-btn" style="display:none;"></a>
                   </div>
-                  <div class="elementor-bottom-sync-info">
-                    <span class="elementor-bottom-sync-dot"></span>
-                    <span>Alterações aparecem na prévia</span>
+
+                  <!-- Lado Direito: Todas as alterações salvas -->
+                  <div class="floating-bottom-pill-right">
+                    <span class="saved-dot-green"></span>
+                    <span>Todas as alterações salvas</span>
                   </div>
-                </footer>
+                </div>
+
+                <!-- Elementos auxiliares escondidos para manter compatibilidade JS -->
+                <div style="display:none;">
+                  <button id="btn-mode-edit" onclick="setCanvasMode('edit')"></button>
+                  <button id="btn-mode-test" onclick="setCanvasMode('test')"></button>
+                  <span id="bottom-device-info-text"></span>
+                </div>
               </main>
 
+              <!-- ══ COLUNA 3: PAINEL INSPETOR DE PROPRIEDADES DIREITO (320px) ══ -->
+              <aside class="builder-right-inspector" id="builder-right-inspector">
+                <!-- Cabeçalho do Inspetor -->
+                <div class="insp-head">
+                  <div class="insp-head-icon" id="inspector-right-icon">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  </div>
+                  <span class="insp-head-title" id="inspector-right-title">Botão</span>
+                </div>
+
+                <!-- Abas do Inspetor: Conteúdo | Estilo | Avançado -->
+                <div class="insp-tabs">
+                  <button type="button" class="insp-tab-btn" id="tab-inspector-content" onclick="switchInspectorTab('content')">Conteúdo</button>
+                  <button type="button" class="insp-tab-btn active" id="tab-inspector-style" onclick="switchInspectorTab('style')">Estilo</button>
+                  <button type="button" class="insp-tab-btn" id="tab-inspector-advanced" onclick="switchInspectorTab('advanced')">Avançado</button>
+                </div>
+
+                <!-- CORPO DA ABA ESTILO -->
+                <div class="insp-body" id="insp-pane-style">
+                  
+                  <!-- Seção TIPOGRAFIA -->
+                  <div>
+                    <div class="insp-section-title">TIPOGRAFIA</div>
+                    
+                    <div class="insp-row">
+                      <label class="insp-label">Fonte</label>
+                      <select id="insp-font-family" class="insp-select" onchange="aplicarEstiloRapido('fontFamily', this.value)">
+                        <option value="Inter" selected>Inter</option>
+                        <option value="Space Grotesk">Space Grotesk</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Poppins">Poppins</option>
+                        <option value="system-ui">Sistema</option>
+                      </select>
+                    </div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Tamanho</label>
+                      <div class="insp-input-unit">
+                        <input type="number" id="insp-font-size" value="16" min="10" max="80" class="insp-input-num" oninput="aplicarEstiloRapido('fontSize', this.value + 'px')">
+                        <span class="unit-label">px ▾</span>
+                      </div>
+                    </div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Peso</label>
+                      <select id="insp-font-weight" class="insp-select" onchange="aplicarEstiloRapido('fontWeight', this.value)">
+                        <option value="400">400</option>
+                        <option value="500">500</option>
+                        <option value="600" selected>600</option>
+                        <option value="700">700</option>
+                        <option value="800">800</option>
+                      </select>
+                    </div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Alinhamento</label>
+                      <div class="insp-align-group">
+                        <button type="button" class="insp-align-btn" id="insp-align-left" onclick="setInspectorAlign('left')" title="Alinhar à esquerda">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                        </button>
+                        <button type="button" class="insp-align-btn active" id="insp-align-center" onclick="setInspectorAlign('center')" title="Centralizar">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="6"/><line x1="21" y1="12" x2="3" y2="12"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
+                        </button>
+                        <button type="button" class="insp-align-btn" id="insp-align-right" onclick="setInspectorAlign('right')" title="Alinhar à direita">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="9" y2="12"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+                        </button>
+                        <button type="button" class="insp-align-btn" id="insp-align-justify" onclick="setInspectorAlign('justify')" title="Justificar">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="3" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção CORES -->
+                  <div>
+                    <div class="insp-section-title">CORES</div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Cor de fundo</label>
+                      <div class="insp-color-row-item">
+                        <div class="insp-color-swatch" id="insp-bg-swatch" style="background:#205BFF;" onclick="document.getElementById('insp-bg-color-picker').click()"></div>
+                        <input type="color" id="insp-bg-color-picker" value="#205BFF" style="display:none;" oninput="atualizarCorHex('backgroundColor', this.value)">
+                        <input type="text" id="insp-bg-color-hex" class="insp-hex-input" value="#205BFF" onchange="aplicarEstiloCor('backgroundColor', this.value)">
+                      </div>
+                    </div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Cor do texto</label>
+                      <div class="insp-color-row-item">
+                        <div class="insp-color-swatch" id="insp-text-swatch" style="background:#FFFFFF;" onclick="document.getElementById('insp-text-color-picker').click()"></div>
+                        <input type="color" id="insp-text-color-picker" value="#ffffff" style="display:none;" oninput="atualizarCorHex('color', this.value)">
+                        <input type="text" id="insp-text-color-hex" class="insp-hex-input" value="#FFFFFF" onchange="aplicarEstiloCor('color', this.value)">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção ESPAÇAMENTO -->
+                  <div>
+                    <div class="insp-section-title">ESPAÇAMENTO</div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Padding horizontal</label>
+                      <div class="insp-input-unit">
+                        <input type="number" id="insp-pad-h" value="24" min="0" max="100" class="insp-input-num" oninput="aplicarPaddingSeparado()">
+                        <span class="unit-label">px</span>
+                      </div>
+                    </div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Padding vertical</label>
+                      <div class="insp-input-unit">
+                        <input type="number" id="insp-pad-v" value="16" min="0" max="100" class="insp-input-num" oninput="aplicarPaddingSeparado()">
+                        <span class="unit-label">px</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção BORDAS -->
+                  <div>
+                    <div class="insp-section-title">BORDAS</div>
+
+                    <div class="insp-row">
+                      <label class="insp-label">Raio da borda</label>
+                      <div class="insp-input-unit">
+                        <input type="number" id="insp-border-radius" value="8" min="0" max="100" class="insp-input-num" oninput="aplicarEstiloRapido('borderRadius', this.value + 'px')">
+                        <span class="unit-label">px</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção SOMBRA (Acordeão) -->
+                  <div>
+                    <div class="insp-accordion-row" onclick="toggleSombraInspector()">
+                      <div class="insp-accordion-left">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                        <span>Sombra</span>
+                      </div>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- CORPO DA ABA CONTEÚDO (DینÂMICO) -->
+                <div class="insp-body" id="insp-pane-content" style="display:none;">
+                  <div class="insp-section-title">CONTEÚDO DO ELEMENTO</div>
+                  <div id="inspector-fields-container" style="display:flex; flex-direction:column; gap:12px;">
+                    <!-- Campos inseridos dinamicamente conforme elemento selecionado -->
+                  </div>
+                  <div style="display:flex; gap:8px; margin-top:14px;">
+                    <button type="button" class="btn-secondary" style="flex:1; min-height:30px; font-size:11px;" onclick="duplicarElementoSelecionado()">Duplicar</button>
+                    <button type="button" class="btn-secondary" style="flex:1; min-height:30px; font-size:11px; color:#ef4444; border-color:#fecaca;" onclick="excluirElementoSelecionado()">Excluir</button>
+                  </div>
+                </div>
+
+                <!-- CORPO DA ABA AVANÇADO -->
+                <div class="insp-body" id="insp-pane-advanced" style="display:none;">
+                  <div class="insp-section-title">CONFIGURAÇÕES AVANÇADAS</div>
+                  
+                  <div class="insp-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                    <label class="insp-label">Evento do Meta Pixel</label>
+                    <select id="builder-pixel-event-select" class="insp-select" style="width:100%;" onchange="atualizarPixelEventTracking(this.value)">
+                      <option value="InitiateCheckout" selected>InitiateCheckout</option>
+                      <option value="AddToCart">AddToCart</option>
+                      <option value="Purchase">Purchase</option>
+                      <option value="Lead">Lead</option>
+                    </select>
+                  </div>
+
+                  <div class="insp-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                    <label class="insp-label">Meta Pixel ID</label>
+                    <input type="text" id="builder-pixel-id-input" class="insp-select" style="width:100%;" placeholder="ex: 184920491823901" oninput="atualizarPixelIdTracking(this.value)">
+                  </div>
+
+                  <div class="insp-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                    <label class="insp-label">Classe CSS Personalizada</label>
+                    <input type="text" id="insp-custom-class" class="insp-select" style="width:100%;" placeholder="minha-classe-custom">
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <button type="button" class="btn-secondary" style="width:100%; min-height:32px; font-size:12px;" onclick="abrirEditorCodigoModal()">
+                      &lt;/&gt; Abrir Código HTML/CSS
+                    </button>
+                  </div>
+                </div>
+              </aside>
+
+            </div>
+
+            <!-- Elemento invisível para manter compatibilidade com CodeMirror fora do painel de estilo -->
+            <div style="display:none !important;" aria-hidden="true">
+              <textarea id="funnel-code-editor"></textarea>
             </div>
 
           </div>
@@ -3505,6 +3490,9 @@
   /* ═══ NAVEGAÇÃO ENTRE TELAS ═══ */
   function navigate(viewId) {
     document.body.classList.remove('in-template-picker');
+    if (viewId !== 'sites') {
+      document.body.classList.remove('in-editor');
+    }
     if (window.fecharPreviaModal) window.fecharPreviaModal();
 
     // Aliases para compatibilidade retroativa
@@ -4067,17 +4055,7 @@
   }
 
 
-  /* ═══ SUB-ABAS DOMÍNIOS & CONFIGURAÇÕES ═══ */
-  function selecionarSubabaDominios(tabKey, btn) {
-    document.querySelectorAll('#view-sites .subtabs-nav .subtab-btn').forEach(function(b) { b.classList.remove('active'); });
-    if (btn) btn.classList.add('active');
-    document.querySelectorAll('#view-sites .subtab-pane').forEach(function(p) { p.classList.remove('active'); });
-    var pane = document.getElementById('sites-subtab-' + tabKey);
-    if (pane) pane.classList.add('active');
-    if (tabKey === 'funis') {
-      if (window.initElementorBuilder) window.initElementorBuilder();
-    }
-  }
+
 
   function selecionarSubabaConfig(tabKey, btn) {
     document.querySelectorAll('#view-settings .subtabs-nav .subtab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -5102,11 +5080,22 @@
       if (targetBtn) targetBtn.classList.add('active');
     }
 
-    if (isFunis && window.initElementorBuilder) {
-      window.initElementorBuilder();
+    if (isFunis) {
+      document.body.classList.add('in-editor');
+      if (window.initElementorBuilder) {
+        window.initElementorBuilder();
+      }
+    } else {
+      document.body.classList.remove('in-editor');
     }
   }
   window.selecionarSubabaDominios = selecionarSubabaDominios;
+
+  function voltarParaDominios() {
+    document.body.classList.remove('in-editor');
+    selecionarSubabaDominios('dominios');
+  }
+  window.voltarParaDominios = voltarParaDominios;
 
   /* ═══ FUNIS HTML & CONSTRUTOR ELEMENTOR ═══ */
   function carregarFunis() {

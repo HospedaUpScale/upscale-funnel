@@ -55,10 +55,24 @@
   function atualizarDisplayLinkPublico() {
     var pubUrl = getPublicUrl();
     var hostDisplay = state.customDomainName ? state.customDomainName : window.location.host;
+    var urlPath = '/f/' + (state.slug || 'oferta-especial');
+    var fullDisplay = hostDisplay + urlPath;
+
     var urlDisplay = document.getElementById('sidebar-public-url-display');
     var openBtn = document.getElementById('sidebar-open-url-btn');
-    if (urlDisplay) urlDisplay.textContent = hostDisplay + '/f/' + (state.slug || 'pagina');
+    if (urlDisplay) urlDisplay.textContent = fullDisplay;
     if (openBtn) openBtn.href = pubUrl;
+
+    var floatingUrlDisplay = document.getElementById('floating-public-url-display');
+    var floatingOpenBtn = document.getElementById('floating-open-url-btn');
+    if (floatingUrlDisplay) floatingUrlDisplay.textContent = fullDisplay;
+    if (floatingOpenBtn) floatingOpenBtn.href = pubUrl;
+
+    var crumbTitle = document.getElementById('builder-crumb-page-title');
+    if (crumbTitle) crumbTitle.textContent = state.name || 'Oferta especial';
+
+    var sidebarTitle = document.getElementById('sidebar-page-item-title');
+    if (sidebarTitle) sidebarTitle.textContent = state.name || 'Oferta especial';
 
     var slugInput = document.getElementById('funnel-slug');
     if (slugInput && slugInput !== document.activeElement && slugInput.value !== (state.slug || '')) {
@@ -176,13 +190,6 @@
           if (typeof window.fbq === 'function') window.fbq('trackCustom', 'ScrollDepth', { depth: m + '%' });
         }
       });
-    }, { passive: true });
-
-    // Time On Page
-    [15, 30, 60].forEach(function(sec) {
-      setTimeout(function() {
-        if (typeof window.fbq === 'function') window.fbq('trackCustom', 'TimeOnPage', { seconds: sec });
-      }, sec * 1000);
     });
   })();
   <\/script>`;
@@ -201,37 +208,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
-    body { background:#f4f7fb; color:#182230; line-height:1.5; padding:40px 16px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
-    .funnel-container { width:100%; max-width:860px; margin:0 auto; }
-    .badge-top { display:inline-block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:#175CFF; background:#edf2fe; padding:6px 14px; border-radius:999px; margin-bottom:14px; text-align:center; }
-    .heading-hero { font-size:36px; font-weight:800; color:#0f172a; text-align:center; line-height:1.2; letter-spacing:-0.03em; margin-bottom:10px; }
-    .subheading-hero { font-size:16px; color:#64748b; text-align:center; margin-bottom:28px; }
+    body { background:#ffffff; color:#0f172a; line-height:1.5; padding:40px 24px 28px 24px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+    .funnel-container { width:100%; max-width:820px; margin:0 auto; }
+    .badge-top { display:inline-block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:#205bff; background:#eff6ff; padding:6px 14px; border-radius:999px; margin-bottom:14px; text-align:center; }
+    .heading-hero { font-size:38px; font-weight:800; color:#0f172a; text-align:center; line-height:1.2; letter-spacing:-0.03em; margin-bottom:10px; }
+    .subheading-hero { font-size:15.5px; color:#64748b; text-align:center; margin-bottom:28px; }
     
     /* Bloco Temporizador */
-    .timer-wrap { display:flex; flex-direction:column; align-items:center; margin-bottom:34px; }
-    .timer-label { font-size:12px; font-weight:600; color:#64748b; margin-bottom:8px; }
-    .timer-boxes { display:flex; gap:10px; }
-    .timer-box { background:#0f172a; color:#ffffff; padding:10px 16px; border-radius:10px; min-width:68px; text-align:center; }
-    .timer-box strong { display:block; font-size:24px; font-weight:800; font-family:'Space Grotesk', sans-serif; }
-    .timer-box span { font-size:10px; text-transform:uppercase; color:#94a3b8; font-weight:600; }
+    .timer-wrap { display:flex; flex-direction:column; align-items:center; margin-bottom:32px; }
+    .timer-label { font-size:12px; font-weight:600; color:#64748b; margin-bottom:10px; }
+    .timer-boxes { display:flex; align-items:center; gap:8px; justify-content:center; }
+    .timer-box { background:#0f172a; color:#ffffff; padding:10px 14px; border-radius:10px; min-width:72px; text-align:center; }
+    .timer-box strong { display:block; font-size:24px; font-weight:800; font-family:'Space Grotesk', sans-serif; line-height:1.1; margin-bottom:2px; }
+    .timer-box span { font-size:9.5px; text-transform:uppercase; color:#94a3b8; font-weight:700; letter-spacing:0.04em; }
+    .timer-sep { font-size:20px; font-weight:700; color:#0f172a; line-height:1; }
 
     /* Card da Oferta */
-    .offer-card { background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; box-shadow:0 12px 35px -8px rgba(0,0,0,0.06); padding:24px; display:grid; grid-template-columns:1fr 1.2fr; gap:24px; align-items:center; margin-bottom:24px; }
+    .offer-card { background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,0.05); padding:24px; display:grid; grid-template-columns:1.05fr 1.25fr; gap:24px; align-items:center; margin-bottom:24px; }
     .offer-image-box { border-radius:14px; overflow:hidden; background:#06152d; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; }
     .offer-image-box img { width:100%; height:100%; object-fit:cover; display:block; }
     .offer-content { display:flex; flex-direction:column; gap:10px; }
-    .offer-title { font-size:24px; font-weight:800; color:#0f172a; }
-    .offer-desc { font-size:13px; color:#64748b; }
+    .offer-title { font-size:24px; font-weight:800; color:#0f172a; margin-bottom:2px; }
+    .offer-desc { font-size:13.5px; color:#64748b; margin-bottom:4px; }
     .offer-price-row { display:flex; align-items:baseline; gap:8px; margin:4px 0; }
-    .offer-price { font-size:32px; font-weight:800; color:#175CFF; }
+    .offer-price { font-size:32px; font-weight:800; color:#205bff; }
     .offer-old-price { font-size:14px; color:#94a3b8; text-decoration:line-through; }
     .offer-benefits { list-style:none; display:flex; flex-direction:column; gap:6px; margin:8px 0; }
     .offer-benefits li { font-size:13px; font-weight:500; color:#334155; display:flex; align-items:center; gap:8px; }
-    .offer-benefits li svg { width:16px; height:16px; color:#175CFF; flex-shrink:0; }
+    .offer-benefits li svg { width:16px; height:16px; color:#205bff; flex-shrink:0; }
 
     /* Botão CTA Principal */
-    .btn-cta { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; background:#175CFF; color:#ffffff; font-size:15px; font-weight:700; text-decoration:none; padding:15px 24px; border-radius:12px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(23,92,255,0.3); transition:all 0.2s ease; }
-    .btn-cta:hover { background:#0f4de6; transform:translateY(-1px); box-shadow:0 6px 20px rgba(23,92,255,0.4); }
+    .btn-cta { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; background:#205bff; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; padding:16px 24px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(32,91,255,0.3); transition:all 0.2s ease; }
+    .btn-cta:hover { background:#174ce0; transform:translateY(-1px); box-shadow:0 6px 20px rgba(32,91,255,0.4); }
 
     .footer-note { text-align:center; font-size:11.5px; color:#94a3b8; margin-top:20px; }
 
@@ -256,16 +264,18 @@
     <div class="timer-wrap" data-block-id="blk_timer_1" data-block-type="timer" data-timer-type="evergreen" data-timer-duration="15" data-timer-end="">
       <span class="timer-label">Oferta disponível até</span>
       <div class="timer-boxes">
-        <div class="timer-box"><strong class="t-hours">02</strong><span>Horas</span></div>
-        <div class="timer-box"><strong class="t-mins">14</strong><span>Minutos</span></div>
-        <div class="timer-box"><strong class="t-secs">38</strong><span>Segundos</span></div>
+        <div class="timer-box"><strong class="t-hours">00</strong><span>HORAS</span></div>
+        <span class="timer-sep">:</span>
+        <div class="timer-box"><strong class="t-mins">14</strong><span>MINUTOS</span></div>
+        <span class="timer-sep">:</span>
+        <div class="timer-box"><strong class="t-secs">17</strong><span>SEGUNDOS</span></div>
       </div>
     </div>
 
     <!-- Bloco Oferta Especial -->
     <div class="offer-card" data-block-id="blk_offer_1" data-block-type="offer">
       <div class="offer-image-box">
-        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80" alt="Booster 200X Ouro">
+        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=700&auto=format&fit=crop&q=80" alt="Booster 200X Ouro">
       </div>
       <div class="offer-content">
         <h3 class="offer-title">Booster 200X Ouro</h3>
@@ -364,16 +374,106 @@
       styleTag.id = '__elementor_styles__';
       styleTag.textContent = \`
         [data-block-id] { position: relative; transition: outline 0.15s ease; }
-        .elementor-hover-outline { outline: 2px dashed #175CFF !important; cursor: pointer !important; }
-        .elementor-active-selected { outline: 2px solid #175CFF !important; box-shadow: 0 0 0 3px rgba(23,92,255,0.2) !important; position: relative !important; }
-        .elementor-active-selected::after {
-          content: ''; position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: #175CFF; border: 2px solid #ffffff; border-radius: 50%; pointer-events: none;
+        .elementor-hover-outline { outline: 2px dashed #205bff !important; cursor: pointer !important; }
+        .elementor-active-selected {
+          outline: 2px solid #205bff !important;
+          position: relative !important;
         }
-        .elementor-active-selected::before {
-          content: ''; position: absolute; bottom: -4px; left: -4px; width: 8px; height: 8px; background: #175CFF; border: 2px solid #ffffff; border-radius: 50%; pointer-events: none;
+        .__elementor_handle__ {
+          position: absolute;
+          width: 7px;
+          height: 7px;
+          background: #ffffff;
+          border: 2px solid #205bff;
+          border-radius: 2px;
+          pointer-events: none;
+          z-index: 999;
+        }
+        .__elementor_handle__.tl { top: -4px; left: -4px; }
+        .__elementor_handle__.tr { top: -4px; right: -4px; }
+        .__elementor_handle__.bl { bottom: -4px; left: -4px; }
+        .__elementor_handle__.br { bottom: -4px; right: -4px; }
+        .__elementor_floating_bar__ {
+          position: absolute;
+          top: -36px;
+          right: 0px;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          padding: 2px 4px;
+          z-index: 1000;
+          cursor: default;
+        }
+        .__elem_btn__ {
+          border: none;
+          background: transparent;
+          color: #64748b;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.15s ease;
+        }
+        .__elem_btn__:hover {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+        .__elem_btn__.__elem_delete__:hover {
+          background: #fee2e2;
+          color: #ef4444;
         }
       \`;
       document.head.appendChild(styleTag);
+
+      function removeFloatingBar() {
+        var existing = document.querySelector('.__elementor_floating_bar__');
+        if (existing) existing.remove();
+        document.querySelectorAll('.__elementor_handle__').forEach(function(h) { h.remove(); });
+      }
+
+      function attachFloatingBar(block) {
+        removeFloatingBar();
+        if (!block) return;
+
+        ['tl', 'tr', 'bl', 'br'].forEach(function(pos) {
+          var h = document.createElement('div');
+          h.className = '__elementor_handle__ ' + pos;
+          block.appendChild(h);
+        });
+
+        var bar = document.createElement('div');
+        bar.className = '__elementor_floating_bar__';
+        bar.innerHTML = \`
+          <button type="button" class="__elem_btn__" title="Mover">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+          </button>
+          <button type="button" class="__elem_btn__" id="__btn_dup__" title="Duplicar">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+          <button type="button" class="__elem_btn__ __elem_delete__" id="__btn_del__" title="Excluir">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#ef4444" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        \`;
+        block.appendChild(bar);
+
+        bar.querySelector('#__btn_dup__').addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          ev.preventDefault();
+          window.parent.postMessage({ type: 'elementor:duplicate' }, '*');
+        });
+
+        bar.querySelector('#__btn_del__').addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          ev.preventDefault();
+          window.parent.postMessage({ type: 'elementor:delete' }, '*');
+        });
+      }
 
       function findBlockParent(el) {
         while (el && el !== document.body) {
@@ -381,6 +481,47 @@
           el = el.parentElement;
         }
         return null;
+      }
+
+      function selectElement(block) {
+        if (currentSelected) {
+          currentSelected.classList.remove('elementor-active-selected');
+        }
+        currentSelected = block;
+        if (!block) {
+          removeFloatingBar();
+          window.parent.postMessage({ type: 'elementor:unselect' }, '*');
+          return;
+        }
+
+        currentSelected.classList.remove('elementor-hover-outline');
+        currentSelected.classList.add('elementor-active-selected');
+        attachFloatingBar(currentSelected);
+
+        var blockId = block.getAttribute('data-block-id');
+        var blockType = block.getAttribute('data-block-type');
+        var textContent = block.innerText || '';
+        var tag = block.tagName.toLowerCase();
+        var comp = window.getComputedStyle(block);
+
+        window.parent.postMessage({
+          type: 'elementor:select',
+          blockId: blockId,
+          blockType: blockType,
+          tag: tag,
+          text: textContent.trim().substring(0, 80),
+          destType: block.getAttribute('data-dest-type') || '',
+          offerId: block.getAttribute('data-offer-id') || '',
+          href: block.getAttribute('href') || '',
+          fontSize: comp.fontSize,
+          fontWeight: comp.fontWeight,
+          textAlign: comp.textAlign,
+          backgroundColor: comp.backgroundColor,
+          color: comp.color,
+          paddingLeft: comp.paddingLeft,
+          paddingTop: comp.paddingTop,
+          borderRadius: comp.borderRadius
+        }, '*');
       }
 
       document.addEventListener('mouseover', function(e) {
@@ -401,41 +542,30 @@
 
       document.addEventListener('click', function(e) {
         if (activeMode !== 'edit') return;
+        // Ignore clicks on floating bar buttons
+        if (e.target && e.target.closest && e.target.closest('.__elementor_floating_bar__')) return;
+
         var block = findBlockParent(e.target);
         if (block) {
           e.preventDefault();
           e.stopPropagation();
-
-          if (currentSelected) {
-            currentSelected.classList.remove('elementor-active-selected');
-          }
-          currentSelected = block;
-          currentSelected.classList.remove('elementor-hover-outline');
-          currentSelected.classList.add('elementor-active-selected');
-
-          var blockId = block.getAttribute('data-block-id');
-          var blockType = block.getAttribute('data-block-type');
-          var textContent = block.innerText || '';
-          var tag = block.tagName.toLowerCase();
-
-          window.parent.postMessage({
-            type: 'elementor:select',
-            blockId: blockId,
-            blockType: blockType,
-            tag: tag,
-            text: textContent.trim().substring(0, 80),
-            destType: block.getAttribute('data-dest-type') || '',
-            offerId: block.getAttribute('data-offer-id') || '',
-            href: block.getAttribute('href') || ''
-          }, '*');
+          selectElement(block);
         } else {
-          if (currentSelected) {
-            currentSelected.classList.remove('elementor-active-selected');
-            currentSelected = null;
-          }
-          window.parent.postMessage({ type: 'elementor:unselect' }, '*');
+          selectElement(null);
         }
       }, true);
+
+      // Auto-selecionar o botão principal (ou primeiro elemento) para corresponder à referência visual
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          var defaultBtn = document.querySelector('[data-block-id="blk_btn_1"]') || document.querySelector('[data-block-type="button"]');
+          if (defaultBtn && activeMode === 'edit') {
+            document.querySelectorAll('.elementor-hover-outline').forEach(function(el) { el.classList.remove('elementor-hover-outline'); });
+            selectElement(defaultBtn);
+            window.scrollTo({ top: 0, behavior: 'instant' });
+          }
+        }, 120);
+      });
 
       // Listener para comandos do painel pai
       window.addEventListener('message', function(event) {
@@ -447,6 +577,7 @@
             document.querySelectorAll('.elementor-hover-outline, .elementor-active-selected').forEach(function(el) {
               el.classList.remove('elementor-hover-outline', 'elementor-active-selected');
             });
+            removeFloatingBar();
             currentSelected = null;
           }
         }
@@ -454,9 +585,7 @@
         if (event.data.action === 'selectBlock') {
           var b = document.querySelector('[data-block-id="' + event.data.blockId + '"]');
           if (b) {
-            if (currentSelected) currentSelected.classList.remove('elementor-active-selected');
-            currentSelected = b;
-            currentSelected.classList.add('elementor-active-selected');
+            selectElement(b);
             b.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
@@ -481,6 +610,7 @@
     carregarOfertasWorkspace();
     carregarDominiosBuilder();
     setupEventListeners();
+    setBuilderZoom(75);
     carregarFunilInicial();
   }
 
@@ -805,142 +935,210 @@
     window.showToast && window.showToast('Elemento adicionado!', 'success');
   }
 
-  // ══ SELEÇÃO E INSPEÇÃO DE ELEMENTO NO PAINEL LATERAL ══
-  function selecionarElementoPeloId(data) {
-    state.selectedBlockId = data.blockId;
-    var inspectorBox = document.getElementById('builder-inspector-box');
-    var fieldsBox = document.getElementById('inspector-fields-container');
-    var typeTitle = document.getElementById('inspector-element-name');
+  // ══ AUXILIARES DE CORES E MEDIDAS ══
+  function rgbToHex(rgb) {
+    if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#205BFF';
+    if (rgb.indexOf('#') === 0) return rgb.toUpperCase();
+    var match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!match) return '#205BFF';
+    var r = parseInt(match[1], 10).toString(16).padStart(2, '0');
+    var g = parseInt(match[2], 10).toString(16).padStart(2, '0');
+    var b = parseInt(match[3], 10).toString(16).padStart(2, '0');
+    return ('#' + r + g + b).toUpperCase();
+  }
 
-    if (!inspectorBox || !fieldsBox) return;
+  function parsePx(val) {
+    if (!val) return 16;
+    var n = parseInt(val, 10);
+    return isNaN(n) ? 16 : n;
+  }
 
-    inspectorBox.style.display = 'flex';
-    var type = data.blockType || 'element';
-    typeTitle.textContent = formatarNomeTipo(type);
-
-    // Constrói os campos específicos para cada tipo de bloco
-    var fieldsHtml = '';
-
-    if (type === 'button') {
-      var offersOptions = state.availableOffers.map(function(o) {
-        var sel = String(o.id) === String(data.offerId) ? 'selected' : '';
-        return `<option value="${o.id}" ${sel}>${escapeHtml(o.title)} (R$ ${Number(o.price).toFixed(2)})</option>`;
-      }).join('');
-
-      fieldsHtml = `
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Texto do Botão</label>
-          <input type="text" class="elementor-prop-input" id="prop-btn-text" value="${escapeHtml(data.text || 'Quero aproveitar')}" oninput="atualizarPropriedadeBloco('button', 'text', this.value)">
-        </div>
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Destino do Clique</label>
-          <select class="elementor-prop-select" id="prop-btn-dest" onchange="atualizarDestinoBotao(this.value)">
-            <option value="checkout" ${data.destType === 'checkout' ? 'selected' : ''}>Checkout da oferta (Pix)</option>
-            <option value="whatsapp" ${data.destType === 'whatsapp' ? 'selected' : ''}>Conversa no WhatsApp</option>
-            <option value="external" ${data.destType === 'external' ? 'selected' : ''}>URL externa</option>
-            <option value="anchor" ${data.destType === 'anchor' ? 'selected' : ''}>Seção da página (#id)</option>
-          </select>
-        </div>
-        <div class="elementor-prop-row" id="group-btn-offer" style="${data.destType === 'whatsapp' || data.destType === 'external' || data.destType === 'anchor' ? 'display:none;' : ''}">
-          <label class="elementor-prop-label">Oferta Vinculada</label>
-          <select class="elementor-prop-select" id="prop-btn-offer-select" onchange="atualizarPropriedadeBloco('button', 'offer_id', this.value)">
-            ${offersOptions || '<option value="1">Oferta Padrão</option>'}
-          </select>
-        </div>
-        <div class="elementor-prop-row" id="group-btn-external" style="${data.destType !== 'external' && data.destType !== 'anchor' ? 'display:none;' : ''}">
-          <label class="elementor-prop-label">Link de Destino</label>
-          <input type="text" class="elementor-prop-input" id="prop-btn-href" value="${escapeHtml(data.href || 'https://')}" oninput="atualizarPropriedadeBloco('button', 'href', this.value)">
-        </div>
-        <div class="elementor-switch-wrap">
-          <span class="elementor-switch-label">Abrir em nova aba</span>
-          <label class="elementor-toggle-switch">
-            <input type="checkbox" id="prop-btn-target-blank" onchange="atualizarPropriedadeBloco('button', 'target', this.checked)">
-            <span class="elementor-toggle-slider"></span>
-          </label>
-        </div>
-      `;
-    } else if (type === 'timer') {
-      fieldsHtml = `
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Tipo de Temporizador</label>
-          <select class="elementor-prop-select" id="prop-timer-type" onchange="atualizarPropriedadeBloco('timer', 'timer_type', this.value)">
-            <option value="evergreen" selected>Duração por visitante (Evergreen)</option>
-            <option value="fixed">Prazo fixo (Data e hora)</option>
-          </select>
-        </div>
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Duração em minutos</label>
-          <input type="number" class="elementor-prop-input" id="prop-timer-duration" value="15" min="1" max="1440" oninput="atualizarPropriedadeBloco('timer', 'duration', this.value)">
-        </div>
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Ação ao encerrar</label>
-          <select class="elementor-prop-select" id="prop-timer-action" onchange="atualizarPropriedadeBloco('timer', 'end_action', this.value)">
-            <option value="message">Exibir mensagem de encerramento</option>
-            <option value="hide">Ocultar a oferta</option>
-            <option value="disable">Desabilitar botão de compra</option>
-          </select>
-        </div>
-        <button type="button" class="btn-secondary" style="margin-top:6px; min-height:30px; font-size:11px;" onclick="reiniciarTimerPreview()">
-          🔄 Reiniciar contador na prévia (teste)
-        </button>
-      `;
-    } else if (type === 'heading' || type === 'text') {
-      fieldsHtml = `
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Texto</label>
-          <textarea class="elementor-prop-textarea" id="prop-text-content" rows="3" oninput="atualizarPropriedadeBloco('${type}', 'text', this.value)">${escapeHtml(data.text || '')}</textarea>
-        </div>
-      `;
-    } else if (type === 'offer') {
-      var offersOpts = state.availableOffers.map(function(o) {
-        return `<option value="${o.id}">${escapeHtml(o.title)} — R$ ${Number(o.price).toFixed(2)}</option>`;
-      }).join('');
-      fieldsHtml = `
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Preencher com Oferta do Sistema</label>
-          <select class="elementor-prop-select" onchange="vincularOfertaAoBloco(this.value)">
-            <option value="">Selecione para auto-preencher...</option>
-            ${offersOpts}
-          </select>
-        </div>
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Título da Oferta</label>
-          <input type="text" class="elementor-prop-input" id="prop-offer-title" value="Booster 200X Ouro" oninput="atualizarPropriedadeBloco('offer', 'title', this.value)">
-        </div>
-        <div class="elementor-prop-row">
-          <label class="elementor-prop-label">Preço (R$)</label>
-          <input type="text" class="elementor-prop-input" id="prop-offer-price" value="R$ 120,00" oninput="atualizarPropriedadeBloco('offer', 'price', this.value)">
-        </div>
-      `;
-    } else {
-      fieldsHtml = `
-        <p style="font-size:12px; color:#64748b;">Edite os estilos finos deste elemento na aba <strong>Estilo</strong> ou seu código bruto na aba <strong>Código</strong>.</p>
-      `;
-    }
-
-    fieldsBox.innerHTML = fieldsHtml;
+  function getIconSvgParaTipo(type) {
+    var map = {
+      heading: '<span style="font-family:serif; font-size:16px; font-weight:700;">T</span>',
+      text: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>',
+      image: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+      video: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>',
+      button: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+      container: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>',
+      html: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+      timer: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M10 2h4"/></svg>',
+      offer: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+      spacer: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>'
+    };
+    return map[type] || map.button;
   }
 
   function formatarNomeTipo(type) {
     var map = {
-      heading: 'Título Selecionado',
-      text: 'Texto Selecionado',
-      image: 'Imagem Selecionada',
-      video: 'Vídeo Selecionado',
-      button: 'Botão Selecionado',
-      container: 'Container Selecionado',
-      html: 'HTML Selecionado',
-      timer: 'Temporizador Selecionado',
-      offer: 'Oferta Selecionada',
-      spacer: 'Espaçador Selecionado'
+      heading: 'Título',
+      text: 'Texto',
+      image: 'Imagem',
+      video: 'Vídeo',
+      button: 'Botão',
+      container: 'Container',
+      html: 'HTML',
+      timer: 'Temporizador',
+      offer: 'Oferta',
+      spacer: 'Espaçador'
     };
-    return map[type] || 'Elemento Selecionado';
+    return map[type] || 'Elemento';
+  }
+
+  // ══ SELEÇÃO E INSPEÇÃO DE ELEMENTO NO PAINEL LATERAL ══
+  function selecionarElementoPeloId(data) {
+    state.selectedBlockId = data.blockId;
+    var type = data.blockType || 'button';
+    var friendlyName = formatarNomeTipo(type);
+
+    // Atualiza cabeçalho do Inspetor Direito
+    var rightTitle = document.getElementById('inspector-right-title');
+    var rightIcon = document.getElementById('inspector-right-icon');
+    if (rightTitle) rightTitle.textContent = friendlyName;
+    if (rightIcon) rightIcon.innerHTML = getIconSvgParaTipo(type);
+
+    // Sincroniza controles da aba Estilo
+    if (data.fontSize) {
+      var fSize = parsePx(data.fontSize);
+      var fsInput = document.getElementById('insp-font-size');
+      if (fsInput) fsInput.value = fSize;
+    }
+
+    if (data.fontWeight) {
+      var fwSelect = document.getElementById('insp-font-weight');
+      if (fwSelect) {
+        var fw = String(data.fontWeight);
+        if (fw === 'bold' || fw === '700') fw = '700';
+        else if (fw === 'normal' || fw === '400') fw = '400';
+        else if (fw === '600') fw = '600';
+        else if (fw === '800') fw = '800';
+        else if (fw === '500') fw = '500';
+        fwSelect.value = fw;
+      }
+    }
+
+    if (data.textAlign) {
+      var align = data.textAlign;
+      ['left', 'center', 'right', 'justify'].forEach(function(a) {
+        var btn = document.getElementById('insp-align-' + a);
+        if (btn) btn.classList.toggle('active', align === a);
+      });
+    }
+
+    if (data.backgroundColor && data.backgroundColor !== 'transparent' && data.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+      var bgHex = rgbToHex(data.backgroundColor);
+      var bgInput = document.getElementById('insp-bg-color-hex');
+      var bgSwatch = document.getElementById('insp-bg-swatch');
+      var bgPicker = document.getElementById('insp-bg-color-picker');
+      if (bgInput) bgInput.value = bgHex;
+      if (bgSwatch) bgSwatch.style.background = bgHex;
+      if (bgPicker) bgPicker.value = bgHex;
+    }
+
+    if (data.color) {
+      var colHex = rgbToHex(data.color);
+      var colInput = document.getElementById('insp-text-color-hex');
+      var colSwatch = document.getElementById('insp-text-swatch');
+      var colPicker = document.getElementById('insp-text-color-picker');
+      if (colInput) colInput.value = colHex;
+      if (colSwatch) colSwatch.style.background = colHex;
+      if (colPicker) colPicker.value = colHex;
+    }
+
+    if (data.paddingLeft !== undefined) {
+      var padH = parsePx(data.paddingLeft);
+      var padHInput = document.getElementById('insp-pad-h');
+      if (padHInput) padHInput.value = padH;
+    }
+
+    if (data.paddingTop !== undefined) {
+      var padV = parsePx(data.paddingTop);
+      var padVInput = document.getElementById('insp-pad-v');
+      if (padVInput) padVInput.value = padV;
+    }
+
+    if (data.borderRadius !== undefined) {
+      var bRadius = parsePx(data.borderRadius);
+      var bRadInput = document.getElementById('insp-border-radius');
+      if (bRadInput) bRadInput.value = bRadius;
+    }
+
+    // Preenche campos dinâmicos na aba Conteúdo
+    var fieldsBox = document.getElementById('inspector-fields-container');
+    if (fieldsBox) {
+      var fieldsHtml = '';
+      if (type === 'button') {
+        var offersOptions = state.availableOffers.map(function(o) {
+          var sel = String(o.id) === String(data.offerId) ? 'selected' : '';
+          return `<option value="${o.id}" ${sel}>${escapeHtml(o.title)} (R$ ${Number(o.price).toFixed(2)})</option>`;
+        }).join('');
+
+        fieldsHtml = `
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label">Texto do Botão</label>
+            <input type="text" class="elementor-prop-input" id="prop-btn-text" value="${escapeHtml(data.text || 'Quero aproveitar →')}" oninput="atualizarPropriedadeBloco('button', 'text', this.value)">
+          </div>
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label">Destino do Clique</label>
+            <select class="elementor-prop-select" id="prop-btn-dest" onchange="atualizarDestinoBotao(this.value)">
+              <option value="checkout" ${data.destType === 'checkout' ? 'selected' : ''}>Checkout da oferta (Pix)</option>
+              <option value="whatsapp" ${data.destType === 'whatsapp' ? 'selected' : ''}>Conversa no WhatsApp</option>
+              <option value="external" ${data.destType === 'external' ? 'selected' : ''}>URL externa</option>
+              <option value="anchor" ${data.destType === 'anchor' ? 'selected' : ''}>Seção da página (#id)</option>
+            </select>
+          </div>
+          <div class="elementor-prop-row" id="group-btn-offer" style="${data.destType === 'whatsapp' || data.destType === 'external' || data.destType === 'anchor' ? 'display:none;' : ''}">
+            <label class="elementor-prop-label">Oferta Vinculada</label>
+            <select class="elementor-prop-select" id="prop-btn-offer-select" onchange="atualizarPropriedadeBloco('button', 'offer_id', this.value)">
+              ${offersOptions || '<option value="1">Oferta Padrão</option>'}
+            </select>
+          </div>
+          <div class="elementor-prop-row" id="group-btn-external" style="${data.destType !== 'external' && data.destType !== 'anchor' ? 'display:none;' : ''}">
+            <label class="elementor-prop-label">Link de Destino</label>
+            <input type="text" class="elementor-prop-input" id="prop-btn-href" value="${escapeHtml(data.href || 'https://')}" oninput="atualizarPropriedadeBloco('button', 'href', this.value)">
+          </div>
+        `;
+      } else if (type === 'heading' || type === 'text') {
+        fieldsHtml = `
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label">Texto</label>
+            <textarea class="elementor-prop-textarea" id="prop-text-content" rows="3" oninput="atualizarPropriedadeBloco('${type}', 'text', this.value)">${escapeHtml(data.text || '')}</textarea>
+          </div>
+        `;
+      } else if (type === 'offer') {
+        var offersOpts = state.availableOffers.map(function(o) {
+          return `<option value="${o.id}">${escapeHtml(o.title)} — R$ ${Number(o.price).toFixed(2)}</option>`;
+        }).join('');
+        fieldsHtml = `
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label">Preencher com Oferta</label>
+            <select class="elementor-prop-select" onchange="vincularOfertaAoBloco(this.value)">
+              <option value="">Selecione...</option>
+              ${offersOpts}
+            </select>
+          </div>
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label">Título da Oferta</label>
+            <input type="text" class="elementor-prop-input" id="prop-offer-title" value="Booster 200X Ouro" oninput="atualizarPropriedadeBloco('offer', 'title', this.value)">
+          </div>
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label">Preço</label>
+            <input type="text" class="elementor-prop-input" id="prop-offer-price" value="R$ 120,00" oninput="atualizarPropriedadeBloco('offer', 'price', this.value)">
+          </div>
+        `;
+      } else {
+        fieldsHtml = `
+          <p style="font-size:12px; color:#64748b;">Ajuste as propriedades finas nas abas Estilo e Avançado.</p>
+        `;
+      }
+      fieldsBox.innerHTML = fieldsHtml;
+    }
   }
 
   function desmarcarElemento() {
     state.selectedBlockId = null;
-    var inspectorBox = document.getElementById('builder-inspector-box');
-    if (inspectorBox) inspectorBox.style.display = 'none';
+    var rightTitle = document.getElementById('inspector-right-title');
+    if (rightTitle) rightTitle.textContent = 'Elemento';
 
     var iframe = (state.activeDevice === 'mobile')
       ? document.getElementById('builder-iframe-mobile')
@@ -1116,8 +1314,143 @@
     var text = document.getElementById('funnel-status-text');
     if (pill) {
       pill.className = 'elementor-status-pill';
-      if (text) text.textContent = statusTxt || 'Rascunho salvo';
+      if (text) text.textContent = statusTxt || 'Rascunho';
     }
+  }
+
+  // ══ CONTROLES DO INSPETOR DIREITO ══
+  function switchInspectorTab(tabName) {
+    ['content', 'style', 'advanced'].forEach(function(t) {
+      var btn = document.getElementById('tab-inspector-' + t);
+      var pane = document.getElementById('insp-pane-' + t);
+      if (btn) btn.classList.toggle('active', tabName === t);
+      if (pane) pane.style.display = (tabName === t) ? 'flex' : 'none';
+    });
+  }
+
+  function setInspectorAlign(align) {
+    ['left', 'center', 'right', 'justify'].forEach(function(a) {
+      var btn = document.getElementById('insp-align-' + a);
+      if (btn) btn.classList.toggle('active', align === a);
+    });
+    aplicarEstiloRapido('textAlign', align);
+  }
+
+  function aplicarEstiloCor(prop, hexVal) {
+    var val = (hexVal || '').trim();
+    if (!val) return;
+    if (val.charAt(0) !== '#') val = '#' + val;
+    val = val.toUpperCase();
+
+    if (prop === 'backgroundColor') {
+      var swatch = document.getElementById('insp-bg-swatch');
+      var picker = document.getElementById('insp-bg-color-picker');
+      if (swatch) swatch.style.background = val;
+      if (picker) picker.value = val;
+    } else if (prop === 'color') {
+      var tSwatch = document.getElementById('insp-text-swatch');
+      var tPicker = document.getElementById('insp-text-color-picker');
+      if (tSwatch) tSwatch.style.background = val;
+      if (tPicker) tPicker.value = val;
+    }
+
+    aplicarEstiloRapido(prop, val);
+  }
+
+  function atualizarCorHex(prop, val) {
+    if (prop === 'backgroundColor') {
+      var hexInp = document.getElementById('insp-bg-color-hex');
+      var swatch = document.getElementById('insp-bg-swatch');
+      if (hexInp) hexInp.value = val.toUpperCase();
+      if (swatch) swatch.style.background = val;
+    } else if (prop === 'color') {
+      var tHexInp = document.getElementById('insp-text-color-hex');
+      var tSwatch = document.getElementById('insp-text-swatch');
+      if (tHexInp) tHexInp.value = val.toUpperCase();
+      if (tSwatch) tSwatch.style.background = val;
+    }
+    aplicarEstiloRapido(prop, val);
+  }
+
+  function aplicarPaddingSeparado() {
+    var padHInput = document.getElementById('insp-pad-h');
+    var padVInput = document.getElementById('insp-pad-v');
+    var padH = padHInput ? parseInt(padHInput.value, 10) : 24;
+    var padV = padVInput ? parseInt(padVInput.value, 10) : 16;
+    if (isNaN(padH)) padH = 24;
+    if (isNaN(padV)) padV = 16;
+    aplicarEstiloRapido('padding', padV + 'px ' + padH + 'px');
+  }
+
+  function toggleSombraInspector() {
+    if (!state.selectedBlockId) return;
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(state.currentHtml, 'text/html');
+    var el = doc.querySelector('[data-block-id="' + state.selectedBlockId + '"]');
+    if (!el) return;
+    var hasShadow = el.style.boxShadow && el.style.boxShadow !== 'none';
+    aplicarEstiloRapido('boxShadow', hasShadow ? 'none' : '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)');
+    window.showToast && window.showToast(hasShadow ? 'Sombra removida.' : 'Sombra aplicada.', 'info');
+  }
+
+  function toggleAccordionSecoes() {
+    var content = document.getElementById('elementor-accordion-content');
+    var chevron = document.getElementById('accordion-chevron');
+    if (!content) return;
+    content.classList.toggle('hidden');
+    if (chevron) chevron.parentElement.parentElement.classList.toggle('collapsed');
+  }
+
+  function inserirSecaoPronta(tipo) {
+    var newId = 'blk_sec_' + tipo + '_' + Date.now().toString(36);
+    var snippet = '';
+
+    if (tipo === 'hero') {
+      snippet = `\n<!-- Seção Hero Pronta -->\n<div data-block-id="${newId}" data-block-type="container" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; padding:36px 24px; text-align:center; margin:24px 0;">\n  <span class="badge-top">DESTAQUE EXCLUSIVO</span>\n  <h2 style="font-size:32px; font-weight:800; color:#0f172a; margin:12px 0;">Transforme Seus Resultados Hoje</h2>\n  <p style="font-size:15px; color:#64748b; max-width:540px; margin:0 auto 20px auto;">Acesso imediato com garantia incondicional e suporte dedicado.</p>\n  <a href="#checkout" class="btn-cta" style="display:inline-block; max-width:280px;">Começar Agora →</a>\n</div>`;
+    } else if (tipo === 'testimonials') {
+      snippet = `\n<!-- Seção Depoimentos Pronta -->\n<div data-block-id="${newId}" data-block-type="container" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; padding:28px 24px; margin:24px 0;">\n  <h3 style="font-size:20px; font-weight:700; text-align:center; margin-bottom:16px;">O Que Nossos Clientes Dizem</h3>\n  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">\n    <div style="background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0;">\n      <div style="color:#f59e0b; margin-bottom:6px;">★★★★★</div>\n      <p style="font-size:13px; color:#334155;">"Excelente oportunidade, entrega rápida e suporte muito atencioso!"</p>\n      <strong style="display:block; font-size:12px; margin-top:8px; color:#0f172a;">— Carlos Eduardo</strong>\n    </div>\n    <div style="background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0;">\n      <div style="color:#f59e0b; margin-bottom:6px;">★★★★★</div>\n      <p style="font-size:13px; color:#334155;">"Fácil de comprar via Pix, tudo aprovado na hora sem burocracia."</p>\n      <strong style="display:block; font-size:12px; margin-top:8px; color:#0f172a;">— Mariana Silva</strong>\n    </div>\n  </div>\n</div>`;
+    } else if (tipo === 'faq') {
+      snippet = `\n<!-- Seção Perguntas Frequentes Pronta -->\n<div data-block-id="${newId}" data-block-type="container" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:20px; padding:28px 24px; margin:24px 0;">\n  <h3 style="font-size:20px; font-weight:700; text-align:center; margin-bottom:18px;">Perguntas Frequentes</h3>\n  <div style="display:flex; flex-direction:column; gap:12px;">\n    <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">\n      <strong style="font-size:13.5px; color:#0f172a;">Como funciona a entrega?</strong>\n      <p style="font-size:12.5px; color:#64748b; margin-top:4px;">O envio é imediato e 100% automático logo após a confirmação do pagamento Pix.</p>\n    </div>\n    <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">\n      <strong style="font-size:13.5px; color:#0f172a;">O pagamento é seguro?</strong>\n      <p style="font-size:12.5px; color:#64748b; margin-top:4px;">Sim, utilizamos criptografia de ponta a ponta e processamento bancário homologado.</p>\n    </div>\n  </div>\n</div>`;
+    }
+
+    if (state.currentHtml.indexOf('</div>\n\n  <!-- Runtime') !== -1) {
+      state.currentHtml = state.currentHtml.replace('</div>\n\n  <!-- Runtime', snippet + '\n  </div>\n\n  <!-- Runtime');
+    } else if (state.currentHtml.indexOf('</body>') !== -1) {
+      state.currentHtml = state.currentHtml.replace('</body>', snippet + '\n</body>');
+    } else {
+      state.currentHtml += snippet;
+    }
+
+    if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
+    renderPreview(true);
+    marcarModificado();
+    window.showToast && window.showToast('Seção adicionada!', 'success');
+  }
+
+  function sincronizarTituloPagina(val) {
+    state.name = val || 'Oferta especial';
+    var crumbTitle = document.getElementById('builder-crumb-page-title');
+    var sidebarTitle = document.getElementById('sidebar-page-item-title');
+    if (crumbTitle) crumbTitle.textContent = state.name;
+    if (sidebarTitle) sidebarTitle.textContent = state.name;
+    marcarModificado();
+  }
+
+  function focarNomePagina() {
+    var novoNome = prompt('Digite o nome da página:', state.name || 'Oferta especial');
+    if (novoNome !== null && novoNome.trim() !== '') {
+      sincronizarTituloPagina(novoNome.trim());
+    }
+  }
+
+  function abrirPreviaNovaAba() {
+    var url = getPublicUrl();
+    window.open(url, '_blank');
+  }
+
+  function abrirEditorCodigoModal() {
+    switchSidebarTab('code');
+    window.showToast && window.showToast('Editor de código ativado.', 'info');
   }
 
   // ══ SALVAR RASCUNHO (NÃO AFETA A VERSÃO NO AR) ══
@@ -1467,9 +1800,9 @@
         if (countBadge) countBadge.textContent = funnels.length;
 
         if (funnels.length > 0) {
-          var f = funnels[0];
+          var f = funnels.find(function(x) { return x.slug === 'oferta-especial'; }) || funnels[0];
           state.funnelId = f.id;
-          state.name = f.name || 'Oferta Especial';
+          state.name = f.name || 'Oferta especial';
           state.slug = f.slug || 'oferta-especial';
           state.templateSlug = f.template_slug || 'default';
           state.customDomainId = f.custom_domain_id || null;
@@ -1501,10 +1834,10 @@
           var pixelEventSel = document.getElementById('builder-pixel-event-select');
           if (pixelEventSel) pixelEventSel.value = state.ctaTrackEvent || 'InitiateCheckout';
 
-          marcarSalvo(f.status === 'published' ? 'Página no ar' : 'Rascunho salvo');
+          marcarSalvo(f.status === 'published' ? 'Página no ar' : 'Rascunho');
         } else {
           state.currentHtml = getDefaultTemplate();
-          marcarSalvo('Rascunho padrão');
+          marcarSalvo('Rascunho');
         }
 
         if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
@@ -2356,6 +2689,14 @@
       if (event.data.type === 'elementor:unselect') {
         desmarcarElemento();
       }
+
+      if (event.data.type === 'elementor:duplicate') {
+        duplicarElementoSelecionado();
+      }
+
+      if (event.data.type === 'elementor:delete') {
+        excluirElementoSelecionado();
+      }
     });
 
     // Fechar prévia ampliada ao clicar no backdrop
@@ -2462,6 +2803,20 @@
   window.irParaAdicionarDominio = irParaAdicionarDominio;
   window.abrirModalHospedagemParaPagina = abrirModalHospedagemParaPagina;
   window.renderizarHostingCards = renderizarHostingCards;
+
+  // Novos controles do Inspetor Direito e Seções
+  window.switchInspectorTab = switchInspectorTab;
+  window.setInspectorAlign = setInspectorAlign;
+  window.aplicarEstiloCor = aplicarEstiloCor;
+  window.atualizarCorHex = atualizarCorHex;
+  window.aplicarPaddingSeparado = aplicarPaddingSeparado;
+  window.toggleSombraInspector = toggleSombraInspector;
+  window.toggleAccordionSecoes = toggleAccordionSecoes;
+  window.inserirSecaoPronta = inserirSecaoPronta;
+  window.sincronizarTituloPagina = sincronizarTituloPagina;
+  window.focarNomePagina = focarNomePagina;
+  window.abrirPreviaNovaAba = abrirPreviaNovaAba;
+  window.abrirEditorCodigoModal = abrirEditorCodigoModal;
 
   // Tela dedicada de seleção de modelos
   window.abrirTelaSelecaoModelos = abrirTelaSelecaoModelos;
