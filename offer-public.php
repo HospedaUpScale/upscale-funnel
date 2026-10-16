@@ -167,7 +167,7 @@ if (empty($themeData) && !empty($offer['theme_config'])) {
 }
 
 $theme = OfferTheme::merge($themeData);
-if ($request->get('native') === '1') $theme['mechanic'] = 'direct';
+if ($request->get('native') === '1' && $request->get('experience') !== 'campaign') $theme['mechanic'] = 'direct';
 
 $payloadForHtml = [
     'id'                  => (int)$offer['id'],

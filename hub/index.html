@@ -23,7 +23,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=3.4" defer></script>
+  <script src="elementor-builder.js?v=3.5" defer></script>
 </head>
 <body>
 
@@ -2030,7 +2030,7 @@
           <div class="elementor-drawer-head">
             <h3 class="elementor-drawer-title">Minhas Páginas</h3>
             <div style="display:flex; align-items:center; gap:8px;">
-              <a class="btn-primary" href="index.html#campaigns" onclick="event.preventDefault(); navigate('campaigns')" style="min-height:30px; padding:0 12px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center;" title="Novo editor visual (GrapesJS)">+ Página, funil ou HTML</a>
+              <a class="btn-primary" href="index.html#campaigns" onclick="event.preventDefault(); navigate('campaigns')" style="min-height:30px; padding:0 12px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center;" title="Criar página no editor clássico da campanha">+ Página, funil ou HTML</a>
               <button type="button" class="btn-secondary" style="min-height:30px; padding:0 12px; font-size:12px;" onclick="abrirTelaSelecaoModelos('drawer')">+ Nova (clássico)</button>
               <button type="button" class="elementor-drawer-close" onclick="togglePagesDrawer()">✕</button>
             </div>
@@ -3645,10 +3645,20 @@
     document.getElementById('campaign-flow-type').focus({ preventScroll: true });
   }
 
-  function abrirPaginaCampanha() {
+  async function abrirPaginaCampanha() {
     if (!selectedCampaignId) return;
     var mechanic = document.getElementById('campaign-flow-type').value;
-    window.location.href = 'visual-editor.html?workspace_id=' + encodeURIComponent(currentWsId || 1) + '&campaign_id=' + encodeURIComponent(selectedCampaignId) + '&mechanic=' + encodeURIComponent(mechanic);
+    var wsId = currentWsId || 1;
+    try {
+      var response = await apiFetch('../api/admin/offer.php?workspace_id=' + wsId + '&campaign_id=' + selectedCampaignId);
+      if (response.status !== 'success') throw new Error(response.message || 'Não foi possível carregar a oferta.');
+      var offer = response.offer;
+      var theme = Object.assign({}, offer.draft_config && offer.draft_config.theme || offer.theme, {mechanic: mechanic});
+      var saved = await apiFetch('../api/admin/offer.php?action=save_draft', {method:'POST', body:JSON.stringify({workspace_id:wsId,campaign_id:selectedCampaignId,theme:theme})});
+      if (saved.status !== 'success') throw new Error(saved.message || 'Não foi possível salvar o tipo de funil.');
+      navigate('sites');
+      selecionarSubabaDominios('funis');
+    } catch(error) { showToast(error.message, 'error'); }
   }
 
   function selecionarSubabaCampanha(tabKey, btn) {
@@ -4164,7 +4174,8 @@
       if (requestedCampaignId && allCampaignsData.some(function(c){return c.id === requestedCampaignId;})) {
         var requested = requestedCampaignId;
         requestedCampaignId = 0;
-        if (editorPageMode) abrirEditorOferta(requested); else abrirDetalhesCampanha(requested);
+        if (pageParams.get('page_editor') === '1') { selectedCampaignId = requested; navigate('sites'); selecionarSubabaDominios('funis'); }
+        else if (editorPageMode) abrirEditorOferta(requested); else abrirDetalhesCampanha(requested);
       }
     })
     .catch(function(e) { console.error('Erro ao carregar campanhas:', e); });
@@ -5570,7 +5581,9 @@
 
   // Inicialização no DOM Ready
   window.addEventListener('DOMContentLoaded', function() {
-    if (editorPageMode) {
+    if (pageParams.get('page_editor') === '1' && !requestedCampaignId) {
+      navigate('sites'); selecionarSubabaDominios('funis');
+    } else if (editorPageMode) {
       navigate('offer-editor');
     } else {
       var hash = (window.location.hash || '').replace('#', '');

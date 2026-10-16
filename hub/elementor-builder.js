@@ -781,6 +781,8 @@
       htmlToInject = htmlToInject + helperScript;
     }
 
+    var previewCampaign = (window.allCampaignsData || []).find(function(c){return c.id === window.selectedCampaignId;});
+    if (previewCampaign && previewCampaign.offer && previewCampaign.offer.public_url) htmlToInject = htmlToInject.split('{{campaign_offer_url}}').join(previewCampaign.offer.public_url + '?native=1');
     iframe.srcdoc = htmlToInject;
 
     // Atualiza o display da URL pública no footer da barra lateral
@@ -1626,7 +1628,8 @@
         },
         draft_content: state.currentHtml,
         html_content: state.currentHtml,
-        workspace_id: wsId
+        workspace_id: wsId,
+        campaign_id: window.selectedCampaignId || null
       })
     })
     .then(function(data) {
@@ -1767,7 +1770,8 @@
         },
         html_content: state.currentHtml,
         draft_content: state.currentHtml,
-        workspace_id: wsId
+        workspace_id: wsId,
+        campaign_id: window.selectedCampaignId || null
       })
     })
     .then(function(data) {
@@ -1873,11 +1877,8 @@
       .then(function(data) {
         var f = (data.funnels || []).find(function(x) { return x.id === id; });
         if (!f) return;
-        if (f.editor_type === 'visual') {
-          window.location.href = 'visual-editor.html?workspace_id=' + encodeURIComponent(wsId) + '&id=' + encodeURIComponent(f.id);
-          return;
-        }
 
+        window.selectedCampaignId = f.campaign_id || null;
         state.funnelId = f.id;
         state.name = f.name || 'Página';
         state.slug = f.slug || 'pagina';
@@ -1943,9 +1944,12 @@
         var countBadge = document.getElementById('builder-pages-count');
         if (countBadge) countBadge.textContent = funnels.length;
 
-        var classicFunnels = funnels.filter(function(f) { return f.editor_type !== 'visual'; });
+        var campaignId = window.selectedCampaignId || 0;
+        var classicFunnels = campaignId ? funnels.filter(function(f) { return f.campaign_id === campaignId; }) : funnels;
+        var requestedId = parseInt(new URLSearchParams(window.location.search).get('funnel_id')) || 0;
         if (classicFunnels.length > 0) {
-          var f = classicFunnels.find(function(x) { return x.slug === 'oferta-especial'; }) || classicFunnels[0];
+          var f = classicFunnels.find(function(x) { return x.id === requestedId; }) || classicFunnels.find(function(x) { return x.slug === 'oferta-especial'; }) || classicFunnels[0];
+          window.selectedCampaignId = f.campaign_id || null;
           state.funnelId = f.id;
           state.name = f.name || 'Oferta especial';
           state.slug = f.slug || 'oferta-especial';
@@ -1981,7 +1985,18 @@
 
           marcarSalvo(f.status === 'published' ? 'Página no ar' : 'Rascunho');
         } else {
+          state.funnelId = null;
           state.currentHtml = getDefaultTemplate();
+          if (campaignId) {
+            var campaign = (window.allCampaignsData || []).find(function(c){return c.id === campaignId;});
+            if (campaign && campaign.offer && campaign.offer.public_url) {
+              state.name = campaign.title;
+              state.slug = 'campanha-' + campaignId;
+              state.currentHtml = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Oferta</title></head><body style="margin:0"><iframe data-campaign-offer src="{{campaign_offer_url}}&experience=campaign" title="Oferta da campanha" style="width:100%;min-height:100vh;border:0"></iframe></body></html>';
+              var nameField = document.getElementById('funnel-name'); if(nameField) nameField.value=state.name;
+              var slugField = document.getElementById('funnel-slug'); if(slugField) slugField.value=state.slug;
+            }
+          }
           marcarSalvo('Rascunho');
         }
 

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../bootstrap.php';
 use App\Auth\AdminAuth;
 use App\Http\JsonResponse;
 use App\Templates\TemplateRegistry;
+use App\Campaigns\CampaignPage;
 
 $token = AdminAuth::extractBearerToken();
 $adminAuth = new AdminAuth($wsRepo, $config['super_admin_token'] ?? '');
@@ -246,6 +247,16 @@ if ($request->method() === 'POST') {
 
     $templateSlug = trim((string)($input['template_slug'] ?? 'default'));
     $campaignId = !empty($input['campaign_id']) ? (int)$input['campaign_id'] : null;
+    if ($id > 0) {
+        $previous = $pdo->prepare('SELECT campaign_id FROM funnels WHERE id = ? AND workspace_id = ?');
+        $previous->execute([$id, $targetWsId]);
+        $previousCampaignId = (int)$previous->fetchColumn();
+        if ($previousCampaignId && $campaignId && $previousCampaignId !== $campaignId) JsonResponse::error('Página pertence a outra campanha.', 403);
+        if (!$campaignId) $campaignId = $previousCampaignId ?: null;
+    }
+    $campaign = $campaignId ? CampaignPage::campaign($pdo, $targetWsId, $campaignId) : null;
+    if ($campaignId && !$campaign) JsonResponse::error('Campanha não encontrada neste workspace.', 404);
+
 
     $blocksConfig = isset($input['blocks_config']) ? (is_string($input['blocks_config']) ? $input['blocks_config'] : json_encode($input['blocks_config'], JSON_UNESCAPED_UNICODE)) : null;
     $settingsConfig = isset($input['settings_config']) ? (is_string($input['settings_config']) ? $input['settings_config'] : json_encode($input['settings_config'], JSON_UNESCAPED_UNICODE)) : null;
@@ -314,7 +325,9 @@ if ($request->method() === 'POST') {
         }
     }
 
+    $campaignOffer = null;
     try {
+        $pdo->beginTransaction();
         if ($id > 0) {
             $existingStmt = $pdo->prepare("SELECT id, published_content, status FROM funnels WHERE id = ? AND workspace_id = ?");
             $existingStmt->execute([$id, $targetWsId]);
@@ -377,11 +390,18 @@ if ($request->method() === 'POST') {
         }
 
         $pdo->prepare("UPDATE funnels SET is_home = 0 WHERE workspace_id = ?")->execute([$targetWsId]);
+        if ($isPublishAction && $campaign) {
+            $campaignOffer = CampaignPage::publishOffer($pdo, $campaign);
+            $pdo->prepare("UPDATE campaigns SET status = 'published', published_at = CURRENT_TIMESTAMP, ended_at = NULL WHERE id = ? AND workspace_id = ?")->execute([$campaignId, $targetWsId]);
+        }
+        $pdo->commit();
     } catch (PDOException $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
         JsonResponse::error('Não foi possível salvar a página agora: ' . $e->getMessage(), 500, ['code' => 'funnel_save_failed']);
     }
 
     $urls = buildFunnelUrls($slug, $domainName);
+    if ($campaignOffer) $urls['public_url'] = $urls['direct_url'] = '/o/' . $campaignOffer['slug'];
 
     JsonResponse::success([
         'message' => $isPublishAction ? 'Página publicada com sucesso! Link exclusivo disponível.' : 'Rascunho da página salvo com sucesso.',
