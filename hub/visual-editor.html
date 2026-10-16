@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editor Visual · upScale</title>
+<link rel="stylesheet" href="../vendor/grapesjs/grapes.min.css">
+<style>
+  :root {
+    --app-bg: #0f172a;
+    --app-fg: #f8fafc;
+    --app-muted: #94a3b8;
+    --app-border: rgba(255,255,255,0.08);
+    --app-primary: #1764ff;
+    --app-success: #16a34a;
+    --app-danger: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--app-bg); color: var(--app-fg); font-family: Inter, system-ui, -apple-system, sans-serif; }
+  #ve-root { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
+
+  /* Barra superior */
+  .ve-top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; background: #0b1120; border-bottom: 1px solid var(--app-border);
+  }
+  .ve-top .back { color: var(--app-fg); text-decoration: none; opacity: .8; padding: 6px 10px; border-radius: 6px; }
+  .ve-top .back:hover { background: rgba(255,255,255,0.06); opacity: 1; }
+  .ve-top input.name { flex: 1; max-width: 320px; background: transparent; color: var(--app-fg); border: 1px solid var(--app-border); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+  .ve-top .spacer { flex: 1; }
+  .ve-top .status { font-size: 12px; color: var(--app-muted); min-width: 180px; text-align: right; }
+  .ve-top .status.saving { color: #facc15; }
+  .ve-top .status.ok { color: #4ade80; }
+  .ve-top .status.err { color: #f87171; }
+  .ve-top .status.dirty { color: #fbbf24; }
+  .ve-top button {
+    background: transparent; color: var(--app-fg); border: 1px solid var(--app-border);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .ve-top button:hover { background: rgba(255,255,255,0.06); }
+  .ve-top button.primary { background: var(--app-primary); border-color: var(--app-primary); }
+  .ve-top button.primary:hover { filter: brightness(1.1); }
+  .ve-top button.success { background: var(--app-success); border-color: var(--app-success); }
+  .ve-top button:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Container GrapesJS */
+  #gjs { height: 100%; border: none; }
+
+  /* GrapesJS overrides para combinar com o painel */
+  .gjs-pn-panels, .gjs-cv-canvas { background: var(--app-bg); }
+  .gjs-two-color, .gjs-clm-tags, .gjs-block, .gjs-block-category .gjs-title { color: var(--app-fg); }
+
+  /* Modal de bloqueio para carregar/salvar */
+  .ve-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 9999; }
+  .ve-overlay.on { display: flex; }
+  .ve-overlay .card { background: #0b1120; border: 1px solid var(--app-border); border-radius: 12px; padding: 22px 26px; max-width: 440px; }
+
+  .ve-toast { position: fixed; bottom: 20px; right: 20px; background: #0b1120; color: var(--app-fg); border: 1px solid var(--app-border); border-radius: 10px; padding: 12px 16px; z-index: 9999; opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); font-size: 13px; }
+  .ve-toast.on { opacity: 1; transform: none; }
+  .ve-toast.err { border-color: var(--app-danger); color: #fecaca; }
+  .ve-toast.ok  { border-color: var(--app-success); color: #bbf7d0; }
+</style>
+</head>
+<body>
+
+<div id="ve-root">
+  <header class="ve-top">
+    <a class="back" href="index.html#sites" title="Voltar ao painel">← Voltar</a>
+    <input class="name" id="ve-page-name" value="Nova página" placeholder="Nome da página">
+    <div class="spacer"></div>
+    <div class="status" id="ve-status">Carregando…</div>
+    <button id="ve-btn-preview" title="Pré-visualizar">👁️ Visualizar</button>
+    <button id="ve-btn-save">Salvar rascunho</button>
+    <button id="ve-btn-publish" class="success">Publicar</button>
+  </header>
+  <div id="gjs"></div>
+</div>
+
+<div class="ve-overlay" id="ve-overlay">
+  <div class="card" id="ve-overlay-text">Carregando editor…</div>
+</div>
+<div class="ve-toast" id="ve-toast"></div>
+
+<script src="../vendor/grapesjs/grapes.min.js"></script>
+<script src="visual-editor/components.js"></script>
+<script src="visual-editor/blocks.js"></script>
+<script src="visual-editor/storage.js"></script>
+<script src="visual-editor/init.js"></script>
+
+</body>
+</html>

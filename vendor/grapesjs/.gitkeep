@@ -1,0 +1,3 @@
+Esta pasta recebe os arquivos vendorizados do GrapesJS Community em runtime.
+Rode: ./scripts/vendor_grapesjs.sh
+(automaticamente executado no start.sh durante o deploy)

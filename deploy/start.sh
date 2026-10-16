@@ -10,6 +10,13 @@ chmod -R 775 /var/www/html/storage /var/www/html/api/logs
 # falhas de conexão com o banco e ainda criava /storage/.migrated, deixando o
 # sistema travado sem tabelas (ex.: "Table 'workspaces' doesn't exist").
 # O migrator é idempotente (só aplica o que falta), então rodar a cada start é seguro.
+# Vendoriza GrapesJS (editor visual) se ainda nao estiver em disco.
+# Idempotente: pula quando os arquivos ja existem.
+if [ ! -s /var/www/html/vendor/grapesjs/grapes.min.js ]; then
+    echo "Vendorizando GrapesJS..."
+    sh /var/www/html/scripts/vendor_grapesjs.sh || echo "Aviso: GrapesJS nao vendorizado (editor visual ficara indisponivel ate que vendor_grapesjs.sh seja executado manualmente)."
+fi
+
 echo "Running migrations..."
 if php /var/www/html/scripts/migrate.php; then
     touch /var/www/html/storage/.migrated
