@@ -41,10 +41,13 @@ class Migrator
             }
             try {
                 $this->pdo->exec($sql);
-                $ins = $this->pdo->prepare("INSERT INTO migrations (filename, applied_at) VALUES (?, datetime('now'))");
-                if ($this->driver === 'mysql') {
-                    $ins = $this->pdo->prepare("INSERT INTO migrations (filename, applied_at) VALUES (?, NOW())");
-                }
+                // IMPORTANTE: Com PDO::ATTR_EMULATE_PREPARES=false (ver Connection.php),
+                // o MySQL valida o SQL no proprio prepare(). Nao prepare "datetime('now')"
+                // no MySQL — ja seria recusado antes do if conseguir sobrescrever.
+                $insertSql = $this->driver === 'mysql'
+                    ? "INSERT INTO migrations (filename, applied_at) VALUES (?, NOW())"
+                    : "INSERT INTO migrations (filename, applied_at) VALUES (?, datetime('now'))";
+                $ins = $this->pdo->prepare($insertSql);
                 $ins->execute([$filename]);
                 if ($useTransaction) {
                     $this->pdo->commit();
