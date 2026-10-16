@@ -13,6 +13,12 @@ if [ ! -f /var/www/html/storage/.migrated ]; then
     echo "Migrations completed!"
 fi
 
+# Garante o administrador global a cada start (idempotente), se as credenciais existirem.
+if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
+    echo "Garantindo administrador global..."
+    php /var/www/html/scripts/create_admin.php || echo "Aviso: falha ao configurar admin (seguindo)."
+fi
+
 # O banco SQLite e a pasta storage/ precisam ser gravaveis pelo PHP-FPM (www-data).
 # As migrations rodam como root e criam o arquivo com dono root; sem este chown as leituras
 # funcionam mas criar/publicar/salvar falha com "attempt to write a readonly database".

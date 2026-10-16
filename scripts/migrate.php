@@ -24,4 +24,11 @@ if (empty($applied)) {
 // Run seed
 require_once dirname(__DIR__) . '/migrations/seed_legacy_workspace.php';
 
+// Cria/atualiza o administrador global se as credenciais estiverem no ambiente (.env).
+// Idempotente: roda a cada deploy sem duplicar. Mantém a senha fora do código.
+if (getenv('ADMIN_EMAIL') && getenv('ADMIN_PASSWORD')) {
+    echo "Configurando administrador global a partir do ambiente...\n";
+    require dirname(__DIR__) . '/scripts/create_admin.php';
+}
+
 echo "Migration and seed finished!\n";

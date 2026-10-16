@@ -602,7 +602,7 @@
               <thead>
                 <tr>
                   <th>Cliente</th>
-                  <th>Campanha</th>
+                  <th>Workspace · Origem</th>
                   <th>Valor</th>
                   <th>Status</th>
                   <th>Data</th>
@@ -4753,8 +4753,19 @@
   }
 
   /* ═══ MÉTRICAS E TRANSAÇÕES ═══ */
+  function rotuloOrigem(src) {
+    var m = {
+      offer_link: 'Link exclusivo do upsell',
+      card_link: 'Link do card pós-venda',
+      funnel: 'Funil / Pressel',
+      raffle_webhook: 'Webhook da rifa',
+      direct: 'Acesso direto'
+    };
+    return m[src] || src;
+  }
+
   function carregarMetricas() {
-    apiFetch('../api/admin/metrics.php?workspace_id=' + (currentWsId || 2))
+    apiFetch('../api/admin/metrics.php?workspace_id=' + wsParam())
     .then(function(data) {
       if (data.status !== 'success') return;
       var m = data.metrics;
@@ -4800,7 +4811,7 @@
             </div>
           </div>
         </td>
-        <td>Mentoria Vendedor Sincero</td>
+        <td>${escapeHtml(o.workspace_name || 'Vendedor Sincero')}${o.source ? `<div style="font-size:11px; color:var(--text-muted);">${escapeHtml(rotuloOrigem(o.source))}</div>` : ''}</td>
         <td><strong>${valFmt}</strong></td>
         <td><span class="badge ${badgeClass}"><span class="badge-dot-indicator"></span> ${badgeLabel}</span></td>
         <td style="color:var(--text-muted); font-size:12px;">${o.created_at || 'Hoje'}</td>
@@ -4826,10 +4837,13 @@
       var valFmt = val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       var split = `R$ ${(val*0.10).toFixed(2)} / R$ ${(val*0.05).toFixed(2)} / R$ ${(val*0.85).toFixed(2)}`;
 
+      var wsLine = (currentWsId === 0 && o.workspace_name) ? `<div style="font-size:11px; color:var(--text-muted);">${escapeHtml(o.workspace_name)}</div>` : '';
+      var srcLine = o.source ? `<div style="font-size:11px; color:var(--primary);">${escapeHtml(rotuloOrigem(o.source))}</div>` : '';
+
       return `<tr>
         <td><code>#${o.id}</code></td>
         <td style="font-size:12px; color:var(--text-muted);">${o.created_at}</td>
-        <td><strong>${escapeHtml(o.customer_name || 'Comprador')}</strong></td>
+        <td><strong>${escapeHtml(o.customer_name || 'Comprador')}</strong>${wsLine}${srcLine}</td>
         <td>${escapeHtml(o.customer_phone || '-')}</td>
         <td><strong>${valFmt}</strong></td>
         <td><span class="badge ${badgeClass}"><span class="badge-dot-indicator"></span> ${badgeLabel}</span></td>
@@ -5303,9 +5317,11 @@
   }
 
   function trocarWorkspace() {
-    currentWsId = parseInt(document.getElementById('workspace-select').value) || 2;
     var sel = document.getElementById('workspace-select');
-    var txt = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : 'Vendedor Sincero';
+    var raw = sel ? sel.value : '';
+    // Permite o valor 0 (visão consolidada de todos os workspaces).
+    currentWsId = (raw === '0') ? 0 : (parseInt(raw) || 2);
+    var txt = (sel && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].textContent : 'Vendedor Sincero';
     var cleanName = txt.replace(/^\[.*?\]\s*/, '');
 
     document.getElementById('account-name-text').textContent = cleanName;
@@ -5314,8 +5330,16 @@
     document.getElementById('account-avatar-text').textContent = (cleanName.substring(0, 2)).toUpperCase();
 
     carregarMetricas();
-    carregarCampanhas();
-    carregarDominios();
+    if (currentWsId !== 0) {
+      // Campanhas e domínios são por workspace; no modo consolidado só mostramos vendas.
+      carregarCampanhas();
+      carregarDominios();
+    }
+  }
+
+  // Id do workspace para as chamadas de API (preserva o 0 do modo consolidado).
+  function wsParam() {
+    return currentWsId === 0 ? '0' : (currentWsId || 2);
   }
 
   function carregarStatusAutenticacao() {
@@ -5332,6 +5356,14 @@
       // Preenche select de workspace
       var sel = document.getElementById('workspace-select');
       sel.innerHTML = '';
+      // Super admin ganha a visão consolidada de TODOS os workspaces (valor 0)
+      var podeVerTodos = (currentRole === 'super_admin') || (auth.permissions && auth.permissions.can_view_all_workspaces);
+      if (podeVerTodos && accessibleWorkspaces.length > 1) {
+        var optAll = document.createElement('option');
+        optAll.value = '0';
+        optAll.textContent = '🌐 Todos os workspaces';
+        sel.appendChild(optAll);
+      }
       accessibleWorkspaces.forEach(function(w) {
         var opt = document.createElement('option');
         opt.value = w.id;
