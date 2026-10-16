@@ -68,6 +68,27 @@ class OfferTheme
             'button_padding'        => 14,
             'card_radius'           => 16,
 
+            // Mecânica de Revelação ('scratch' = raspadinha | 'wheel' = roleta premiada)
+            'mechanic'              => 'scratch',
+
+            // Roleta Premiada (usada quando mechanic = 'wheel')
+            'wheel_spin_label'      => 'GIRAR A ROLETA',
+            'wheel_result_label'    => 'VOCÊ GANHOU!',
+            // Rótulos das fatias. A fatia vencedora é marcada por "is_win": true e
+            // sempre cai sob o ponteiro (o giro é teatral, igual à raspadinha).
+            'wheel_segments'        => [
+                ['label' => 'BÔNUS', 'is_win' => false],
+                ['label' => 'BOOSTER', 'is_win' => true],
+                ['label' => 'QUASE!', 'is_win' => false],
+                ['label' => 'GIRE+', 'is_win' => false],
+                ['label' => 'SORTE', 'is_win' => false],
+                ['label' => 'PRÊMIO', 'is_win' => false],
+            ],
+
+            // Saudação personalizada com o nome do comprador (quando disponível)
+            'greeting_enabled'      => true,
+            'greeting_template'     => 'Parabéns, {nome}!',
+
             // Área de Raspagem
             'scratch_width'         => 460,
             'scratch_height'        => 260,
@@ -164,7 +185,10 @@ class OfferTheme
                 continue;
             }
 
-            if (is_bool($base[$key])) {
+            if (is_array($base[$key])) {
+                // Campos estruturados (ex.: wheel_segments): aceita só arrays válidos.
+                $out[$key] = is_array($val) ? array_values($val) : $base[$key];
+            } elseif (is_bool($base[$key])) {
                 $out[$key] = filter_var($val, FILTER_VALIDATE_BOOLEAN);
             } elseif (is_int($base[$key])) {
                 $out[$key] = (int)$val;
