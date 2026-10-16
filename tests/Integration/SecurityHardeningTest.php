@@ -429,4 +429,37 @@ class SecurityHardeningTest extends TestCase
         }
     }
 
+    public function testClassicPageKeepsPublishedHtmlWhileDraftChanges(): void
+    {
+        $workspaceId = self::$ws['sec-a']['id'];
+        $headers = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        $slug = 'published-html-' . bin2hex(random_bytes(4));
+        $payload = ['workspace_id' => $workspaceId, 'name' => 'Página personalizada', 'slug' => $slug,
+            'action' => 'publish', 'html_content' => '<h1>HTML PUBLICADO ORIGINAL</h1>'];
+        [$status, $created] = $this->http('POST', '/api/admin/funnels.php', $payload, $headers);
+        $this->assertEquals(200, $status);
+        $id = $created['funnel_id'];
+        try {
+            $payload['funnel_id'] = $id;
+            $payload['action'] = 'save';
+            $payload['html_content'] = '<h1>NOVO RASCUNHO DO EDITOR</h1>';
+            [$saved] = $this->http('POST', '/api/admin/funnels.php', $payload, $headers);
+            $this->assertEquals(200, $saved);
+            foreach (['/f/' . $slug, '/f/' . $slug . '/', '/f/' . $slug . '?slug=pagina-inexistente'] as $path) {
+                [$publicStatus, , $html] = $this->http('GET', $path);
+                $this->assertEquals(200, $publicStatus);
+                $this->assertStringContains('HTML PUBLICADO ORIGINAL', $html);
+                $this->assertFalse(str_contains($html, 'NOVO RASCUNHO DO EDITOR'));
+                $this->assertFalse(str_contains($html, 'Raspe e descubra'));
+            }
+            $payload['action'] = 'publish';
+            [$published] = $this->http('POST', '/api/admin/funnels.php', $payload, $headers);
+            $this->assertEquals(200, $published);
+            [, , $updatedHtml] = $this->http('GET', '/f/' . $slug);
+            $this->assertStringContains('NOVO RASCUNHO DO EDITOR', $updatedHtml);
+        } finally {
+            self::$pdo->prepare('DELETE FROM funnels WHERE id = ?')->execute([$id]);
+        }
+    }
+
 }

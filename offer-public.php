@@ -5,6 +5,9 @@ require_once __DIR__ . '/api/bootstrap.php';
 use App\Support\OfferTheme;
 
 $slug = strtolower(trim((string)($_GET['offer_slug'] ?? ($_GET['slug'] ?? '')), '/'));
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+if (preg_match('#^/o/([a-z0-9-]+)/?$#i', $requestPath, $route)) $slug = strtolower($route[1]);
+
 
 if (empty($slug)) {
     http_response_code(404);

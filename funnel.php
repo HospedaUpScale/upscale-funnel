@@ -5,6 +5,16 @@ require_once __DIR__ . '/api/bootstrap.php';
 $host = strtolower(explode(':', $_SERVER['HTTP_HOST'] ?? '')[0]);
 $lookupHost = str_starts_with($host, 'www.') ? substr($host, 4) : $host;
 $slug = strtolower(trim((string)($_GET['slug'] ?? ''), '/'));
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+if (preg_match('#^/f/([a-z0-9-]+)/?$#i', $requestPath, $route)) {
+    $slug = strtolower($route[1]);
+} elseif (preg_match('#^/f(?:/|$)#i', $requestPath)) {
+    http_response_code(404);
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<h1>Página não encontrada</h1>';
+    exit;
+}
+
 $domain = null;
 
 try {
