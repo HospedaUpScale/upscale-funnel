@@ -68,11 +68,13 @@ function login_master_success(PDO $pdo, int $userId, string $name, string $email
             'email' => $email,
             'role'  => 'super_admin',
         ],
-        'workspace' => $wsList[0] ?? [
-            'id'   => 1,
-            'name' => 'upScale Hub Global',
-            'slug' => 'global',
-        ],
+        // Workspace de pouso: prefere o "Admin upScale" (slug admin-upscale),
+        // depois qualquer outro do tipo super_admin, por fim o primeiro da lista.
+        'workspace' => (function () use ($wsList) {
+            foreach ($wsList as $w) { if (($w['slug'] ?? '') === 'admin-upscale') return $w; }
+            foreach ($wsList as $w) { if (($w['type'] ?? '') === 'super_admin') return $w; }
+            return $wsList[0] ?? ['id' => 1, 'name' => 'upScale Hub Global', 'slug' => 'global'];
+        })(),
         'workspaces' => $wsList,
     ]);
 }

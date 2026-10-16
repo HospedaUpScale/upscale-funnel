@@ -32,17 +32,21 @@ if ($email === '' || $password === '') {
 $pdo = Connection::make();
 $hash = password_hash($password, PASSWORD_DEFAULT);
 
-// 1. Garante um workspace para ancorar a associação super_admin.
-//    (No modelo atual, basta UMA associação super_admin para o usuário ver todos os workspaces.)
-$wsId = (int) ($pdo->query("SELECT id FROM workspaces ORDER BY id ASC LIMIT 1")->fetchColumn() ?: 0);
+// 1. Garante o workspace "Admin upScale" (tipo super_admin), que serve como
+//    workspace de pouso do administrador e NÃO é um cliente real. Idempotente:
+//    procura pelo slug "admin-upscale"; se nao existir, cria.
+$wsId = (int) ($pdo->query("SELECT id FROM workspaces WHERE slug = 'admin-upscale' LIMIT 1")->fetchColumn() ?: 0);
 if ($wsId === 0) {
-    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
     $pdo->prepare("
         INSERT INTO workspaces (parent_id, type, name, slug, api_token_hash, admin_token_hash, gateway_provider, status)
-        VALUES (NULL, 'super_admin', 'Administração Global', 'global', ?, ?, 'mock', 'active')
+        VALUES (NULL, 'super_admin', 'Admin upScale', 'admin-upscale', ?, ?, 'mock', 'active')
     ")->execute([hash('sha256', bin2hex(random_bytes(16))), hash('sha256', bin2hex(random_bytes(16)))]);
     $wsId = (int) $pdo->lastInsertId();
-    echo "Workspace de administração criado (ID {$wsId}).\n";
+    echo "Workspace 'Admin upScale' criado (ID {$wsId}).\n";
+} else {
+    // Garante que mantém o tipo e nome corretos (em caso de edicao acidental)
+    $pdo->prepare("UPDATE workspaces SET type = 'super_admin', status = 'active' WHERE id = ? AND (type <> 'super_admin' OR status <> 'active')")
+        ->execute([$wsId]);
 }
 
 // 2. Cria ou atualiza o usuário (idempotente pelo e-mail).
