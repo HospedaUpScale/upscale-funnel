@@ -2615,18 +2615,48 @@
 
         <!-- Sub-aba 1: Credenciais & API (antiga view-gateway) -->
         <div id="config-subtab-credenciais" class="subtab-pane active">
+          <!-- Token de API do workspace (usado nos webhooks) -->
           <div class="card" style="margin-bottom:16px;">
-            <h3 class="card-title-clean" style="margin-bottom:12px;">Endpoint de Injeção de Upsell (Webhook)</h3>
-            <p class="card-subtitle-clean" style="margin-bottom:12px;">URL para cadastrar no webhook de criação de pedidos da plataforma de rifas:</p>
-            <input type="text" class="form-input" readonly value="http://localhost:8000/api/order-context.php" onclick="this.select()" style="font-family:var(--font-mono); margin-bottom:10px;">
-            <button type="button" class="btn-secondary" onclick="copiarValor('http://localhost:8000/api/order-context.php')">Copiar URL</button>
+            <div class="card-header-clean">
+              <h3 class="card-title-clean">Token de API do workspace</h3>
+              <button type="button" class="btn-secondary" onclick="rotacionarTokenApi()">Gerar novo token</button>
+            </div>
+            <p class="card-subtitle-clean" style="margin-bottom:12px;">Este token autentica os webhooks das plataformas. Por segurança ele não fica salvo em texto: gere um novo e cole nos webhooks abaixo. Gerar um novo invalida o anterior.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <input type="text" class="form-input" id="api-token-display" readonly placeholder="Clique em “Gerar novo token” para exibir" style="font-family:var(--font-mono); flex:1; min-width:220px;" onclick="this.select()">
+              <button type="button" class="btn-secondary" onclick="copiarValor(document.getElementById('api-token-display').value)">Copiar</button>
+            </div>
           </div>
 
+          <!-- Endpoints de webhook (dinâmicos) -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header-clean">
+              <h3 class="card-title-clean">Webhooks do workspace</h3>
+              <button type="button" class="btn-secondary" onclick="carregarWebhooks()">Atualizar</button>
+            </div>
+            <p class="card-subtitle-clean" style="margin-bottom:12px;">Cadastre cada URL na plataforma indicada. Envie o token em <code>Authorization: Bearer SEU_TOKEN</code> ou, se a plataforma não permitir cabeçalhos, use a URL com <code>?token=</code>.</p>
+            <div id="webhooks-list" style="display:flex; flex-direction:column; gap:12px;">
+              <div style="color:var(--text-muted); font-size:13px;">Carregando endpoints…</div>
+            </div>
+          </div>
+
+          <!-- Vendas por origem (rastreamento) -->
           <div class="card">
-            <h3 class="card-title-clean" style="margin-bottom:12px;">Token de Autenticação do Workspace</h3>
-            <p class="card-subtitle-clean" style="margin-bottom:12px;">Chave Bearer utilizada em chamadas autenticadas da API:</p>
-            <input type="text" class="form-input" id="settings-token-display" readonly style="font-family:var(--font-mono); margin-bottom:10px;" onclick="this.select()">
-            <button type="button" class="btn-secondary" onclick="copiarValor(document.getElementById('settings-token-display').value)">Copiar Token</button>
+            <div class="card-header-clean">
+              <h3 class="card-title-clean">Vendas por origem</h3>
+              <button type="button" class="btn-secondary" onclick="carregarVendasPorOrigem()">Atualizar</button>
+            </div>
+            <p class="card-subtitle-clean" style="margin-bottom:12px;">Todas as vendas são rastreadas por canal, inclusive as do link exclusivo do upsell.</p>
+            <div class="table-responsive">
+              <table class="clean-table">
+                <thead>
+                  <tr><th>Origem</th><th>Pedidos</th><th>Pagos</th><th>Receita</th></tr>
+                </thead>
+                <tbody id="sales-source-body">
+                  <tr><td colspan="4" style="text-align:center; padding:18px; color:var(--text-muted);">Sem dados ainda.</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -4063,6 +4093,8 @@
     document.querySelectorAll('#view-settings .subtab-pane').forEach(function(p) { p.classList.remove('active'); });
     var pane = document.getElementById('config-subtab-' + tabKey);
     if (pane) pane.classList.add('active');
+    if (tabKey === 'credenciais') { carregarWebhooks(); carregarVendasPorOrigem(); }
+    if (tabKey === 'logs') carregarLogs();
   }
 
   /* ═══ CAMPANHAS / AÇÕES ═══ */
@@ -5211,6 +5243,88 @@
           <td style="font-size:12px;">${escapeHtml(l.details || '-')}</td>
         </tr>`;
       }).join('');
+    });
+  }
+
+  /* ═══ WEBHOOKS & RASTREAMENTO ═══ */
+  function carregarWebhooks() {
+    var box = document.getElementById('webhooks-list');
+    if (!box) return;
+    apiFetch('../api/admin/webhook-info.php?workspace_id=' + (currentWsId || 1))
+    .then(function(data) {
+      if (!data || data.status !== 'success') {
+        box.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Não foi possível carregar os endpoints.</div>';
+        return;
+      }
+      box.innerHTML = (data.endpoints || []).map(function(ep) {
+        var queryUrl = ep.auth_query || '';
+        var copyQuery = queryUrl ? `<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 10px;" onclick="copiarValor('${queryUrl.replace(/'/g, "\\'")}')">Copiar URL com ?token=</button>` : '';
+        return `<div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+            <strong style="font-size:14px;">${escapeHtml(ep.name)}</strong>
+            <span class="badge badge-neutral" style="font-size:11px;">${escapeHtml(ep.method)}</span>
+          </div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${escapeHtml(ep.description)}</div>
+          <input type="text" class="form-input" readonly value="${escapeHtml(ep.url)}" onclick="this.select()" style="font-family:var(--font-mono); font-size:12px; margin-bottom:8px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" style="font-size:12px; padding:6px 10px;" onclick="copiarValor('${ep.url.replace(/'/g, "\\'")}')">Copiar URL</button>
+            ${copyQuery}
+          </div>
+        </div>`;
+      }).join('');
+    })
+    .catch(function() {
+      box.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Não foi possível carregar os endpoints.</div>';
+    });
+  }
+
+  function rotacionarTokenApi() {
+    if (!confirm('Gerar um novo token de API? O token anterior deixará de funcionar e você precisará atualizar os webhooks das plataformas.')) return;
+    apiFetch('../api/admin/webhook-info.php?workspace_id=' + (currentWsId || 1) + '&action=rotate_token', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'rotate_token', workspace_id: currentWsId || 1 })
+    })
+    .then(function(data) {
+      if (data && data.status === 'success' && data.api_token) {
+        var el = document.getElementById('api-token-display');
+        if (el) el.value = data.api_token;
+        showToast('Novo token gerado. Copie e atualize os webhooks.', 'success');
+      } else {
+        showToast('Não foi possível gerar o token.', 'error');
+      }
+    })
+    .catch(function() { showToast('Falha ao gerar o token.', 'error'); });
+  }
+
+  function carregarVendasPorOrigem() {
+    var tbody = document.getElementById('sales-source-body');
+    if (!tbody) return;
+    var rotulos = {
+      offer_link: 'Link exclusivo do upsell',
+      card_link: 'Link do card pós-venda',
+      funnel: 'Funil / Pressel',
+      raffle_webhook: 'Webhook da rifa',
+      direct: 'Acesso direto'
+    };
+    apiFetch('../api/admin/metrics.php?workspace_id=' + (currentWsId || 1))
+    .then(function(data) {
+      var rows = (data && data.sales_by_source) || [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:18px; color:var(--text-muted);">Sem vendas registradas ainda.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(function(r) {
+        var receita = 'R$ ' + (Number(r.revenue) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return `<tr>
+          <td>${escapeHtml(rotulos[r.source] || r.source)}</td>
+          <td>${r.total}</td>
+          <td>${r.paid}</td>
+          <td style="font-weight:600;">${receita}</td>
+        </tr>`;
+      }).join('');
+    })
+    .catch(function() {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:18px; color:var(--text-muted);">Não foi possível carregar.</td></tr>';
     });
   }
 

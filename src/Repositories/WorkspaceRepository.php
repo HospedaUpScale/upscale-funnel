@@ -136,4 +136,13 @@ class WorkspaceRepository
         $id = (int)$this->pdo->lastInsertId();
         return $this->findById($id);
     }
+
+    /** Gera um novo token de API para o workspace e salva o hash. Retorna o token em claro (uma vez). */
+    public function rotateApiToken(int $workspaceId): string
+    {
+        $raw = 'ups_api_' . bin2hex(random_bytes(20));
+        $stmt = $this->pdo->prepare("UPDATE workspaces SET api_token_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([hash('sha256', $raw), $workspaceId]);
+        return $raw;
+    }
 }

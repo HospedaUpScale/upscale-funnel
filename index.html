@@ -999,13 +999,25 @@
     $('step-2').className = 'step-item inactive';
     $('step-3').className = 'step-item active';
 
+    var offerSlug = (window.__INITIAL_OFFER_DATA__ && window.__INITIAL_OFFER_DATA__.slug) || param(['offer_slug']);
+    var token = param(['token']);
+    // Origem da venda para rastreamento (ver api/pix-upsell.php)
+    var source = param(['source']) || (offerSlug ? 'offer_link' : (token ? 'card_link' : 'direct'));
+
     var payload = {
       name: param(['nome', 'name', 'first_name']) || 'Cliente',
       phone: param(['telefone', 'phone', 'celular']),
       cpf: param(['cpf']),
       order_id: param(['order_id', 'pedido_id', 'id']),
       offer_id: param(['offer_id']) || 1,
-      workspace: param(['workspace_id', 'workspace']) || 1
+      workspace: param(['workspace_id', 'workspace']) || 1,
+      offer_slug: offerSlug,
+      token: token,
+      source: source,
+      source_ref: offerSlug || token || '',
+      utm_source: param(['utm_source']),
+      utm_medium: param(['utm_medium']),
+      utm_campaign: param(['utm_campaign'])
     };
 
     fetch('api/pix-upsell.php', {
