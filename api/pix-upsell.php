@@ -51,6 +51,24 @@ $customer = $customerRepo->upsert(
 $orderRepo = new OrderRepository($pdo);
 $externalOrderId = $input['order_id'] ?? $input['pedido_id'] ?? uniqid('ord_');
 
+// Canal de origem da venda (rastreamento). Valores conhecidos:
+// offer_link (link exclusivo /o/{slug}), card_link (link do card pós-venda),
+// funnel (funil/pressel), raffle_webhook, direct (fallback).
+$allowedSources = ['offer_link', 'card_link', 'funnel', 'raffle_webhook', 'direct'];
+$orderSource = strtolower(trim((string)($input['source'] ?? '')));
+if (!in_array($orderSource, $allowedSources, true)) {
+    // Sem origem explícita: infere pelo que veio no payload.
+    if (!empty($input['offer_slug'])) {
+        $orderSource = 'offer_link';
+    } elseif (!empty($input['token'])) {
+        $orderSource = 'card_link';
+    } else {
+        $orderSource = 'direct';
+    }
+}
+$orderSourceRef = trim((string)($input['source_ref'] ?? $input['offer_slug'] ?? $input['token'] ?? ''));
+$orderSourceRef = $orderSourceRef !== '' ? mb_substr($orderSourceRef, 0, 180) : null;
+
 $order = $orderRepo->create([
     'workspace_id'      => $workspace->id,
     'customer_id'       => $customer['id'],
@@ -64,6 +82,8 @@ $order = $orderRepo->create([
     'utm_source'        => $input['utm_source'] ?? null,
     'utm_medium'        => $input['utm_medium'] ?? null,
     'utm_campaign'      => $input['utm_campaign'] ?? null,
+    'source'            => $orderSource,
+    'source_ref'        => $orderSourceRef,
 ]);
 
 // 4. Calculate Split

@@ -28,8 +28,8 @@ class OrderRepository
             INSERT INTO orders (
                 workspace_id, customer_id, offer_id, flow_type, status,
                 external_order_id, base_amount, upsell_amount, total_amount,
-                utm_source, utm_medium, utm_campaign
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                utm_source, utm_medium, utm_campaign, source, source_ref
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         $stmt->execute([
@@ -45,6 +45,8 @@ class OrderRepository
             $data['utm_source'] ?? null,
             $data['utm_medium'] ?? null,
             $data['utm_campaign'] ?? null,
+            $data['source'] ?? null,
+            $data['source_ref'] ?? null,
         ]);
 
         $id = (int)$this->pdo->lastInsertId();

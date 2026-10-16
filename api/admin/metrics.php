@@ -68,6 +68,7 @@ $scratchToPixRate = ($scratches > 0) ? round(($pixPaid / $scratches) * 100, 2) :
 // 3. Recent orders list
 $recentSql = "
     SELECT o.id, o.workspace_id, o.status, o.upsell_amount, o.created_at, o.paid_at,
+           o.source, o.source_ref,
            c.name as customer_name, c.phone as customer_phone,
            w.name as workspace_name,
            t.gateway_tx_id, t.pix_copy_paste, t.split_details
@@ -89,6 +90,28 @@ foreach ($recentOrders as &$ro) {
         $ro['split_details'] = json_decode($ro['split_details'], true);
     }
 }
+unset($ro);
+
+// 4. Vendas por canal de origem (todas as vendas, inclusive o link exclusivo do upsell)
+$sourceSql = "
+    SELECT COALESCE(NULLIF(source, ''), 'direct') AS source,
+           COUNT(*) AS total,
+           SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid,
+           SUM(CASE WHEN status = 'paid' THEN upsell_amount ELSE 0 END) AS revenue
+    FROM orders
+    " . ($isGlobal ? "" : "WHERE workspace_id = ?") . "
+    GROUP BY COALESCE(NULLIF(source, ''), 'direct')
+    ORDER BY revenue DESC
+";
+$stmt = $pdo->prepare($sourceSql);
+$stmt->execute($isGlobal ? [] : [$targetWsId]);
+$sourceRows = $stmt->fetchAll();
+$salesBySource = array_map(fn($r) => [
+    'source'  => $r['source'],
+    'total'   => (int)$r['total'],
+    'paid'    => (int)$r['paid'],
+    'revenue' => (float)$r['revenue'],
+], $sourceRows);
 
 JsonResponse::send([
     'status' => 'success',
@@ -108,5 +131,6 @@ JsonResponse::send([
             'pix_paid'       => $pixPaid,
         ]
     ],
-    'recent_orders' => $recentOrders
+    'recent_orders' => $recentOrders,
+    'sales_by_source' => $salesBySource
 ]);
