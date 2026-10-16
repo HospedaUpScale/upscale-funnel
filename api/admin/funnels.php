@@ -260,6 +260,9 @@ if ($request->method() === 'POST') {
 
     $blocksConfig = isset($input['blocks_config']) ? (is_string($input['blocks_config']) ? $input['blocks_config'] : json_encode($input['blocks_config'], JSON_UNESCAPED_UNICODE)) : null;
     $settingsConfig = isset($input['settings_config']) ? (is_string($input['settings_config']) ? $input['settings_config'] : json_encode($input['settings_config'], JSON_UNESCAPED_UNICODE)) : null;
+    $experience = $settingsConfig ? json_decode($settingsConfig, true) : [];
+    $mechanic = $experience['experience']['mechanic'] ?? null;
+    if ($mechanic !== null && !in_array($mechanic, ['scratch', 'wheel', 'direct'], true)) JsonResponse::error('Experiência inválida.', 422);
 
     $html = (string)($input['html_content'] ?? ($input['draft_content'] ?? ($input['html'] ?? '')));
 
@@ -391,7 +394,7 @@ if ($request->method() === 'POST') {
 
         $pdo->prepare("UPDATE funnels SET is_home = 0 WHERE workspace_id = ?")->execute([$targetWsId]);
         if ($isPublishAction && $campaign) {
-            $campaignOffer = CampaignPage::publishOffer($pdo, $campaign);
+            $campaignOffer = CampaignPage::publishOffer($pdo, $campaign, $mechanic);
             $pdo->prepare("UPDATE campaigns SET status = 'published', published_at = CURRENT_TIMESTAMP, ended_at = NULL WHERE id = ? AND workspace_id = ?")->execute([$campaignId, $targetWsId]);
         }
         $pdo->commit();

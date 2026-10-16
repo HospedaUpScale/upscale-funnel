@@ -170,7 +170,11 @@ if (empty($themeData) && !empty($offer['theme_config'])) {
 }
 
 $theme = OfferTheme::merge($themeData);
-if ($request->get('native') === '1' && $request->get('experience') !== 'campaign') $theme['mechanic'] = 'direct';
+if ($request->get('native') === '1') {
+    $experience = (string)$request->get('experience', 'direct');
+    if (in_array($experience, ['scratch', 'wheel', 'direct'], true)) $theme['mechanic'] = $experience;
+    elseif ($experience !== 'campaign') $theme['mechanic'] = 'direct';
+}
 
 $payloadForHtml = [
     'id'                  => (int)$offer['id'],

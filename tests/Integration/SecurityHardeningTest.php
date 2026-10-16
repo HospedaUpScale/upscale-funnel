@@ -462,4 +462,40 @@ class SecurityHardeningTest extends TestCase
         }
     }
 
+    public function testClassicExperienceSelectionPublishesNativeMechanic(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $headers = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        [, $created] = $this->http('POST', '/api/admin/campaigns.php?workspace_id=' . $wsId,
+            ['action' => 'create', 'title' => 'Campanha seletor', 'ticket_price' => 23, 'status' => 'draft'], $headers);
+        $campaignId = $created['campaign_id'];
+        $pageId = 0;
+        try {
+            foreach (['wheel', 'scratch', 'direct'] as $mechanic) {
+                $payload = ['workspace_id' => $wsId, 'campaign_id' => $campaignId, 'funnel_id' => $pageId,
+                    'action' => 'publish', 'name' => 'Página personalizada', 'slug' => 'seletor-campanha-' . $campaignId,
+                    'html_content' => '<h1>CONTEUDO PERSONALIZADO MANTIDO</h1><iframe data-campaign-offer src="{{campaign_offer_url}}&experience=' . $mechanic . '"></iframe>',
+                    'settings_config' => ['experience' => ['mechanic' => $mechanic]]];
+                [$status, $page] = $this->http('POST', '/api/admin/funnels.php', $payload, $headers);
+                $this->assertEquals(200, $status);
+                $pageId = $page['funnel_id'];
+                [, $offer] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $campaignId, null, $headers);
+                $this->assertEquals($mechanic, $offer['offer']['published_config']['theme']['mechanic']);
+                [$publicStatus, , $html] = $this->http('GET', $page['public_url']);
+                $this->assertEquals(200, $publicStatus);
+                $this->assertStringContains('CONTEUDO PERSONALIZADO MANTIDO', $html);
+                $this->assertStringContains('&experience=' . $mechanic, $html);
+                [, , $native] = $this->http('GET', $page['public_url'] . '?native=1&experience=' . $mechanic);
+                $this->assertStringContains('"mechanic":"' . $mechanic . '"', $native);
+            }
+            $payload['settings_config']['experience']['mechanic'] = 'invalid';
+            [$invalid] = $this->http('POST', '/api/admin/funnels.php', $payload, $headers);
+            $this->assertEquals(422, $invalid);
+        } finally {
+            if ($pageId) self::$pdo->prepare('DELETE FROM funnels WHERE id = ?')->execute([$pageId]);
+            self::$pdo->prepare('DELETE FROM upsell_offers WHERE campaign_id = ?')->execute([$campaignId]);
+            self::$pdo->prepare('DELETE FROM campaigns WHERE id = ?')->execute([$campaignId]);
+        }
+    }
+
 }

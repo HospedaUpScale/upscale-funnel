@@ -30,9 +30,79 @@
     historyIndex: -1,
     availableOffers: [],
     availableDomains: [],
+    mechanic: 'scratch',
+    flowOffer: null,
+    flowControlsGeneration: 0,
     codeMirror: null,
     debounceTimer: null
   };
+
+  var validMechanics = ['scratch', 'wheel', 'direct'];
+  function flowMessage(text) { var el=document.getElementById('builder-flow-hint'); if(el)el.textContent=text; }
+  function flowFrameSource(mechanic) { return '{{campaign_offer_url}}&experience='+mechanic; }
+  function applyExperience(insertIfMissing) {
+    if (!window.selectedCampaignId) { flowMessage('Selecione a campanha para usar sua oferta.'); return; }
+    // O bloco é adicionado ou atualizado; o HTML do cliente não é substituído.
+    var doc=new DOMParser().parseFromString(state.currentHtml, 'text/html');
+    var frames=doc.querySelectorAll('iframe[data-campaign-offer]');
+    if(!frames.length && !insertIfMissing) return;
+    if(!frames.length){
+      var section=doc.createElement('section'); section.dataset.blockId='campaign-experience-'+Date.now();section.dataset.blockType='html';
+      var frame=doc.createElement('iframe');frame.setAttribute('data-campaign-offer','true');frame.title='Experiência e oferta da campanha';frame.style.cssText='display:block;width:100%;min-height:900px;border:0';section.appendChild(frame);doc.body.appendChild(section);frames=[frame];
+    }
+    frames.forEach(function(frame){frame.setAttribute('src',flowFrameSource(state.mechanic));frame.removeAttribute('srcdoc');});
+    state.currentHtml='<!doctype html>\n'+doc.documentElement.outerHTML;
+    if(state.codeMirror)state.codeMirror.setValue(state.currentHtml);
+    renderPreview(true);marcarModificado();
+    flowMessage('Experiência atualizada na prévia. Publique para atualizar o link público.');
+  }
+  function alterarExperienciaFunil(mechanic) {
+    if(validMechanics.indexOf(mechanic)===-1)return;
+    state.mechanic=mechanic;applyExperience(true);
+  }
+  function inserirExperienciaFunil(){applyExperience(true);}
+  async function vincularCampanhaExperiencia(value, generation) {
+    if (!generation) generation = ++state.flowControlsGeneration;
+    var id=parseInt(value)||0;
+    if(!id)return;
+    window.selectedCampaignId=id;
+    try{
+      var data=await window.apiFetch('../api/admin/offer.php?workspace_id='+(window.currentWsId||2)+'&campaign_id='+id);
+      if(data.status!=='success')throw new Error(data.message||'Não foi possível carregar a oferta.');
+      if(window.selectedCampaignId!==id || generation!==state.flowControlsGeneration)return;
+      state.flowOffer=Object.assign({},data.offer,data.offer.draft_config||{});
+      document.getElementById('builder-flow-type').disabled=false;
+      document.getElementById('builder-insert-experience').disabled=false;
+      flowMessage('Oferta vinculada. Escolha a experiência e insira o bloco na página.');
+    }catch(e){flowMessage(e.message);}
+  }
+  async function refreshExperienceControls(page) {
+    var select=document.getElementById('builder-flow-campaign');if(!select)return;
+    var generation=++state.flowControlsGeneration;
+    var campaignId=window.selectedCampaignId||0;
+    var config={};try{config=typeof(page&&page.settings_config)==='string'?JSON.parse(page.settings_config):page&&page.settings_config||{};}catch(e){}
+    var requested=window.requestedCampaignMechanic;
+    state.mechanic=requested||config.experience&&config.experience.mechanic||'scratch';
+    if(validMechanics.indexOf(state.mechanic)===-1)state.mechanic='scratch';
+    state.flowOffer=null;
+    document.getElementById('builder-flow-type').value=state.mechanic;
+    document.getElementById('builder-flow-type').disabled=!campaignId;
+    document.getElementById('builder-insert-experience').disabled=!campaignId;
+    try{
+      var data=await window.apiFetch('../api/admin/campaigns.php?workspace_id='+(window.currentWsId||2));
+      if((window.selectedCampaignId||0)!==campaignId || generation!==state.flowControlsGeneration)return;
+      select.replaceChildren(new Option('Selecione uma campanha',''));
+      (data.campaigns||[]).forEach(function(c){select.add(new Option(c.title,String(c.id)));});
+      select.value=campaignId?String(campaignId):'';select.disabled=!!(page&&page.campaign_id);
+      if(campaignId){
+        await vincularCampanhaExperiencia(campaignId,generation);
+        if (generation!==state.flowControlsGeneration) return;
+        if(!requested&&!(config.experience&&config.experience.mechanic))state.mechanic=state.flowOffer&&state.flowOffer.theme&&state.flowOffer.theme.mechanic||'scratch';
+        document.getElementById('builder-flow-type').value=state.mechanic;
+        if(requested){window.requestedCampaignMechanic=null;applyExperience(false);}else renderPreview(false);
+      }
+    }catch(e){flowMessage('Não foi possível carregar as campanhas: '+e.message);}
+  }
 
   // ══ AUXILIARES DE SLUG E URLS ══
   function sanitizeSlug(val) {
@@ -782,7 +852,8 @@
     }
 
     var previewCampaign = (window.allCampaignsData || []).find(function(c){return c.id === window.selectedCampaignId;});
-    if (previewCampaign && previewCampaign.offer && previewCampaign.offer.public_url) htmlToInject = htmlToInject.split('{{campaign_offer_url}}').join(previewCampaign.offer.public_url + '?native=1');
+    if (state.flowOffer) htmlToInject=htmlToInject.split('{{campaign_offer_url}}').join('/index.html?preview=1&native=1');
+    else if (previewCampaign && previewCampaign.offer && previewCampaign.offer.public_url) htmlToInject = htmlToInject.split('{{campaign_offer_url}}').join(previewCampaign.offer.public_url + '?native=1');
     iframe.srcdoc = htmlToInject;
 
     // Atualiza o display da URL pública no footer da barra lateral
@@ -791,6 +862,18 @@
     // Notifica modo atual para o iframe logo que carregar
     iframe.onload = function () {
       iframe.contentWindow.postMessage({ action: 'setMode', mode: state.canvasMode }, '*');
+      if(state.flowOffer){
+        var nativeFrames=iframe.contentDocument.querySelectorAll('iframe[data-campaign-offer]');
+        nativeFrames.forEach(function(frame){
+          function previewOffer(){
+            var data=Object.assign({},state.flowOffer,{theme:Object.assign({},state.flowOffer.theme||{},{mechanic:state.mechanic})});
+            frame.contentWindow.postMessage({tipo:'upscale:preview-config',offer:data},window.location.origin);
+            frame.contentWindow.postMessage({tipo:'upscale:preview-screen',screen:'scratch'},window.location.origin);
+          }
+          frame.addEventListener('load',previewOffer);
+          if(frame.contentDocument&&frame.contentDocument.readyState==='complete')previewOffer();
+        });
+      }
       if (state.selectedBlockId) {
         iframe.contentWindow.postMessage({ action: 'selectBlock', blockId: state.selectedBlockId }, '*');
       }
@@ -1621,6 +1704,7 @@
         custom_domain_id: state.customDomainId,
         template_slug: state.templateSlug || 'default',
         settings_config: {
+          experience: { mechanic: state.mechanic },
           tracking: {
             meta_pixel_id: state.metaPixelId || '',
             cta_track_event: state.ctaTrackEvent || 'InitiateCheckout'
@@ -1763,6 +1847,7 @@
         custom_domain_id: state.customDomainId,
         template_slug: state.templateSlug || 'default',
         settings_config: {
+          experience: { mechanic: state.mechanic },
           tracking: {
             meta_pixel_id: state.metaPixelId || '',
             cta_track_event: state.ctaTrackEvent || 'InitiateCheckout'
@@ -1886,6 +1971,7 @@
         state.customDomainId = f.custom_domain_id || null;
         state.customDomainName = f.domain || '';
         state.currentHtml = f.draft_content || f.html_content || getDefaultTemplate();
+        refreshExperienceControls(f);
 
         if (f.settings_config) {
           try {
@@ -1957,6 +2043,7 @@
           state.customDomainId = f.custom_domain_id || null;
           state.customDomainName = f.domain || '';
           state.currentHtml = f.draft_content || f.html_content || getDefaultTemplate();
+          refreshExperienceControls(f);
 
           if (f.settings_config) {
             try {
@@ -1997,6 +2084,7 @@
               var slugField = document.getElementById('funnel-slug'); if(slugField) slugField.value=state.slug;
             }
           }
+          refreshExperienceControls(null);
           marcarSalvo('Rascunho');
         }
 
@@ -2327,6 +2415,7 @@
         custom_domain_id: domId,
         template_slug: selectedTemplateSlug,
         settings_config: {
+          experience: { mechanic: state.mechanic },
           tracking: {
             meta_pixel_id: pixelId,
             cta_track_event: 'InitiateCheckout'
@@ -2758,6 +2847,7 @@
         custom_domain_id: null,
         template_slug: def.templateSlug,
         settings_config: {
+          experience: { mechanic: state.mechanic },
           tracking: {
             meta_pixel_id: '',
             cta_track_event: 'InitiateCheckout'
@@ -2957,6 +3047,9 @@
   window.setBuilderZoom = setBuilderZoom;
   window.setCanvasMode = setCanvasMode;
   window.switchSidebarTab = switchSidebarTab;
+  window.alterarExperienciaFunil = alterarExperienciaFunil;
+  window.inserirExperienciaFunil = inserirExperienciaFunil;
+  window.vincularCampanhaExperiencia = vincularCampanhaExperiencia;
   window.inserirBloco = inserirBloco;
   window.desmarcarElemento = desmarcarElemento;
   window.duplicarElementoSelecionado = duplicarElementoSelecionado;

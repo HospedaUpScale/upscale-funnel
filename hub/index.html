@@ -23,7 +23,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=3.5" defer></script>
+  <script src="elementor-builder.js?v=3.6" defer></script>
 </head>
 <body>
 
@@ -1584,6 +1584,14 @@
               
               <!-- ══ COLUNA 1: SIDEBAR ESQUERDA DO BUILDER (280px) ══ -->
               <aside class="elementor-sidebar">
+                <section id="builder-experience-panel" style="padding:14px;border-bottom:1px solid var(--border-light);">
+                  <label class="form-label" for="builder-flow-campaign">Campanha da experiência</label>
+                  <select id="builder-flow-campaign" class="form-select" onchange="vincularCampanhaExperiencia(this.value)"><option value="">Selecione uma campanha</option></select>
+                  <label class="form-label" for="builder-flow-type" style="margin-top:10px;">Experiência do comprador</label>
+                  <select id="builder-flow-type" class="form-select" onchange="alterarExperienciaFunil(this.value)"><option value="scratch">Raspadinha</option><option value="wheel">Roleta</option><option value="direct">Direto para o upsell</option></select>
+                  <button id="builder-insert-experience" type="button" class="btn-primary" onclick="inserirExperienciaFunil()" style="width:100%;margin-top:10px;">Inserir experiência na página</button>
+                  <p id="builder-flow-hint" role="status" style="font-size:12px;line-height:1.5;margin:8px 0 0;color:var(--text-muted);">A experiência é inserida como um bloco. O restante da página é preservado.</p>
+                </section>
                 <!-- Abas da Sidebar -->
                 <div class="elementor-sidebar-tabs">
                   <button type="button" class="elementor-tab-btn active" id="tab-btn-elements" onclick="switchSidebarTab('elements')">
@@ -3656,6 +3664,7 @@
       var theme = Object.assign({}, offer.draft_config && offer.draft_config.theme || offer.theme, {mechanic: mechanic});
       var saved = await apiFetch('../api/admin/offer.php?action=save_draft', {method:'POST', body:JSON.stringify({workspace_id:wsId,campaign_id:selectedCampaignId,theme:theme})});
       if (saved.status !== 'success') throw new Error(saved.message || 'Não foi possível salvar o tipo de funil.');
+      window.requestedCampaignMechanic = mechanic;
       navigate('sites');
       selecionarSubabaDominios('funis');
     } catch(error) { showToast(error.message, 'error'); }

@@ -6,6 +6,8 @@ O editor ativo é o **clássico, estilo Elementor**, em `hub/index.html`. Grapes
 
 Abra **Campanhas → Página e funil**, selecione **Raspadinha**, **Roleta** ou **Direto para o upsell** e clique em **Criar / editar página e etapas**. O editor clássico abre a página da campanha. Os valores e estilos da oferta são configurados em **Editar oferta e checkout**.
 
+Dentro do editor clássico, a lateral esquerda contém **Campanha da experiência** e **Experiência do comprador**. Vincule uma campanha quando a página ainda não tiver uma. As opções são **Raspadinha**, **Roleta** e **Direto para o upsell**. Trocar a opção insere ou atualiza um único bloco nativo, mantendo o restante do HTML. O botão **Inserir experiência na página** permite inserir a opção já selecionada. A prévia mostra o rascunho da própria oferta, e **Publicar** aplica a escolha ao link público. A escolha também é salva no rascunho para reabertura.
+
 Raspadinha e roleta nativas continuam em `index.html`. A roleta possui giro, segmentos e revelação da oferta e não depende de nenhuma biblioteca de edição. Os modelos e o bloco HTML do editor clássico continuam disponíveis.
 
 Cada campanha mantém sua própria oferta e endereço `/o/{slug}`. Publicar uma página vinculada publica a própria oferta e a campanha, mantendo o mesmo link. Um iframe de oferta pode usar `{{campaign_offer_url}}&experience=campaign` para respeitar a mecânica configurada. Sem `experience=campaign`, a opção `native=1` entra direto na oferta. Isso evita recursão e mantém compatibilidade com páginas publicadas anteriormente.
