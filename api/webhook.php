@@ -26,26 +26,19 @@ use App\Repositories\CustomerRepository;
 use App\Repositories\OfferRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\TransactionRepository;
+use App\Repositories\WorkspaceRepository;
+use App\Security\WebhookAuth;
 
 $pdo = Connection::make();
+$webhookAuth = new WebhookAuth(new WorkspaceRepository($pdo), (string) ($config['webhook_secret'] ?? ''));
 $txRepo = new TransactionRepository($pdo);
 $orderRepo = new OrderRepository($pdo);
 $eventRepo = new ConversionEventRepository($pdo);
 $customerRepo = new CustomerRepository($pdo);
 $offerRepo = new OfferRepository($pdo);
 
-// 1. Diagnóstico / Healthcheck se for GET
+// 1. Healthcheck se for GET (os logs de webhook não são mais expostos publicamente)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $action = $_GET['action'] ?? 'status';
-    if ($action === 'logs') {
-        $logFile = __DIR__ . '/logs/webhooks.log';
-        $logs = file_exists($logFile) ? file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-        $recent = array_slice(array_reverse($logs), 0, 50);
-        $parsed = array_map(fn($line) => json_decode($line, true) ?: ['raw' => $line], $recent);
-        echo json_encode(['status' => 'success', 'total_logs' => count($logs), 'recent_webhooks' => $parsed], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
     echo json_encode([
         'status'             => 'online',
         'service'            => 'upScale Media Network Pix Webhook Gateway',
@@ -53,8 +46,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         'methods_accepted'   => ['POST'],
         'gateways_supported' => ['Infopago', 'Mercado Pago', 'Asaas', 'Efí (Gerencianet)', 'EzzePay', 'SuitPay', 'Sorteamos / DX Custom'],
         'timestamp'          => date('c'),
-        'instructions'       => 'Envie um HTTP POST com payload JSON contendo o status de pagamento e o identificador (txid, order_id ou id).'
+        'instructions'       => 'Envie um HTTP POST autenticado (Authorization: Bearer <token>, X-Webhook-Token ou ?token=) com payload JSON contendo o status de pagamento e o identificador (txid, order_id ou id).'
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Método não permitido. Utilize POST.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// 1.1 Autenticação obrigatória: sem token, nada é processado.
+$webhookToken = WebhookAuth::extractToken();
+if ($webhookToken === '') {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Token de webhook ausente.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -69,18 +76,37 @@ if (!is_array($payload)) {
 
 $clientIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
-// 3. Auditoria em arquivo de logs
+// 3. Auditoria em arquivo de logs (sem tokens e com CPF mascarado)
+function webhook_redact(mixed $data): mixed
+{
+    if (!is_array($data)) {
+        return $data;
+    }
+    foreach ($data as $key => $value) {
+        $k = strtolower((string) $key);
+        if (in_array($k, ['token', 'api_token', 'access_token', 'secret', 'password'], true)) {
+            $data[$key] = '[removido]';
+        } elseif (in_array($k, ['cpf', 'document', 'documento', 'cpf_cnpj', 'tax_id'], true) && is_scalar($value)) {
+            $digits = preg_replace('/\D/', '', (string) $value);
+            $data[$key] = $digits === '' ? '' : str_repeat('*', max(0, strlen($digits) - 2)) . substr($digits, -2);
+        } else {
+            $data[$key] = webhook_redact($value);
+        }
+    }
+    return $data;
+}
+
 $logEntry = [
     'timestamp' => date('Y-m-d H:i:s'),
     'ip'        => $clientIp,
     'method'    => $_SERVER['REQUEST_METHOD'],
-    'query'     => $_GET,
+    'query'     => webhook_redact($_GET),
     'headers'   => [
         'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
         'signature'  => $_SERVER['HTTP_X_SIGNATURE'] ?? $_SERVER['HTTP_SIGNATURE'] ?? '',
-        'token'      => $_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? ''
+        'has_token'  => true,
     ],
-    'payload'   => $payload
+    'payload'   => webhook_redact($payload)
 ];
 
 $logsDir = __DIR__ . '/logs';
@@ -88,6 +114,13 @@ if (!is_dir($logsDir)) {
     @mkdir($logsDir, 0777, true);
 }
 @file_put_contents($logsDir . '/webhooks.log', json_encode($logEntry, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND | LOCK_EX);
+
+// 3.1 Token precisa ser o segredo global ou o token de API de algum workspace ativo.
+if (!$webhookAuth->isGlobalSecret($webhookToken) && !$webhookAuth->workspaceForToken($webhookToken)) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Token de webhook inválido.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // 4. Extração Inteligente de Identificadores e Status
 $txid = $payload['txid'] 
@@ -106,29 +139,26 @@ $externalOrderId = $payload['order_id']
     ?? $_GET['order_id'] 
     ?? null;
 
-$statusString = strtolower((string)(
-    $payload['status'] 
-    ?? $payload['event'] 
-    ?? $payload['action'] 
-    ?? $payload['payment']['status'] 
-    ?? $payload['situacao'] 
-    ?? 'paid' // default se o endpoint for acionado por trigger de sucesso
-));
+// O status precisa vir explícito: ausência de status NUNCA é tratada como pagamento.
+$statusString = strtolower(trim((string)(
+    $payload['status']
+    ?? $payload['payment']['status']
+    ?? $payload['situacao']
+    ?? $payload['event']
+    ?? $payload['action']
+    ?? ''
+)));
 
-// Lista de termos que confirmam pagamento
+// Termos que confirmam pagamento — comparação exata, para que "unpaid" ou "nao_pago"
+// não sejam confundidos com "paid"/"pago". "payment.updated" não confirma pagamento
+// (pode ser estorno ou cancelamento), por isso não está na lista.
 $paidKeywords = [
-    'paid', 'approved', 'pago', 'concluido', 'completed', 
-    'payment_received', 'payment.updated', 'settled', 
+    'paid', 'approved', 'pago', 'concluido', 'completed',
+    'payment_received', 'settled',
     'confirmed', 'sucesso', 'pix_received', 'pix.received'
 ];
 
-$isPaid = false;
-foreach ($paidKeywords as $keyword) {
-    if (strpos($statusString, $keyword) !== false) {
-        $isPaid = true;
-        break;
-    }
-}
+$isPaid = in_array($statusString, $paidKeywords, true);
 
 // 5. Localização da Transação e do Pedido no Banco
 $transaction = null;
@@ -156,8 +186,10 @@ if ($transaction && !$order) {
     $order = $orderRepo->find((int)$transaction['order_id']);
 }
 
-// Se não localizou nem por txid nem por order_id, devolve 404 / informativa
-if (!$transaction || !$order) {
+// Se não localizou nem por txid nem por order_id — ou o token não pertence ao workspace
+// do pedido — devolve 404 (mesma resposta, para não revelar pedidos de outros clientes).
+if (!$transaction || !$order
+    || !$webhookAuth->authorizesWorkspace($webhookToken, (int) $order['workspace_id'])) {
     http_response_code(404);
     echo json_encode([
         'status'  => 'error',
@@ -223,8 +255,18 @@ if ($isPaid) {
         'quotas_awarded'   => $quotasToAdd,
         'amount_paid'      => (float)$order['total_amount'],
         'paid_at'          => date('Y-m-d H:i:s'),
-        'signature'        => hash_hmac('sha256', (string)$order['id'] . '|' . $order['external_order_id'], 'upscale_secret_delivery_key')
     ];
+
+    // Assinatura HMAC com segredo configurado no servidor (POSTBACK_SECRET).
+    // Sem segredo configurado, o postback segue sem assinatura em vez de usar uma chave pública.
+    $postbackSecret = (string) ($config['postback_secret'] ?? '');
+    if ($postbackSecret !== '') {
+        $deliveryPayload['signature'] = hash_hmac(
+            'sha256',
+            (string)$order['id'] . '|' . $order['external_order_id'],
+            $postbackSecret
+        );
+    }
 
     // Se houver URL de entrega configurada na oferta ou workspace
     $deliveryUrl = null;
@@ -236,17 +278,21 @@ if ($isPaid) {
     $postbackResult = 'no_url_configured';
     if (!empty($deliveryUrl) && filter_var($deliveryUrl, FILTER_VALIDATE_URL)) {
         // Envia requisição HTTP POST para a plataforma da rifa creditar as cotas
+        $postbackHeaders = [
+            'Content-Type: application/json',
+            'X-Source: upScale-Media-Network',
+        ];
+        if (!empty($deliveryPayload['signature'])) {
+            $postbackHeaders[] = 'X-Signature: ' . $deliveryPayload['signature'];
+        }
+
         $ch = curl_init($deliveryUrl);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 5,
             CURLOPT_POSTFIELDS     => json_encode($deliveryPayload),
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                'X-Source: upScale-Media-Network',
-                'X-Signature: ' . $deliveryPayload['signature']
-            ]
+            CURLOPT_HTTPHEADER     => $postbackHeaders,
         ]);
         $postbackResponse = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

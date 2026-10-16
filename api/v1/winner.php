@@ -14,7 +14,40 @@ header('Cache-Control: no-cache, no-store, must-revalidate');
 $token = trim((string)$request->get('token'));
 $orderId = trim((string)($request->get('order_id') ?? $request->get('pedido_id') ?? $request->get('id')));
 $phone = trim((string)($request->get('phone') ?? $request->get('telefone')));
-$targetWsId = (int)($request->get('workspace_id') ?? ($workspace->id ?? 2));
+
+// A consulta pelo token do card (segredo aleatório que só o comprador recebe) é livre.
+// As consultas por pedido ou telefone exigem o token de API do workspace ou um login de admin.
+$targetWsId = 0;
+if ($token === '' && ($orderId !== '' || $phone !== '')) {
+    $apiToken = '';
+    $authHeader = (string) ($request->header('Authorization') ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '');
+    if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
+        $apiToken = trim($m[1]);
+    }
+    $apiToken = $apiToken ?: trim((string) ($request->header('X-Api-Token') ?? $request->header('X-Upscale-Token') ?? ''));
+
+    $apiWorkspace = (new \App\Security\WebhookAuth($wsRepo))->workspaceForToken($apiToken);
+    if ($apiWorkspace) {
+        $targetWsId = $apiWorkspace->id;
+    } else {
+        $adminAuth = (new \App\Auth\AdminAuth($wsRepo, $config['super_admin_token'] ?? ''))->authenticate($apiToken ?: null);
+        if (!$adminAuth) {
+            JsonResponse::error('Autenticação obrigatória para consultar por pedido ou telefone.', 401);
+        }
+
+        $requested = (int) ($request->get('workspace_id') ?? 0);
+        if ($adminAuth['role'] === 'super_admin') {
+            $targetWsId = $requested > 0 ? $requested : (int) ($workspace->id ?? 0);
+        } else {
+            $ownId = $adminAuth['workspace']->id;
+            $allowed = array_merge([$ownId], array_map(fn($w) => $w->id, $wsRepo->findDescendants($ownId)));
+            $targetWsId = $requested > 0 ? $requested : $ownId;
+            if (!in_array($targetWsId, $allowed, true)) {
+                JsonResponse::error('Forbidden for this workspace', 403);
+            }
+        }
+    }
+}
 
 $found = null;
 
@@ -27,9 +60,23 @@ if ($token !== '') {
     $stmt->execute([$targetWsId, $orderId]);
     $found = $stmt->fetch();
 } elseif ($phone !== '') {
-    $stmt = $pdo->prepare("SELECT * FROM order_access_tokens WHERE workspace_id = ? AND customer_phone LIKE ? ORDER BY id DESC LIMIT 1");
-    $stmt->execute([$targetWsId, '%' . $phone . '%']);
-    $found = $stmt->fetch();
+    // Busca exata pelos dígitos do telefone (sem LIKE, para não permitir varredura parcial).
+    $digits = preg_replace('/\D/', '', $phone);
+    if (strlen($digits) < 10) {
+        JsonResponse::error('Informe o telefone completo com DDD.', 422);
+    }
+    $stmt = $pdo->prepare("SELECT * FROM order_access_tokens WHERE workspace_id = ? AND customer_phone IS NOT NULL ORDER BY id DESC LIMIT 500");
+    $stmt->execute([$targetWsId]);
+    $found = null;
+    foreach ($stmt->fetchAll() as $row) {
+        $rowDigits = preg_replace('/\D/', '', (string) $row['customer_phone']);
+        if ($rowDigits !== '' && ($rowDigits === $digits || ltrim($rowDigits, '0') === ltrim($digits, '0')
+            || (str_starts_with($rowDigits, '55') && substr($rowDigits, 2) === $digits)
+            || (str_starts_with($digits, '55') && substr($digits, 2) === $rowDigits))) {
+            $found = $row;
+            break;
+        }
+    }
 }
 
 if (!$found) {

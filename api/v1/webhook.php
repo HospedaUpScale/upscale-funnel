@@ -20,30 +20,29 @@ if ($request->method() !== 'POST') {
     JsonResponse::error('Método não permitido. Utilize POST.', 405);
 }
 
-// 1. Autenticação via Bearer Token ou Header Customizado
+// 1. Autenticação obrigatória: o token de API define o workspace da venda.
 $authHeader = $request->header('Authorization') ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 $token = '';
 if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
     $token = trim($matches[1]);
 } else {
-    $token = $request->header('X-Upscale-Token')
+    $token = trim((string) (
+        $request->header('X-Upscale-Token')
         ?? $request->header('X-Api-Token')
         ?? $request->get('api_token')
-        ?? '';
+        ?? ''
+    ));
 }
 
-// Se fornecido token, valida no workspace
-if (!empty($token)) {
-    $tokenHash = hash('sha256', $token);
-    $wsStmt = $pdo->prepare("SELECT id FROM workspaces WHERE api_token_hash = ? AND is_active = 1 LIMIT 1");
-    $wsStmt->execute([$tokenHash]);
-    $matchedWsId = (int)$wsStmt->fetchColumn();
-    if ($matchedWsId > 0) {
-        $targetWsId = $matchedWsId;
-    }
+$tokenWorkspace = $token !== ''
+    ? (new \App\Security\WebhookAuth($wsRepo))->workspaceForToken($token)
+    : null;
+
+if (!$tokenWorkspace) {
+    JsonResponse::error('Token de API ausente ou inválido. Envie o token do workspace em Authorization: Bearer <token>.', 401);
 }
 
-$targetWsId = $targetWsId ?? ($workspace->id ?? 2);
+$targetWsId = $tokenWorkspace->id;
 
 // 2. Extração Flexível do Payload de Venda da Rifa
 $input = $request->all();

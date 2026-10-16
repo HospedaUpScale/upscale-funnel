@@ -46,6 +46,15 @@ class AdminAuth
             $session = null;
         }
         if ($session) {
+            // Sessão master (login por usuário/senha): não depende de workspace.
+            if (($session['role'] ?? '') === 'super_admin') {
+                return [
+                    'role' => 'super_admin',
+                    'workspace' => null,
+                    'user_id' => (int) $session['user_id'],
+                ];
+            }
+
             $ws = $this->workspaceRepo->findById((int) $session['workspace_id']);
             if ($ws && $ws->status === 'active') {
                 return [

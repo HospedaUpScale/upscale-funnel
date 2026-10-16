@@ -92,6 +92,16 @@ Todas as requisições passam pelo [`router.php`](file:///c:/Users/Isaias/Downlo
   * **Função:** Recupera dados de sessão do cliente para pré-preencher o fluxo de 1-clique.
 * **`GET /api/v1/winner`** ([`api/v1/winner.php`](file:///c:/Users/Isaias/Downloads/UPSCALE/api/v1/winner.php))
   * **Função:** Consulta e exibição de ganhadores e resultados de sorteios.
+  * **Segurança:** Consulta pelo token do card é livre. Consulta por `order_id` ou telefone exige o token de API do workspace (`Authorization: Bearer`) ou um login de admin. O telefone precisa ser completo, com DDD.
+
+### 🔐 Autenticação de webhooks
+* **`POST /api/webhook.php`** (pagamento Pix) e **`POST /api/v1/webhook.php`** (vendas da rifa) exigem token.
+  * Envie o **token de API do workspace** em `Authorization: Bearer <token>`, `X-Webhook-Token` ou, para gateways que não enviam headers, na URL: `/api/webhook.php?token=<token>`.
+  * O webhook de pagamento também aceita o segredo global `WEBHOOK_SECRET`, se configurado.
+  * O pagamento só é confirmado com `status` explícito (`paid`, `approved`, `pago`, `confirmed`…). Payload sem status é ignorado.
+* **Postback de entrega de cotas:** assinado com HMAC-SHA256 usando `POSTBACK_SECRET` (header `X-Signature`). Sem `POSTBACK_SECRET`, o postback segue sem assinatura.
+* **Login master:** usa somente `ADMIN_USER` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Sem `ADMIN_PASSWORD`, o login master por senha fica desativado. O login gera uma sessão de 12 horas; o `SUPER_ADMIN_TOKEN` nunca é enviado ao navegador.
+* **`APP_ENV`:** se não for definido, o sistema assume produção. Use `APP_ENV=local` apenas em desenvolvimento.
 
 ---
 

@@ -6,11 +6,24 @@ require_once __DIR__ . '/../src/Support/Env.php';
 Env::load(__DIR__ . '/../.env');
 
 return [
-    'app_env' => Env::get('APP_ENV', 'local'),
+    // Padrão seguro: sem APP_ENV definido, o sistema se comporta como produção.
+    // Para desenvolvimento local, defina APP_ENV=local no .env.
+    'app_env' => Env::get('APP_ENV', 'production'),
     'base_domain' => Env::get('BASE_DOMAIN', 'vendedorsincero.pro'),
     'default_workspace_slug' => Env::get('DEFAULT_WORKSPACE_SLUG', 'sincero'),
     'super_admin_token' => Env::get('SUPER_ADMIN_TOKEN', ''),
     'enforce_api_token' => Env::get('ENFORCE_API_TOKEN', false),
+
+    // Credenciais do login master. Sem ADMIN_PASSWORD, o login master por senha fica desativado.
+    'admin_user' => (string) Env::get('ADMIN_USER', 'admin'),
+    'admin_email' => (string) Env::get('ADMIN_EMAIL', ''),
+    'admin_password' => (string) Env::get('ADMIN_PASSWORD', ''),
+
+    // Segredo global aceito pelo webhook de pagamento (além do token de API de cada workspace).
+    'webhook_secret' => (string) Env::get('WEBHOOK_SECRET', ''),
+
+    // Chave usada para assinar (HMAC-SHA256) o postback de entrega de cotas.
+    'postback_secret' => (string) Env::get('POSTBACK_SECRET', ''),
 
     'db' => [
         'driver' => Env::get('DB_DRIVER', 'sqlite'), // 'sqlite' or 'mysql'

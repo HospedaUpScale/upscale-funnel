@@ -42,7 +42,7 @@ set_exception_handler(function (\Throwable $e): void {
     }
 
     $payload = ['status' => 'error', 'message' => $message];
-    if (in_array(strtolower((string) getenv('APP_ENV')), ['', 'local', 'dev', 'development'], true)) {
+    if (in_array(strtolower((string) getenv('APP_ENV')), ['local', 'dev', 'development'], true)) {
         $payload['detail'] = $raw;
     }
 
@@ -82,7 +82,7 @@ $resolver = new TenantResolver(
     workspaceRepo: $wsRepo,
     baseDomain: $config['base_domain'] ?? 'vendedorsincero.pro',
     defaultSlug: $config['default_workspace_slug'] ?? 'sincero',
-    appEnv: $config['app_env'] ?? 'local'
+    appEnv: $config['app_env'] ?? 'production'
 );
 
 $workspace = $resolver->resolve(

@@ -25,22 +25,8 @@ $directToken = trim((string) ($input['token'] ?? ''));
 
 $superAdminToken = (string) ($config['super_admin_token'] ?? '');
 
-$masterUser  = strtolower((string) (getenv('ADMIN_USER') ?: 'admin'));
-$masterEmail = strtolower((string) (getenv('ADMIN_EMAIL') ?: 'isaiasmktd@gmail.com'));
-$masterPass  = (string) (getenv('ADMIN_PASSWORD') ?: 'Master@2026');
-
-$isMasterAttempt = false;
-if ($directToken !== '' && !empty($superAdminToken) && hash_equals($superAdminToken, $directToken)) {
-    $isMasterAttempt = true;
-} elseif (
-    ($type === '' || $type === 'master' || $type === 'client') &&
-    in_array(strtolower($username), [$masterUser, $masterEmail, 'admin', 'isaiasmktd@gmail.com', 'admin@upscalefunnel.site'], true) &&
-    (hash_equals($masterPass, $password) || ($password === 'Master@2026') || ($password === 'admin123'))
-) {
-    $isMasterAttempt = true;
-}
-
-if (!$isMasterAttempt && $rateLimiter->isTooManyAttempts($rateKey, 5, 900)) {
+// O rate limit vale para todas as tentativas, inclusive as do login master.
+if ($rateLimiter->isTooManyAttempts($rateKey, 5, 900)) {
     $seconds = $rateLimiter->availableIn($rateKey, 900);
     header('Retry-After: ' . $seconds);
     JsonResponse::error("Muitas tentativas incorretas. Acesso bloqueado por {$seconds}s para segurança.", 429);
@@ -53,6 +39,42 @@ function login_fail(string $message, ?RateLimiter $limiter = null, ?string $key 
     }
     usleep(400000);
     JsonResponse::error($message, 401);
+}
+
+/**
+ * Cria uma sessão master com validade (em vez de entregar o SUPER_ADMIN_TOKEN ao navegador)
+ * e responde com a lista de workspaces.
+ */
+function login_master_success(PDO $pdo, int $userId, string $name, string $email): void
+{
+    $session = (new AuthSessionRepository($pdo))->create($userId, 0, 'super_admin', 12);
+
+    $allWs = (new \App\Repositories\WorkspaceRepository($pdo))->all();
+    $wsList = array_map(fn($w) => [
+        'id'   => $w->id,
+        'name' => $w->name,
+        'slug' => $w->slug,
+        'type' => $w->type,
+    ], $allWs);
+
+    JsonResponse::send([
+        'status'     => 'success',
+        'token'      => $session['token'],
+        'expires_at' => $session['expires_at'],
+        'role'       => 'super_admin',
+        'login_type' => 'master',
+        'user'       => [
+            'name'  => $name,
+            'email' => $email,
+            'role'  => 'super_admin',
+        ],
+        'workspace' => $wsList[0] ?? [
+            'id'   => 1,
+            'name' => 'upScale Hub Global',
+            'slug' => 'global',
+        ],
+        'workspaces' => $wsList,
+    ]);
 }
 
 // 1. Login direto por token administrativo (avançado)
@@ -83,46 +105,22 @@ if ($username === '' || $password === '') {
 }
 
 // 2. Login MASTER (administração global da upScale)
+// Credenciais vêm somente das variáveis ADMIN_USER / ADMIN_EMAIL / ADMIN_PASSWORD.
+// Sem ADMIN_PASSWORD configurado, o login master por senha fica desativado.
 if ($type === '' || $type === 'master') {
-    $masterUser  = strtolower((string) (getenv('ADMIN_USER') ?: 'admin'));
-    $masterEmail = strtolower((string) (getenv('ADMIN_EMAIL') ?: 'isaiasmktd@gmail.com'));
-    $masterPass  = (string) (getenv('ADMIN_PASSWORD') ?: 'Master@2026');
+    $masterPass = (string) ($config['admin_password'] ?? '');
+    $masterIds = array_values(array_filter(array_map(
+        fn($v) => strtolower(trim((string) $v)),
+        [$config['admin_user'] ?? '', $config['admin_email'] ?? '']
+    )));
 
-    $isMasterUser = in_array(strtolower($username), [$masterUser, $masterEmail, 'admin', 'isaiasmktd@gmail.com', 'admin@upscalefunnel.site'], true);
-    $isMasterPass = hash_equals($masterPass, $password) || ($password === 'Master@2026') || ($password === 'admin123');
+    $isMaster = $masterPass !== ''
+        && in_array(strtolower($username), $masterIds, true)
+        && hash_equals($masterPass, $password);
 
-    if ($isMasterUser && $isMasterPass) {
-        if ($superAdminToken === '') {
-            JsonResponse::error('SUPER_ADMIN_TOKEN não está configurado no servidor (.env / variáveis de ambiente).', 500);
-        }
-
-        $allWs = (new \App\Repositories\WorkspaceRepository($pdo))->all();
-        $wsList = array_map(fn($w) => [
-            'id'   => $w->id,
-            'name' => $w->name,
-            'slug' => $w->slug,
-            'type' => $w->type,
-        ], $allWs);
-
+    if ($isMaster) {
         $rateLimiter->clear($rateKey);
-
-        JsonResponse::send([
-            'status' => 'success',
-            'token'  => $superAdminToken,
-            'role'   => 'super_admin',
-            'login_type' => 'master',
-            'user'   => [
-                'name'  => 'Isaias (Master)',
-                'email' => $username,
-                'role'  => 'super_admin',
-            ],
-            'workspace' => $wsList[0] ?? [
-                'id'   => 1,
-                'name' => 'upScale Hub Global',
-                'slug' => 'global',
-            ],
-            'workspaces' => $wsList,
-        ]);
+        login_master_success($pdo, 0, 'upScale Master', $username);
     }
 
     if ($type === 'master') {
@@ -145,7 +143,7 @@ if (!$memberships) {
     login_fail('Este usuário não possui acesso a nenhum workspace ativo. Fale com o administrador.', $rateLimiter, $rateKey);
 }
 
-// Se o usuário tem perfil super_admin ou é o master cadastrado
+// Usuário com perfil super_admin em algum workspace recebe uma sessão master.
 $hasSuperAdmin = false;
 foreach ($memberships as $m) {
     if ($m['membership_role'] === 'super_admin') {
@@ -154,34 +152,9 @@ foreach ($memberships as $m) {
     }
 }
 
-if ($hasSuperAdmin || strtolower($user['email']) === 'isaiasmktd@gmail.com') {
+if ($hasSuperAdmin) {
     $rateLimiter->clear($rateKey);
-
-    $allWs = (new \App\Repositories\WorkspaceRepository($pdo))->all();
-    $wsList = array_map(fn($w) => [
-        'id'   => $w->id,
-        'name' => $w->name,
-        'slug' => $w->slug,
-        'type' => $w->type,
-    ], $allWs);
-
-    JsonResponse::send([
-        'status' => 'success',
-        'token'  => $superAdminToken,
-        'role'   => 'super_admin',
-        'login_type' => 'master',
-        'user'   => [
-            'name'  => $user['name'] ?: 'Isaias (Master)',
-            'email' => $user['email'],
-            'role'  => 'super_admin',
-        ],
-        'workspace' => $wsList[0] ?? [
-            'id'   => 1,
-            'name' => 'upScale Hub Global',
-            'slug' => 'global',
-        ],
-        'workspaces' => $wsList,
-    ]);
+    login_master_success($pdo, (int) $user['id'], $user['name'] ?: 'upScale Master', $user['email']);
 }
 
 $wanted = (int) ($input['workspace_id'] ?? 0);
