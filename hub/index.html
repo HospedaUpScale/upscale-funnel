@@ -1162,6 +1162,14 @@
                     <div class="accordion-body">
                       <div style="display:flex; flex-direction:column; gap:12px;">
                         <div>
+                          <label class="form-label">Mecânica de revelação</label>
+                          <select class="form-select" id="mechanic-type" onchange="alternarMecanica(); marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
+                            <option value="scratch" selected>Raspadinha</option>
+                            <option value="wheel">Roleta premiada</option>
+                          </select>
+                          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Escolha como o comprador revela a oferta. A roleta sempre cai na oferta.</div>
+                        </div>
+                        <div id="scratch-texture-row">
                           <label class="form-label">Textura da Cobertura</label>
                           <select class="form-select" id="scratch-texture-type" onchange="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
                             <option value="metallic" selected>Aço escovado metálico (Hiper-realista)</option>
@@ -3772,6 +3780,14 @@
     if (legacyBox) legacyBox.style.display = mode === 'external_redirect' ? 'block' : 'none';
   }
 
+  // Mostra os ajustes de textura só quando a mecânica é raspadinha.
+  function alternarMecanica() {
+    var sel = document.getElementById('mechanic-type');
+    var row = document.getElementById('scratch-texture-row');
+    if (!sel || !row) return;
+    row.style.display = sel.value === 'wheel' ? 'none' : 'block';
+  }
+
   // Normalização de Slug em tempo real
   function normalizeOfferSlugJs(str) {
     return String(str || '')
@@ -3861,6 +3877,7 @@
       font_body: document.getElementById('font-body-select').value,
       title_size: parseInt(document.getElementById('typo-title-size').value) || 32,
       body_size: parseInt(document.getElementById('typo-body-size').value) || 16,
+      mechanic: (document.getElementById('mechanic-type') || {}).value || 'scratch',
       scratch_texture: document.getElementById('scratch-texture-type').value,
       scratch_threshold: parseInt(document.getElementById('scratch-threshold').value) || 22,
       timer_minutes: timerMin,
@@ -4005,6 +4022,10 @@
 
         // Tema e Cores
         var t = o.theme || {};
+        if (t.mechanic && document.getElementById('mechanic-type')) {
+          document.getElementById('mechanic-type').value = t.mechanic;
+          alternarMecanica();
+        }
         if (t.cta_label) document.getElementById('camp-cta').value = t.cta_label;
         if (t.cta_subtext) document.getElementById('camp-cta-subtext').value = t.cta_subtext;
         if (t.timer_minutes) document.getElementById('camp-timer-minutes').value = t.timer_minutes;
