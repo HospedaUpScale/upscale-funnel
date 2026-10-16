@@ -524,6 +524,20 @@
         }, '*');
       }
 
+      // Duplo-clique num bloco HTML customizado abre o editor de codigo no pai.
+      document.addEventListener('dblclick', function(e) {
+        if (activeMode !== 'edit') return;
+        var block = findBlockParent(e.target);
+        if (!block) return;
+        if (block.getAttribute('data-block-type') !== 'html') return;
+        e.preventDefault();
+        window.parent.postMessage({
+          type: 'elementor:edit-html',
+          blockId: block.getAttribute('data-block-id'),
+          currentHtml: block.innerHTML
+        }, '*');
+      });
+
       document.addEventListener('mouseover', function(e) {
         if (activeMode !== 'edit') return;
         var block = findBlockParent(e.target);
@@ -906,8 +920,15 @@
         snippet = `\n<div data-block-id="${newId}" data-block-type="container" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:24px; margin:20px 0;"><p style="color:#64748b; font-size:13px; text-align:center;">Container vazio. Adicione elementos dentro.</p></div>`;
         break;
       case 'html':
-        snippet = `\n<div data-block-id="${newId}" data-block-type="html" style="margin:14px 0;"><!-- Código HTML Personalizado -->\n<div style="padding:12px; background:#f1f5f9; border-radius:8px; font-family:monospace; font-size:12px;">Bloco HTML livre</div></div>`;
-        break;
+        // Em vez de inserir uma caixinha fake "Bloco HTML livre", abre um editor
+        // onde o usuario cola o HTML real. O codigo e inserido como esta e
+        // compila/executa normalmente (o preview injeta via srcdoc do iframe).
+        pedirHtmlCustomizado('', function (codigo) {
+          if (codigo === null) return; // cancelou
+          var block = '\n<div data-block-id="' + newId + '" data-block-type="html">\n' + codigo + '\n</div>';
+          inserirSnippetNoHtml(block);
+        });
+        return; // insercao assincrona; nao segue o fluxo padrao abaixo
       case 'timer':
         snippet = `\n<div class="timer-wrap" data-block-id="${newId}" data-block-type="timer" data-timer-type="evergreen" data-timer-duration="15" style="margin:20px 0;"><span class="timer-label">Oferta disponível por tempo limitado:</span><div class="timer-boxes"><div class="timer-box"><strong class="t-hours">00</strong><span>Horas</span></div><div class="timer-box"><strong class="t-mins">15</strong><span>Minutos</span></div><div class="timer-box"><strong class="t-secs">00</strong><span>Segundos</span></div></div></div>`;
         break;
@@ -920,7 +941,14 @@
         break;
     }
 
-    // Inserir antes do fechamento do container principal ou antes do body
+    inserirSnippetNoHtml(snippet);
+  }
+
+  // Insere um snippet HTML no local certo (antes do runtime ou antes do </body>).
+  // Reutilizado por inserirBloco() e pelo bloco HTML customizado.
+  function inserirSnippetNoHtml(snippet) {
+    if (!snippet) return;
+
     if (state.currentHtml.indexOf('</div>\n\n  <!-- Runtime') !== -1) {
       state.currentHtml = state.currentHtml.replace('</div>\n\n  <!-- Runtime', snippet + '\n  </div>\n\n  <!-- Runtime');
     } else if (state.currentHtml.indexOf('</body>') !== -1) {
@@ -934,6 +962,57 @@
     marcarModificado();
     window.showToast && window.showToast('Elemento adicionado!', 'success');
   }
+
+  // Modal simples para o usuario digitar/colar HTML personalizado.
+  // Usa um <dialog> criado uma vez e reaproveitado. Retorna o codigo via callback
+  // (null se cancelou). Aceita um valor inicial para EDITAR um bloco HTML existente.
+  function pedirHtmlCustomizado(valorInicial, callback) {
+    var dlg = document.getElementById('builder-html-dialog');
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = 'builder-html-dialog';
+      dlg.style.cssText = 'padding:0; border:0; border-radius:12px; max-width:720px; width:90vw; box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+      dlg.innerHTML =
+        '<form method="dialog" style="margin:0;">' +
+        '  <div style="padding:18px 20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">' +
+        '    <h3 style="margin:0; font-size:16px; color:#0f172a;">Código HTML personalizado</h3>' +
+        '    <button type="button" aria-label="Fechar" id="builder-html-close" style="background:none; border:0; font-size:22px; cursor:pointer; color:#64748b;">&times;</button>' +
+        '  </div>' +
+        '  <div style="padding:16px 20px;">' +
+        '    <p style="margin:0 0 10px; font-size:13px; color:#475569;">Cole seu HTML abaixo. Scripts e CSS inline são permitidos — o código é inserido tal como está e executa no preview.</p>' +
+        '    <textarea id="builder-html-textarea" rows="14" style="width:100%; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; padding:12px; border:1px solid #cbd5e1; border-radius:8px; resize:vertical; min-height:220px;" placeholder="&lt;script&gt;...&lt;/script&gt; ou &lt;div&gt;conteúdo&lt;/div&gt;"></textarea>' +
+        '  </div>' +
+        '  <div style="padding:12px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:8px;">' +
+        '    <button type="button" id="builder-html-cancel" class="btn-secondary" style="padding:8px 14px;">Cancelar</button>' +
+        '    <button type="button" id="builder-html-ok" class="btn-primary" style="padding:8px 14px;">Inserir</button>' +
+        '  </div>' +
+        '</form>';
+      document.body.appendChild(dlg);
+    }
+
+    var ta = dlg.querySelector('#builder-html-textarea');
+    var btnOk = dlg.querySelector('#builder-html-ok');
+    var btnCancel = dlg.querySelector('#builder-html-cancel');
+    var btnClose = dlg.querySelector('#builder-html-close');
+    ta.value = valorInicial || '';
+
+    var cleanup = function () {
+      btnOk.onclick = null; btnCancel.onclick = null; btnClose.onclick = null;
+      if (typeof dlg.close === 'function') dlg.close();
+      else dlg.style.display = 'none';
+    };
+
+    btnOk.onclick = function () { var v = ta.value; cleanup(); callback(v); };
+    btnCancel.onclick = function () { cleanup(); callback(null); };
+    btnClose.onclick = btnCancel.onclick;
+
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.style.display = 'block';
+    setTimeout(function () { ta.focus(); }, 50);
+  }
+
+  // Expoe para outras partes do builder (ex.: duplo-clique em bloco HTML existente)
+  window.pedirHtmlCustomizado = pedirHtmlCustomizado;
 
   // ══ AUXILIARES DE CORES E MEDIDAS ══
   function rgbToHex(rgb) {
@@ -2696,6 +2775,29 @@
 
       if (event.data.type === 'elementor:delete') {
         excluirElementoSelecionado();
+      }
+
+      // Edicao de bloco HTML customizado via duplo-clique no preview.
+      if (event.data.type === 'elementor:edit-html') {
+        var blockId = event.data.blockId;
+        var atual = event.data.currentHtml || '';
+        pedirHtmlCustomizado(atual, function (novo) {
+          if (novo === null) return;
+          // Substitui o conteudo do bloco no HTML atual, preservando o wrapper
+          // <div data-block-id="X" data-block-type="html">...</div>.
+          var escapedId = String(blockId).replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+          var re = new RegExp('(<div[^>]*data-block-id="' + escapedId + '"[^>]*>)([\\s\\S]*?)(<\\/div>)');
+          var m = state.currentHtml.match(re);
+          if (!m) {
+            window.showToast && window.showToast('Bloco HTML nao encontrado para edicao.', 'error');
+            return;
+          }
+          state.currentHtml = state.currentHtml.replace(re, m[1] + '\n' + novo + '\n' + m[3]);
+          if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
+          renderPreview(true);
+          marcarModificado();
+          window.showToast && window.showToast('Bloco HTML atualizado.', 'success');
+        });
       }
     });
 

@@ -62,7 +62,7 @@ if ($action === 'get_templates') {
 }
 
 if ($action === 'get_template_defaults') {
-    $tplSlug = (string)($request->get('template_slug') ?? ($request->all()['template_slug'] ?? 'pressel-premium'));
+    $tplSlug = (string)($request->get('template_slug') ?? ($request->all()['template_slug'] ?? 'default'));
     $template = TemplateRegistry::get($tplSlug);
     $config = TemplateRegistry::getDefaultConfig($tplSlug);
     JsonResponse::success([
@@ -252,8 +252,10 @@ if ($request->method() === 'POST') {
 
     $html = (string)($input['html_content'] ?? ($input['draft_content'] ?? ($input['html'] ?? '')));
 
-    // Se for template pressel-premium e o HTML estiver vazio ou foi solicitado auto-render
-    if ($templateSlug === 'pressel-premium' && (trim($html) === '' || !empty($input['auto_render']))) {
+    // Pressel Premium: só re-renderiza o template se o cliente pediu EXPLICITAMENTE
+    // via auto_render=true. Antes, re-renderizava sozinho quando o HTML vinha vazio,
+    // o que apagava as edições do usuário se o CodeMirror ainda não tinha inicializado.
+    if ($templateSlug === 'pressel-premium' && !empty($input['auto_render'])) {
         $bArray = $blocksConfig ? json_decode($blocksConfig, true) : [];
         $sArray = $settingsConfig ? json_decode($settingsConfig, true) : [];
         $html = TemplateRegistry::render('pressel-premium', $bArray ?: [], $sArray ?: [], ['is_editor' => false]);
@@ -263,8 +265,16 @@ if ($request->method() === 'POST') {
     $status = $isPublishAction ? 'published' : 'draft';
     $domainId = !empty($input['custom_domain_id']) ? (int)$input['custom_domain_id'] : null;
 
+    // IMPORTANTE: nao publicar/salvar HTML vazio. Antes, o backend injetava um
+    // placeholder "Nova Pagina / Comece a editar..." quando o HTML vinha vazio
+    // — era exatamente o "publica qualquer coisa, nao o que eu crio".
     if (trim($html) === '') {
-        $html = '<div style="font-family:sans-serif; text-align:center; padding:50px;"><h1>Nova Página</h1><p>Comece a editar com o construtor visual.</p></div>';
+        if ($isPublishAction) {
+            JsonResponse::error('A pagina esta vazia. Edite o conteudo no builder antes de publicar.', 422, ['code' => 'empty_html']);
+        }
+        // Salvar rascunho vazio ainda e aceito (usuario pode estar iniciando), mas
+        // nao substitui o published_content ja existente (ver UPDATE abaixo).
+        $html = '';
     }
     if (strlen($html) > 5000000) JsonResponse::error('O HTML ultrapassa o limite de 5 MB.', 413);
 
