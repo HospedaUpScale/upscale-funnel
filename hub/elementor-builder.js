@@ -447,12 +447,20 @@
           block.appendChild(h);
         });
 
+        var isHtml = block.getAttribute('data-block-type') === 'html';
+        var editBtn = isHtml
+          ? '<button type="button" class="__elem_btn__" id="__btn_edit_html__" title="Editar código HTML" style="background:#1764FF;">' +
+            '  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' +
+            '</button>'
+          : '';
+
         var bar = document.createElement('div');
         bar.className = '__elementor_floating_bar__';
         bar.innerHTML = \`
           <button type="button" class="__elem_btn__" title="Mover">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
           </button>
+          \${editBtn}
           <button type="button" class="__elem_btn__" id="__btn_dup__" title="Duplicar">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </button>
@@ -473,6 +481,19 @@
           ev.preventDefault();
           window.parent.postMessage({ type: 'elementor:delete' }, '*');
         });
+
+        var editHtmlBtn = bar.querySelector('#__btn_edit_html__');
+        if (editHtmlBtn) {
+          editHtmlBtn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            ev.preventDefault();
+            window.parent.postMessage({
+              type: 'elementor:edit-html',
+              blockId: block.getAttribute('data-block-id'),
+              currentHtml: block.innerHTML
+            }, '*');
+          });
+        }
       }
 
       function findBlockParent(el) {
@@ -513,6 +534,9 @@
           destType: block.getAttribute('data-dest-type') || '',
           offerId: block.getAttribute('data-offer-id') || '',
           href: block.getAttribute('href') || '',
+          // Conteudo HTML interno do bloco — enviado so para blocos tipo 'html',
+          // para o pai poder abrir o editor automaticamente ao selecionar.
+          innerHtml: blockType === 'html' ? block.innerHTML : '',
           fontSize: comp.fontSize,
           fontWeight: comp.fontWeight,
           textAlign: comp.textAlign,
@@ -1014,6 +1038,21 @@
   // Expoe para outras partes do builder (ex.: duplo-clique em bloco HTML existente)
   window.pedirHtmlCustomizado = pedirHtmlCustomizado;
 
+  // Chamado pelo botao "Editar codigo HTML" do painel lateral direito.
+  function abrirEditorHtmlDoBlocoSelecionado() {
+    if (!state.selectedBlockId || state.selectedBlockType !== 'html') {
+      window.showToast && window.showToast('Nenhum bloco HTML selecionado.', 'error');
+      return;
+    }
+    // Reaproveita o mesmo caminho dos cliques e duplo-clique: posta a mensagem.
+    window.postMessage({
+      type: 'elementor:edit-html',
+      blockId: state.selectedBlockId,
+      currentHtml: state.selectedBlockHtml || ''
+    }, '*');
+  }
+  window.abrirEditorHtmlDoBlocoSelecionado = abrirEditorHtmlDoBlocoSelecionado;
+
   // ══ AUXILIARES DE CORES E MEDIDAS ══
   function rgbToHex(rgb) {
     if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#205BFF';
@@ -1067,6 +1106,8 @@
   // ══ SELEÇÃO E INSPEÇÃO DE ELEMENTO NO PAINEL LATERAL ══
   function selecionarElementoPeloId(data) {
     state.selectedBlockId = data.blockId;
+    state.selectedBlockType = data.blockType || '';
+    state.selectedBlockHtml = data.innerHtml || '';
     var type = data.blockType || 'button';
     var friendlyName = formatarNomeTipo(type);
 
@@ -1075,6 +1116,26 @@
     var rightIcon = document.getElementById('inspector-right-icon');
     if (rightTitle) rightTitle.textContent = friendlyName;
     if (rightIcon) rightIcon.innerHTML = getIconSvgParaTipo(type);
+
+    // Para bloco HTML: injeta um botao "Editar codigo HTML" no painel direito
+    // (aba "Conteudo") para o usuario ter acesso rapido ao editor.
+    var fieldsBox = document.getElementById('inspector-fields-container');
+    if (fieldsBox) {
+      if (type === 'html') {
+        fieldsBox.innerHTML =
+          '<div style="padding:12px; background:#f1f5f9; border-radius:8px; font-size:12px; color:#475569; line-height:1.5;">' +
+          '  Este bloco contém código HTML personalizado. Clique abaixo para abrir o editor.' +
+          '</div>' +
+          '<button type="button" class="btn-primary" style="width:100%; min-height:40px; font-size:13px;" onclick="abrirEditorHtmlDoBlocoSelecionado()">' +
+          '  ✎ Editar código HTML' +
+          '</button>';
+      } else {
+        // Limpa quando a selecao muda para outro tipo (evita vazar o botao).
+        if (fieldsBox.querySelector('button[onclick="abrirEditorHtmlDoBlocoSelecionado()"]')) {
+          fieldsBox.innerHTML = '';
+        }
+      }
+    }
 
     // Sincroniza controles da aba Estilo
     if (data.fontSize) {
@@ -2763,6 +2824,18 @@
 
       if (event.data.type === 'elementor:select') {
         selecionarElementoPeloId(event.data);
+        // Bloco HTML: ao SELECIONAR, abre o editor imediatamente. Guard para nao
+        // reabrir infinitamente quando o preview recarrega e re-seleciona.
+        if (event.data.blockType === 'html' && state.lastHtmlEditedId !== event.data.blockId) {
+          state.lastHtmlEditedId = event.data.blockId;
+          window.postMessage({
+            type: 'elementor:edit-html',
+            blockId: event.data.blockId,
+            currentHtml: event.data.innerHtml || ''
+          }, '*');
+        } else if (event.data.blockType !== 'html') {
+          state.lastHtmlEditedId = null;
+        }
       }
 
       if (event.data.type === 'elementor:unselect') {
