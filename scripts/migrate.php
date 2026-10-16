@@ -16,12 +16,12 @@ class Migrator
     {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo = $pdo;
-        $this->driver = strtolower($driver);
+        $this->driver = strtolower(trim($driver));
         $this->migrationsPath = rtrim($migrationsPath, '/\\');
     }
 
     /**
-     * Executa as migrações pendentes.
+     * Executa todas as migrações pendentes.
      *
      * @return array Lista de arquivos de migração aplicados.
      */
@@ -45,19 +45,27 @@ class Migrator
             $sql = file_get_contents($filePath);
 
             try {
-                // Remove linhas de comentário SQL (-- ...) para não descartar comandos válidos ao dividir por ';'
+                // Se o driver for MySQL, converte expressões SQLite como datetime('now') para CURRENT_TIMESTAMP
+                if ($this->driver === 'mysql') {
+                    $sql = preg_replace("/datetime\s*\(\s*'now'\s*\)/i", 'CURRENT_TIMESTAMP', $sql);
+                    $sql = preg_replace("/DEFAULT\s+\(\s*datetime\s*\(\s*'now'\s*\)\s*\)/i", 'DEFAULT CURRENT_TIMESTAMP', $sql);
+                    $sql = preg_replace("/\(\s*'now'\s*\)/i", 'CURRENT_TIMESTAMP', $sql);
+                }
+
+                // Remove linhas de comentário SQL (-- ...) para não interferir na separação de comandos
                 $cleanSql = preg_replace('/^\s*--.*$/m', '', $sql);
 
-                // Divide o SQL por ';' para executar múltiplas instruções (CREATE TABLE, CREATE INDEX, etc.) individualmente
-                $statements = array_filter(array_map('trim', explode(';', $cleanSql)));
+                // Divide o arquivo SQL por ';' e executa cada instrução individualmente
+                $statements = explode(';', $cleanSql);
 
                 foreach ($statements as $statement) {
-                    if ($statement !== '') {
-                        $this->pdo->exec($statement);
+                    $stmtTrimmed = trim($statement);
+                    if ($stmtTrimmed !== '') {
+                        $this->pdo->exec($stmtTrimmed);
                     }
                 }
 
-                // Regista a migração passando a data gerada pelo PHP (compatível com MySQL e SQLite)
+                // Regista a migração aplicada usando data gerada pelo PHP
                 $stmt = $this->pdo->prepare("INSERT INTO migrations (migration, executed_at) VALUES (:migration, :executed_at)");
                 $stmt->execute([
                     'migration'   => $migration,
@@ -94,8 +102,12 @@ class Migrator
 
     protected function getAppliedMigrations(): array
     {
-        $stmt = $this->pdo->query("SELECT migration FROM migrations");
-        return $stmt ? ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: []) : [];
+        try {
+            $stmt = $this->pdo->query("SELECT migration FROM migrations");
+            return $stmt ? ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: []) : [];
+        } catch (Exception $e) {
+            return [];
+        }
     }
 
     protected function getMigrationFiles(): array
@@ -115,7 +127,7 @@ class Migrator
                 continue;
             }
 
-            // Ignora arquivos específicos do outro driver
+            // Filtra estritamente os arquivos do driver ativo (.mysql.sql ou .sqlite.sql)
             if ($this->driver === 'mysql' && str_ends_with($file, '.sqlite.sql')) {
                 continue;
             }
@@ -123,7 +135,7 @@ class Migrator
                 continue;
             }
 
-            if (str_ends_with($file, ".{$this->driver}.sql") || str_ends_with($file, '.sql')) {
+            if (str_ends_with($file, ".{$this->driver}.sql") || (str_ends_with($file, '.sql') && !str_ends_with($file, '.mysql.sql') && !str_ends_with($file, '.sqlite.sql'))) {
                 $migrationFiles[] = $file;
             }
         }
