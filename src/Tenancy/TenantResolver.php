@@ -51,6 +51,21 @@ class TenantResolver
         }
 
         // 5. Default workspace fallback (especially for localhost / dev server)
-        return $this->workspaceRepo->findBySlug($this->defaultSlug);
+        $ws = $this->workspaceRepo->findBySlug($this->defaultSlug);
+        if ($ws) {
+            return $ws;
+        }
+
+        // 6. Último recurso: primeiro workspace ativo existente.
+        // Evita "Workspace not found" quando o domínio/slug não batem com o padrão
+        // (ex.: banco novo cujo workspace tem outro slug). Garante que o Hub e as
+        // ofertas funcionem desde o primeiro deploy, com um único workspace.
+        foreach ($this->workspaceRepo->all() as $candidate) {
+            if (($candidate->status ?? 'active') === 'active') {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }
