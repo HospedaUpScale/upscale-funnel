@@ -16,13 +16,13 @@ class Migrator
     {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo = $pdo;
-        $this->driver = $driver;
+        $this->driver = strtolower($driver);
         $this->migrationsPath = rtrim($migrationsPath, '/\\');
     }
 
     /**
      * Executa as migrações pendentes.
-     * 
+     *
      * @return array Lista de arquivos de migração aplicados.
      */
     public function run(): array
@@ -37,7 +37,7 @@ class Migrator
 
         foreach ($pendingMigrations as $migration) {
             $filePath = $this->migrationsPath . '/' . $migration;
-            
+
             if (!file_exists($filePath)) {
                 continue;
             }
@@ -45,13 +45,23 @@ class Migrator
             $sql = file_get_contents($filePath);
 
             try {
-                // Executa o SQL da migração
-                $this->pdo->exec($sql);
+                // Remove linhas de comentário SQL (-- ...) para não descartar comandos válidos ao dividir por ';'
+                $cleanSql = preg_replace('/^\s*--.*$/m', '', $sql);
 
-                // Regista a migração como aplicada (Corrigido para usar NOW() de forma segura no MySQL)
-                $stmt = $this->pdo->prepare("INSERT INTO migrations (migration, executed_at) VALUES (:migration, NOW())");
+                // Divide o SQL por ';' para executar múltiplas instruções (CREATE TABLE, CREATE INDEX, etc.) individualmente
+                $statements = array_filter(array_map('trim', explode(';', $cleanSql)));
+
+                foreach ($statements as $statement) {
+                    if ($statement !== '') {
+                        $this->pdo->exec($statement);
+                    }
+                }
+
+                // Regista a migração passando a data gerada pelo PHP (compatível com MySQL e SQLite)
+                $stmt = $this->pdo->prepare("INSERT INTO migrations (migration, executed_at) VALUES (:migration, :executed_at)");
                 $stmt->execute([
-                    'migration' => $migration
+                    'migration'   => $migration,
+                    'executed_at' => date('Y-m-d H:i:s'),
                 ]);
 
                 $applied[] = $migration;
@@ -65,19 +75,16 @@ class Migrator
 
     protected function createMigrationsTableIfNeeded(): void
     {
-        $driver = $this->driver;
-
-        if ($driver === 'sqlite') {
+        if ($this->driver === 'sqlite') {
             $sql = "CREATE TABLE IF NOT EXISTS migrations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                migration VARCHAR(255) NOT NULL,
+                migration VARCHAR(255) NOT NULL UNIQUE,
                 executed_at DATETIME NOT NULL
             );";
         } else {
-            // Padrão para MySQL / MariaDB
             $sql = "CREATE TABLE IF NOT EXISTS migrations (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                migration VARCHAR(255) NOT NULL,
+                migration VARCHAR(255) NOT NULL UNIQUE,
                 executed_at DATETIME NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
         }
@@ -88,37 +95,40 @@ class Migrator
     protected function getAppliedMigrations(): array
     {
         $stmt = $this->pdo->query("SELECT migration FROM migrations");
-        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        return $stmt ? ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: []) : [];
     }
 
     protected function getMigrationFiles(): array
     {
+        if (!is_dir($this->migrationsPath)) {
+            return [];
+        }
+
         $files = scandir($this->migrationsPath);
         if (!$files) {
             return [];
         }
 
-        // Filtra apenas os arquivos compatíveis com o driver atual (ex: .mysql.sql ou .sqlite.sql ou .sql geral)
         $migrationFiles = [];
         foreach ($files as $file) {
             if ($file === '.' || $file === '..') {
                 continue;
             }
 
-            // Verifica se o arquivo corresponde ao driver ou é um .sql genérico
+            // Ignora arquivos específicos do outro driver
+            if ($this->driver === 'mysql' && str_ends_with($file, '.sqlite.sql')) {
+                continue;
+            }
+            if ($this->driver === 'sqlite' && str_ends_with($file, '.mysql.sql')) {
+                continue;
+            }
+
             if (str_ends_with($file, ".{$this->driver}.sql") || str_ends_with($file, '.sql')) {
-                // Evita misturar arquivos de drivers diferentes se houver extensão específica
-                if ($this->driver === 'mysql' && str_ends_with($file, '.sqlite.sql')) {
-                    continue;
-                }
-                if ($this->driver === 'sqlite' && str_ends_with($file, '.mysql.sql')) {
-                    continue;
-                }
                 $migrationFiles[] = $file;
             }
         }
 
-        sort($migrationFiles);
+        sort($migrationFiles, SORT_NATURAL);
         return $migrationFiles;
     }
 }
