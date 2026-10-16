@@ -309,9 +309,7 @@ class PresselPremiumTemplate
   <link rel="canonical" href="<?= htmlspecialchars(self::sanitizeUrl($publicUrl), ENT_QUOTES, 'UTF-8') ?>">
   <meta property="og:url" content="<?= htmlspecialchars(self::sanitizeUrl($publicUrl), ENT_QUOTES, 'UTF-8') ?>">
   <?php endif; ?>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,800;0,900;1,900&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="preload" href="/assets/fonts/barlow-condensed-900.woff" as="font" type="font/woff" crossorigin>
   <?php if (!empty($pixelId) && !$isEditor): ?>
   <!-- Meta Pixel Code -->
   <script>
@@ -330,6 +328,15 @@ class PresselPremiumTemplate
   <!-- End Meta Pixel Code -->
   <?php endif; ?>
   <style>
+@font-face { font-family: "Barlow Condensed"; src: url("/assets/fonts/barlow-condensed-600.woff") format("woff"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/assets/fonts/barlow-condensed-800.woff") format("woff"); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/assets/fonts/barlow-condensed-900.woff") format("woff"); font-weight: 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("/assets/fonts/barlow-400.woff") format("woff"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("/assets/fonts/barlow-500.woff") format("woff"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("/assets/fonts/barlow-600.woff") format("woff"); font-weight: 600; font-style: normal; font-display: swap; }
+/* Fontes reserva com largura ajustada: enquanto a Barlow carrega, títulos e botões ocupam o mesmo espaço e não quebram linha. */
+@font-face { font-family: "Barlow Condensed Reserva"; src: local("Arial Narrow"), local("ArialNarrow"), local("Arial"), local("Helvetica"), local("Roboto"); size-adjust: 71%; }
+@font-face { font-family: "Barlow Reserva"; src: local("Arial"), local("Helvetica"), local("Roboto"); size-adjust: 93%; }
 :root {
   color-scheme: dark;
   --bg: <?= $bg ?>;
@@ -340,8 +347,8 @@ class PresselPremiumTemplate
   --accent: <?= $accent ?>;
   --accent-ink: <?= $accentInk ?>;
   --pix: <?= $pix ?>;
-  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
-  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: "Barlow Condensed", "Barlow Condensed Reserva", "Arial Narrow", sans-serif;
+  --body: "Barlow", "Barlow Reserva", system-ui, -apple-system, "Segoe UI", sans-serif;
   --sticky-space: 100px;
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -376,6 +383,8 @@ section + section { border-top: 1px solid var(--line); }
 .hero { position: relative; max-width: <?= $heroWidth ?>; margin-inline: auto; }
 .hero-img { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--surface); }
 .hero-img img { width: 100%; height: 100%; object-fit: cover; object-position: <?= htmlspecialchars($hero['object_position_desktop'] ?? '50% 60%', ENT_QUOTES, 'UTF-8') ?>; }
+.hero-img picture { display: contents; }
+@media (max-width: 719px) { .hero-img img { object-position: <?= htmlspecialchars($hero['object_position_mobile'] ?? '50% 50%', ENT_QUOTES, 'UTF-8') ?>; } }
 .hero-img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg,#0b0e1259 0%,transparent 22%,transparent 55%,var(--bg) 100%); pointer-events: none; }
 .hero-copy { position: relative; z-index: 2; display: grid; gap: 14px; margin-top: -100px; }
 .hero h1 { font-size: clamp(3.1rem,15vw,5.6rem); font-weight: 900; letter-spacing: -.01em; }
@@ -390,25 +399,32 @@ section + section { border-top: 1px solid var(--line); }
 .btn:active { transform: scale(.98); }
 @media (hover: hover) { .btn:hover { filter: brightness(1.08); } }
 .note { margin: 0; color: var(--muted); font-size: .9rem; text-align: center; }
-.marquee { margin-top: 40px; overflow: hidden; color: <?= htmlspecialchars($marquee['text_color'] ?? '#1a1206', ENT_QUOTES, 'UTF-8') ?>; background: <?= htmlspecialchars($marquee['bg_color'] ?? '#f5a524', ENT_QUOTES, 'UTF-8') ?>; }
+.band { position: relative; margin-top: 40px; }
+.marquee { overflow: hidden; color: <?= htmlspecialchars($marquee['text_color'] ?? '#1a1206', ENT_QUOTES, 'UTF-8') ?>; background: <?= htmlspecialchars($marquee['bg_color'] ?? '#f5a524', ENT_QUOTES, 'UTF-8') ?>; }
 .marquee-track { display: flex; width: max-content; animation: roll <?= (int)($marquee['speed_seconds'] ?? 28) ?>s linear infinite; }
 .marquee-group { display: flex; flex: 0 0 auto; align-items: center; gap: 28px; padding: 12px 28px 12px 0; white-space: nowrap; font: 800 1.15rem/1.4 var(--display); text-transform: uppercase; }
 .marquee .icon { width: 16px; height: 16px; }
 @keyframes roll { to { transform: translateX(-50%); } }
 .marquee:hover .marquee-track, .marquee.is-paused .marquee-track { animation-play-state: paused; }
-.motion-control { display: block; margin: 8px auto 0; padding: 10px 14px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); font-size: .8rem; cursor: pointer; }
+.motion-control { position: absolute; right: 8px; top: 50%; z-index: 2; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; transform: translateY(-50%); border: 0; border-radius: 50%; background: #0b0e12b3; color: #fff; cursor: pointer; }
+.motion-control::before { content: ""; position: absolute; inset: -4px; }
+.motion-control .icon { width: 16px; height: 16px; }
+.band:has(.motion-control:not([hidden])) .marquee { -webkit-mask-image: linear-gradient(90deg,#000 calc(100% - 72px),transparent calc(100% - 20px)); mask-image: linear-gradient(90deg,#000 calc(100% - 72px),transparent calc(100% - 20px)); }
+.motion-control .i-play { display: none; }
+.motion-control[aria-pressed="true"] .i-play { display: block; }
+.motion-control[aria-pressed="true"] .i-pause { display: none; }
 .sec-head { display: grid; gap: 10px; margin-bottom: 24px; }
 .sec-head h2 { font-size: clamp(2.2rem,9vw,3rem); font-weight: 900; }
 .sec-head p { margin: 0; color: var(--muted); }
 .prizes { display: grid; gap: 10px; }
 .prize { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 .prize > div { min-width: 0; }
-.tag { flex: none; min-width: 68px; padding: 8px; border-radius: 8px; text-align: center; text-transform: uppercase; font: 900 1.05rem var(--display); }
+.tag { flex: 0 0 76px; width: 76px; padding: 8px 4px; border-radius: 8px; text-align: center; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 900 1rem var(--display); }
 .tag.ip { color: var(--bg); background: var(--fg); }
 .tag.px { color: #062522; background: var(--pix); }
 .prize h3 { font-size: 1.7rem; font-weight: 800; overflow-wrap: anywhere; }
 .prize p { margin: 4px 0 0; color: var(--muted); font-size: .92rem; }
-.reel { display: grid; grid-auto-flow: column; grid-auto-columns: 78%; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -16px; padding: 4px 16px 12px; scrollbar-width: thin; scrollbar-color: var(--line) var(--bg); }
+.reel { display: grid; grid-auto-flow: column; grid-auto-columns: 78%; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; margin-inline: -16px; padding: 4px 16px 12px; scrollbar-width: thin; scrollbar-color: var(--line) var(--bg); }
 .clip { scroll-snap-align: start; min-width: 0; margin: 0; }
 .vid { position: relative; aspect-ratio: 9/16; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .vid video { width: 100%; height: 100%; object-fit: cover; }
@@ -461,6 +477,26 @@ footer strong { color: var(--fg); }
   .reel { grid-auto-flow: row; grid-template-columns: repeat(3,minmax(0,1fr)); grid-auto-columns: auto; overflow: visible; margin-inline: 0; padding-inline: 0; }
   .hint { display: none; }
 }
+@media (min-width: 1024px) {
+  .wrap { max-width: 1120px; padding-inline: 32px; }
+  .top { position: absolute; }
+  .hero { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,1fr); align-items: center; gap: 56px; max-width: 1120px; padding: 88px 32px 40px; }
+  .hero-img { aspect-ratio: 4/5; max-height: calc(100vh - 140px); border-radius: 24px; border: 1px solid var(--line); }
+  .hero-img::after { background: linear-gradient(180deg,transparent 60%,#0b0e1280 100%); }
+  .hero-copy { margin-top: 0; padding-inline: 0; gap: 16px; }
+  .hero h1 { font-size: clamp(3.6rem,5.6vw,5.6rem); }
+  main .btn { max-width: 440px; }
+  .hero .note { text-align: left; max-width: 440px; }
+  .sec-head { max-width: 680px; }
+  .prizes { grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); }
+  .reel { grid-template-columns: repeat(auto-fill,minmax(220px,260px)); }
+  .steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+  .steps li { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .steps li:last-child { border-bottom: 1px solid var(--line); }
+  .channels { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  [data-block-type="faq"] details { max-width: 760px; }
+  footer p { max-width: 760px; }
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -501,7 +537,12 @@ footer strong { color: var(--fg); }
   <?php if (!empty($hero['enabled'])): ?>
   <div class="hero" data-block-id="blk_hero" data-block-type="hero">
     <div class="hero-img">
-      <img src="<?= htmlspecialchars(self::sanitizeUrl($hero['image_desktop'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($hero['image_alt'] ?? '', ENT_QUOTES, 'UTF-8') ?>" width="1116" height="1114" fetchpriority="high">
+      <picture>
+        <?php if (!empty($hero['image_mobile'])): ?>
+        <source media="(max-width: 719px)" srcset="<?= htmlspecialchars(self::sanitizeUrl($hero['image_mobile']), ENT_QUOTES, 'UTF-8') ?>">
+        <?php endif; ?>
+        <img src="<?= htmlspecialchars(self::sanitizeUrl($hero['image_desktop'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($hero['image_alt'] ?? '', ENT_QUOTES, 'UTF-8') ?>" width="1116" height="1114" fetchpriority="high">
+      </picture>
     </div>
     <div class="wrap hero-copy">
       <?php if (!empty($hero['eyebrow'])): ?>
@@ -532,6 +573,7 @@ footer strong { color: var(--fg); }
   <?php endif; ?>
 
   <?php if (!empty($marquee['enabled']) && !empty($marquee['items'])): ?>
+  <div class="band">
   <div class="marquee" id="prize-marquee" aria-hidden="true" data-block-id="blk_marquee" data-block-type="marquee">
     <div class="marquee-track">
       <div class="marquee-group">
@@ -548,7 +590,11 @@ footer strong { color: var(--fg); }
       </div>
     </div>
   </div>
-  <button id="motion-control" class="motion-control" type="button" aria-controls="prize-marquee" aria-pressed="false" hidden>Pausar animação da faixa</button>
+  <button id="motion-control" class="motion-control" type="button" aria-controls="prize-marquee" aria-pressed="false" aria-label="Pausar animação da faixa" hidden>
+    <svg class="icon i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+    <svg class="icon i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+  </button>
+  </div>
   <?php endif; ?>
 
   <?php if (!empty($prizes['enabled']) && !empty($prizes['items'])): ?>
@@ -926,7 +972,7 @@ footer strong { color: var(--fg); }
     motionButton.addEventListener('click', () => {
       const paused = marquee.classList.toggle('is-paused');
       motionButton.setAttribute('aria-pressed', String(paused));
-      motionButton.textContent = paused ? 'Retomar animação da faixa' : 'Pausar animação da faixa';
+      motionButton.setAttribute('aria-label', paused ? 'Retomar animação da faixa' : 'Pausar animação da faixa');
     });
   }
 
