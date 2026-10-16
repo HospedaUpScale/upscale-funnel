@@ -28,3 +28,6 @@ Thumbs.db
 *.zip
 
 .superpowers/
+
+# Cache local (rate limit)
+storage/cache/
