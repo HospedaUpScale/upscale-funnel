@@ -128,6 +128,18 @@ if (!$offer) {
     exit;
 }
 
+// O mesmo link da oferta passa a servir a página publicada da campanha.
+// native=1 é usado somente no bloco de checkout, evitando recursão do funil.
+if (!empty($offer['campaign_id']) && ($request->get('native') !== '1')) {
+    $pageStmt = $pdo->prepare("SELECT * FROM funnels WHERE workspace_id = ? AND campaign_id = ? AND status = 'published' ORDER BY id DESC LIMIT 1");
+    $pageStmt->execute([(int)$offer['workspace_id'], (int)$offer['campaign_id']]);
+    if ($campaignPageOverride = $pageStmt->fetch(PDO::FETCH_ASSOC)) {
+        $_GET['slug'] = $campaignPageOverride['slug'];
+        require __DIR__ . '/funnel.php';
+        exit;
+    }
+}
+
 // 3. Montar dados a partir de published_config (congelado) com fallback
 $pubConfig = [];
 if (!empty($offer['published_config'])) {
@@ -155,6 +167,7 @@ if (empty($themeData) && !empty($offer['theme_config'])) {
 }
 
 $theme = OfferTheme::merge($themeData);
+if ($request->get('native') === '1') $theme['mechanic'] = 'direct';
 
 $payloadForHtml = [
     'id'                  => (int)$offer['id'],
@@ -175,7 +188,7 @@ $payloadForHtml = [
 $htmlTemplate = file_get_contents(__DIR__ . '/index.html');
 
 // Injetar script com window.__INITIAL_OFFER_DATA__ antes do fechamento do head
-$injectedScript = '<script>window.__INITIAL_OFFER_DATA__ = ' . json_encode($payloadForHtml, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ';</script>' . "\n" . '</head>';
+$injectedScript = '<script>window.__INITIAL_OFFER_DATA__ = ' . json_encode($payloadForHtml, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ';</script>' . "\n" . '</head>';
 $htmlRendered = str_replace('</head>', $injectedScript, $htmlTemplate);
 
 header('Content-Type: text/html; charset=utf-8');

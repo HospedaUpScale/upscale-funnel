@@ -1,92 +1,171 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Editor Visual · upScale</title>
-<link rel="stylesheet" href="../vendor/grapesjs/grapes.min.css">
-<style>
-  :root {
-    --app-bg: #0f172a;
-    --app-fg: #f8fafc;
-    --app-muted: #94a3b8;
-    --app-border: rgba(255,255,255,0.08);
-    --app-primary: #1764ff;
-    --app-success: #16a34a;
-    --app-danger: #ef4444;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--app-bg); color: var(--app-fg); font-family: Inter, system-ui, -apple-system, sans-serif; }
-  #ve-root { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
-
-  /* Barra superior */
-  .ve-top {
-    display: flex; align-items: center; gap: 12px;
-    padding: 0 16px; background: #0b1120; border-bottom: 1px solid var(--app-border);
-  }
-  .ve-top .back { color: var(--app-fg); text-decoration: none; opacity: .8; padding: 6px 10px; border-radius: 6px; }
-  .ve-top .back:hover { background: rgba(255,255,255,0.06); opacity: 1; }
-  .ve-top input.name { flex: 1; max-width: 320px; background: transparent; color: var(--app-fg); border: 1px solid var(--app-border); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
-  .ve-top .spacer { flex: 1; }
-  .ve-top .status { font-size: 12px; color: var(--app-muted); min-width: 180px; text-align: right; }
-  .ve-top .status.saving { color: #facc15; }
-  .ve-top .status.ok { color: #4ade80; }
-  .ve-top .status.err { color: #f87171; }
-  .ve-top .status.dirty { color: #fbbf24; }
-  .ve-top button {
-    background: transparent; color: var(--app-fg); border: 1px solid var(--app-border);
-    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: 13px;
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .ve-top button:hover { background: rgba(255,255,255,0.06); }
-  .ve-top button.primary { background: var(--app-primary); border-color: var(--app-primary); }
-  .ve-top button.primary:hover { filter: brightness(1.1); }
-  .ve-top button.success { background: var(--app-success); border-color: var(--app-success); }
-  .ve-top button:disabled { opacity: .5; cursor: not-allowed; }
-
-  /* Container GrapesJS */
-  #gjs { height: 100%; border: none; }
-
-  /* GrapesJS overrides para combinar com o painel */
-  .gjs-pn-panels, .gjs-cv-canvas { background: var(--app-bg); }
-  .gjs-two-color, .gjs-clm-tags, .gjs-block, .gjs-block-category .gjs-title { color: var(--app-fg); }
-
-  /* Modal de bloqueio para carregar/salvar */
-  .ve-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 9999; }
-  .ve-overlay.on { display: flex; }
-  .ve-overlay .card { background: #0b1120; border: 1px solid var(--app-border); border-radius: 12px; padding: 22px 26px; max-width: 440px; }
-
-  .ve-toast { position: fixed; bottom: 20px; right: 20px; background: #0b1120; color: var(--app-fg); border: 1px solid var(--app-border); border-radius: 10px; padding: 12px 16px; z-index: 9999; opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); font-size: 13px; }
-  .ve-toast.on { opacity: 1; transform: none; }
-  .ve-toast.err { border-color: var(--app-danger); color: #fecaca; }
-  .ve-toast.ok  { border-color: var(--app-success); color: #bbf7d0; }
-</style>
-</head>
-<body>
-
-<div id="ve-root">
-  <header class="ve-top">
-    <a class="back" href="index.html#sites" title="Voltar ao painel">← Voltar</a>
-    <input class="name" id="ve-page-name" value="Nova página" placeholder="Nome da página">
-    <div class="spacer"></div>
-    <div class="status" id="ve-status">Carregando…</div>
-    <button id="ve-btn-preview" title="Pré-visualizar">👁️ Visualizar</button>
-    <button id="ve-btn-save">Salvar rascunho</button>
-    <button id="ve-btn-publish" class="success">Publicar</button>
-  </header>
-  <div id="gjs"></div>
-</div>
-
-<div class="ve-overlay" id="ve-overlay">
-  <div class="card" id="ve-overlay-text">Carregando editor…</div>
-</div>
-<div class="ve-toast" id="ve-toast"></div>
-
-<script src="../vendor/grapesjs/grapes.min.js"></script>
-<script src="visual-editor/components.js"></script>
-<script src="visual-editor/blocks.js"></script>
-<script src="visual-editor/storage.js"></script>
-<script src="visual-editor/init.js"></script>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Editor de páginas · upScale</title>
+    <link rel="stylesheet" href="../vendor/grapesjs/grapes.min.css" />
+    <link rel="stylesheet" href="visual-editor/editor.css" />
+  </head>
+  <body>
+    <div id="ve-root">
+      <header class="ve-top">
+        <a href="index.html#sites">← Hub</a
+        ><input
+          id="ve-page-name"
+          aria-label="Nome da página"
+          placeholder="Nome da página"
+        /><label
+          >Endereço /f/<input
+            id="ve-page-slug"
+            placeholder="minha-pagina"
+            aria-label="Endereço da página" /></label
+        ><span id="ve-status" role="status">Carregando…</span
+        ><button id="ve-btn-preview">Visualizar</button
+        ><button id="ve-btn-save">Salvar rascunho</button
+        ><button id="ve-btn-publish" class="primary">Publicar</button
+        ><a id="ve-public-link" hidden target="_blank" rel="noopener"
+          >Abrir publicada ↗</a
+        >
+      </header>
+      <div class="ve-workspace">
+        <aside class="ve-left">
+          <h2>Minha página</h2>
+          <p id="ve-campaign-context" class="hint" hidden></p>
+          <a id="ve-edit-campaign-offer" target="_blank" rel="noopener" hidden
+            >Editar oferta e checkout ↗</a
+          >
+          <button id="ve-btn-templates">Modelos e HTML pronto</button>
+          <button id="ve-save-template">Salvar como modelo</button>
+          <h3>Etapas do funil</h3>
+          <p class="hint">Edite cada etapa e conecte seus botões à próxima.</p>
+          <div id="ve-steps"></div>
+          <button id="ve-add-step">+ Adicionar etapa</button>
+          <div class="ve-step-actions">
+            <button id="ve-step-up" title="Mover etapa para cima">↑</button
+            ><button id="ve-step-down" title="Mover etapa para baixo">↓</button
+            ><button id="ve-delete-step">Excluir etapa</button>
+          </div>
+          <label>Nome da etapa<input id="ve-step-name" /></label>
+          <h3>Adicionar blocos</h3>
+          <div id="ve-blocks"></div>
+        </aside>
+        <main class="ve-main">
+          <nav class="ve-toolbar">
+            <button id="ve-mode-visual" class="active">Editor visual</button
+            ><button id="ve-mode-html">Código HTML</button
+            ><span class="spacer"></span
+            ><button data-device="Desktop">Desktop</button
+            ><button data-device="Tablet">Tablet</button
+            ><button data-device="Celular">Celular</button
+            ><button id="ve-undo" title="Desfazer">↶</button
+            ><button id="ve-redo" title="Refazer">↷</button>
+          </nav>
+          <div id="gjs"></div>
+          <section id="ve-code" hidden>
+            <p>
+              Cole o HTML da etapa, incluindo CSS e scripts. Documentos
+              completos são preservados na publicação. Para editar visualmente,
+              use “Converter para edição visual”.
+            </p>
+            <textarea
+              id="ve-html"
+              aria-label="Código HTML da etapa"
+              spellcheck="false"
+            ></textarea
+            ><button id="ve-convert">Converter para edição visual</button>
+          </section>
+        </main>
+        <aside class="ve-right">
+          <h3>Elemento selecionado</h3>
+          <p class="hint">
+            Clique no conteúdo para editar textos, estilos e propriedades.
+          </p>
+          <div id="ve-traits"></div>
+          <h3>Estilos</h3>
+          <div id="ve-styles"></div>
+          <h3>Camadas</h3>
+          <div id="ve-layers"></div>
+        </aside>
+      </div>
+    </div>
+    <dialog id="ve-template-dialog">
+      <div class="dialog-head">
+        <h2>Como deseja começar?</h2>
+        <button id="ve-close-templates" aria-label="Fechar modelos">✕</button>
+      </div>
+      <p>
+        Escolha um modelo. Textos, cores, botões e todas as etapas são
+        editáveis.
+      </p>
+      <h3>Modelos iniciais</h3>
+      <div id="ve-template-list" class="ve-template-grid"></div>
+      <h3>Meus modelos</h3>
+      <div id="ve-library-status" role="status"></div>
+      <div id="ve-library" class="ve-template-grid"></div>
+      <p class="hint">
+        Raspadinha e roleta são experiências promocionais. Configure a oferta e
+        o link de checkout; os modelos não processam pagamentos nem sorteios
+        financeiros.
+      </p>
+    </dialog>
+    <dialog id="ve-save-template-dialog">
+      <form id="ve-template-form">
+        <div class="dialog-head">
+          <h2>Salvar como modelo</h2>
+          <button type="button" id="ve-cancel-template">Fechar</button>
+        </div>
+        <p>
+          Uma cópia de todas as etapas ficará disponível em Meus modelos. Sua
+          página atual continua independente.
+        </p>
+        <label
+          >Nome do modelo<input id="ve-template-name" required maxlength="150"
+        /></label>
+        <label
+          >Categoria<input
+            id="ve-template-category"
+            required
+            maxlength="80"
+            value="Personalizado"
+            list="ve-template-categories"
+        /></label>
+        <datalist id="ve-template-categories">
+          <option value="Funil"></option>
+          <option value="Raspadinha"></option>
+          <option value="Roleta"></option>
+          <option value="Landing page"></option>
+          <option value="HTML pronto"></option>
+        </datalist>
+        <label
+          >Capa (URL HTTPS, opcional)<input
+            id="ve-template-cover"
+            type="url"
+            placeholder="https://..."
+        /></label>
+        <p id="ve-template-error" role="alert"></p>
+        <button id="ve-confirm-template" class="primary" type="submit">
+          Salvar modelo
+        </button>
+      </form>
+    </dialog>
+    <dialog id="ve-preview-dialog">
+      <div class="dialog-head">
+        <h2>Prévia do funil</h2>
+        <button id="ve-close-preview">Fechar</button>
+      </div>
+      <iframe
+        id="ve-preview"
+        title="Prévia da página"
+        sandbox="allow-scripts allow-popups"
+      ></iframe>
+    </dialog>
+    <div id="ve-toast" role="alert"></div>
+    <script src="../vendor/grapesjs/grapes.min.js"></script>
+    <script src="visual-editor/components.js"></script>
+    <script src="visual-editor/blocks.js"></script>
+    <script src="visual-editor/templates.js"></script>
+    <script src="visual-editor/storage.js"></script>
+    <script src="visual-editor/init.js"></script>
+  </body>
 </html>

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../bootstrap.php';
 use App\Auth\AdminAuth;
 use App\Http\JsonResponse;
 use App\Support\OfferTheme;
+use App\Campaigns\CampaignPage;
 
 $token = AdminAuth::extractBearerToken();
 $adminAuth = new AdminAuth($wsRepo, $config['super_admin_token'] ?? '');
@@ -29,6 +30,14 @@ if ($auth && $auth['role'] !== 'super_admin') {
             JsonResponse::error('Acesso negado para esta oferta/subconta.', 403);
         }
     }
+}
+
+$targetCampaignId = (int)$request->get('campaign_id', 0);
+$campaignOffer = null;
+if ($targetCampaignId > 0) {
+    $campaign = CampaignPage::campaign($pdo, $targetWsId, $targetCampaignId);
+    if (!$campaign) JsonResponse::error('Campanha não encontrada neste workspace.', 404);
+    $campaignOffer = CampaignPage::offer($pdo, $campaign);
 }
 
 // Helper para normalizar slug
@@ -113,7 +122,7 @@ if ($request->method() === 'GET') {
         ORDER BY id ASC LIMIT 1
     ");
     $stmt->execute([$targetWsId]);
-    $offer = $stmt->fetch();
+    $offer = $campaignOffer ?: $stmt->fetch();
 
     if (!$offer) {
         $defaultSlug = 'kit-bobzao-booster-200x';
@@ -165,6 +174,7 @@ if ($request->method() === 'GET') {
         'offer'  => [
             'id'                  => (int)$offer['id'],
             'workspace_id'        => (int)$offer['workspace_id'],
+            'campaign_id'         => $offer['campaign_id'] ? (int)$offer['campaign_id'] : null,
             'title'               => $offer['title'] ?? 'Booster 200X Ouro',
             'subtitle'            => $offer['subtitle'] ?? 'Kit Bobzão Bitruck + Ford F250',
             'price'               => (float)($offer['price'] ?? 90.00),
@@ -191,7 +201,7 @@ if ($request->method() === 'POST') {
     // Buscar oferta existente
     $stmt = $pdo->prepare("SELECT * FROM upsell_offers WHERE workspace_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1");
     $stmt->execute([$targetWsId]);
-    $existing = $stmt->fetch();
+    $existing = $campaignOffer ?: $stmt->fetch();
 
     $offerId = $existing ? (int)$existing['id'] : 0;
 

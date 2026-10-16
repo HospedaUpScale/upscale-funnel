@@ -21,6 +21,7 @@ require_once __DIR__ . '/../bootstrap.php';
 
 use App\Auth\AdminAuth;
 use App\Http\JsonResponse;
+use App\Campaigns\CampaignPage;
 
 $token = AdminAuth::extractBearerToken();
 $adminAuth = new AdminAuth($wsRepo, $config['super_admin_token'] ?? '');
@@ -28,6 +29,10 @@ $auth = $adminAuth->authenticate($token);
 
 if (!$auth && ($config['app_env'] ?? 'production') !== 'local') {
     JsonResponse::error('Unauthorized. Admin token required.', 401);
+}
+
+if ($request->method() !== 'POST') {
+    JsonResponse::error('Use POST para acessar o editor.', 405);
 }
 
 $action = (string)($request->get('action') ?? ($request->all()['action'] ?? ''));
@@ -46,6 +51,72 @@ if ($auth && $auth['role'] !== 'super_admin') {
 }
 if ($targetWsId <= 0) {
     JsonResponse::error('workspace_id obrigatorio.', 400);
+}
+
+$targetCampaignId = (int)($input['campaign_id'] ?? 0);
+$campaignContext = null;
+if ($targetCampaignId > 0) {
+    $campaignContext = CampaignPage::campaign($pdo, $targetWsId, $targetCampaignId);
+    if (!$campaignContext) JsonResponse::error('Campanha não encontrada neste workspace.', 404);
+}
+if ($action === 'load-campaign') {
+    if (!$campaignContext) JsonResponse::error('campaign_id obrigatório.', 422);
+    $offer = CampaignPage::offer($pdo, $campaignContext);
+    $stmt = $pdo->prepare('SELECT id, status FROM funnels WHERE workspace_id = ? AND campaign_id = ? ORDER BY id DESC LIMIT 1');
+    $stmt->execute([$targetWsId, $targetCampaignId]);
+    $page = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    $draft = json_decode($offer['draft_config'] ?? '', true) ?: [];
+    $theme = $draft['theme'] ?? (json_decode($offer['theme_config'] ?? '', true) ?: []);
+    JsonResponse::send(['status' => 'success', 'campaign' => ['id' => (int)$campaignContext['id'], 'title' => $campaignContext['title']],
+        'offer' => ['id' => (int)$offer['id'], 'title' => $draft['title'] ?? $offer['title'], 'slug' => $offer['slug'], 'mechanic' => $theme['mechanic'] ?? 'scratch', 'price' => (float)$offer['price'], 'is_published' => (bool)$offer['is_published'], 'public_url' => '/o/' . $offer['slug']], 'page' => $page]);
+}
+
+// A biblioteca guarda snapshots independentes; nenhuma ação publica uma página.
+if ($action === 'list-templates') {
+    $stmt = $pdo->prepare('SELECT id, name, category, cover_url, created_at FROM page_templates WHERE workspace_id = ? ORDER BY id DESC');
+    $stmt->execute([$targetWsId]);
+    JsonResponse::send(['status' => 'success', 'templates' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+}
+
+if ($action === 'load-template' || $action === 'delete-template') {
+    $templateId = (int)($input['template_id'] ?? 0);
+    $stmt = $pdo->prepare('SELECT * FROM page_templates WHERE id = ? AND workspace_id = ?');
+    $stmt->execute([$templateId, $targetWsId]);
+    $template = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$template) JsonResponse::error('Modelo não encontrado neste workspace.', 404);
+    if ($action === 'delete-template') {
+        $pdo->prepare('DELETE FROM page_templates WHERE id = ? AND workspace_id = ?')->execute([$templateId, $targetWsId]);
+        JsonResponse::send(['status' => 'success']);
+    }
+    $template['project_data'] = json_decode($template['project_data'], true);
+    JsonResponse::send(['status' => 'success', 'template' => $template]);
+}
+
+if ($action === 'save-template') {
+    $name = trim((string)($input['name'] ?? ''));
+    $category = trim((string)($input['category'] ?? 'Personalizado')) ?: 'Personalizado';
+    $cover = trim((string)($input['cover_url'] ?? ''));
+    if ($name === '' || mb_strlen($name) > 150 || mb_strlen($category) > 80) {
+        JsonResponse::error('Informe um nome de até 150 caracteres e categoria de até 80.', 422);
+    }
+    if ($cover !== '' && (strlen($cover) > 2048 || !filter_var($cover, FILTER_VALIDATE_URL) || strtolower((string)parse_url($cover, PHP_URL_SCHEME)) !== 'https')) {
+        JsonResponse::error('A capa deve usar um endereço HTTPS válido.', 422);
+    }
+    $project = $input['project_data'] ?? null;
+    $steps = is_array($project) ? ($project['upscaleFlow']['steps'] ?? null) : null;
+    if (!is_array($steps) || count($steps) < 1 || count($steps) > 50) {
+        JsonResponse::error('O modelo deve conter entre 1 e 50 etapas.', 422);
+    }
+    foreach ($steps as $step) {
+        if (!is_array($step) || !is_string($step['id'] ?? null) || !is_string($step['name'] ?? null) || !is_string($step['html'] ?? null)) {
+            JsonResponse::error('Etapa do modelo inválida.', 422);
+        }
+    }
+    $json = json_encode($project, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false || strlen($json) > 4 * 1024 * 1024) JsonResponse::error('Modelo acima do limite de 4 MB.', 413);
+    $pdo->prepare('INSERT INTO page_templates (workspace_id, name, category, cover_url, project_data) VALUES (?, ?, ?, ?, ?)')
+        ->execute([$targetWsId, $name, $category, $cover, $json]);
+    JsonResponse::send(['status' => 'success', 'template_id' => (int)$pdo->lastInsertId()]);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,6 +175,7 @@ if ($action === 'load') {
 
     if ($id > 0) {
         $funnel = ve_fetch_funnel($pdo, $targetWsId, $id);
+        if ($funnel && $targetCampaignId > 0 && (int)$funnel['campaign_id'] !== $targetCampaignId) JsonResponse::error('Página pertence a outra campanha.', 403);
         if (!$funnel) {
             JsonResponse::error('Pagina nao encontrada neste workspace.', 404);
         }
@@ -122,6 +194,7 @@ if ($action === 'load') {
             'slug'           => (string)$funnel['slug'],
             'editor_type'    => $isVisual ? 'visual' : 'code',
             'revision'       => (int)($funnel['revision'] ?? 0),
+            'campaign_id'    => !empty($funnel['campaign_id']) ? (int)$funnel['campaign_id'] : null,
             'project_format' => (string)($funnel['project_format_version'] ?? '1'),
             'is_published'   => ($funnel['status'] === 'published'),
             'project_data'   => $projectData,
@@ -154,6 +227,9 @@ if ($action === 'save-draft') {
     $id = (int)($input['id'] ?? 0);
     $name = trim((string)($input['name'] ?? 'Nova pagina'));
     $slug = ve_slug((string)($input['slug'] ?? $name));
+    if (in_array($slug, ['api', 'hub', 'assets', 'vendor', 'f', 'o', 'src', 'storage', 'config', 'scripts', 'migrations', 'index', 'admin', 'login'], true)) {
+        JsonResponse::error('Este endereço é reservado. Escolha outro.', 422);
+    }
     $expectedRev = (int)($input['expected_revision'] ?? 0);
     $projectData = $input['project_data'] ?? null;
     $html = (string)($input['html'] ?? '');
@@ -175,6 +251,7 @@ if ($action === 'save-draft') {
         if ($id > 0) {
             $cur = ve_fetch_funnel($pdo, $targetWsId, $id);
             if (!$cur) JsonResponse::error('Pagina nao encontrada.', 404);
+            if ($targetCampaignId > 0 && (int)$cur['campaign_id'] !== $targetCampaignId) JsonResponse::error('Página pertence a outra campanha.', 403);
             // Conflito entre abas / sessoes
             if ((int)($cur['revision'] ?? 0) !== $expectedRev) {
                 JsonResponse::send([
@@ -193,7 +270,7 @@ if ($action === 'save-draft') {
             }
 
             $newRev = (int)$cur['revision'] + 1;
-            $pdo->prepare("
+            $update = $pdo->prepare("
                 UPDATE funnels SET
                     name = ?, slug = ?,
                     editor_type = 'visual',
@@ -201,8 +278,12 @@ if ($action === 'save-draft') {
                     grapesjs_data = ?,
                     revision = ?,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND workspace_id = ?
-            ")->execute([$name, $slug, $html, $html, $jsonData, $newRev, $id, $targetWsId]);
+                WHERE id = ? AND workspace_id = ? AND revision = ?
+            ");
+            $update->execute([$name, $slug, $html, $html, $jsonData, $newRev, $id, $targetWsId, $expectedRev]);
+            if ($update->rowCount() !== 1) {
+                JsonResponse::error('A página foi alterada em outra aba. Recarregue antes de salvar.', 409, ['code' => 'revision_conflict']);
+            }
             $funnelId = $id;
         } else {
             // Novo rascunho: cria com slug unico
@@ -219,11 +300,11 @@ if ($action === 'save-draft') {
 
             $pdo->prepare("
                 INSERT INTO funnels (
-                    workspace_id, name, slug, html_content,
+                    workspace_id, campaign_id, name, slug, html_content,
                     template_slug, editor_type, draft_content, grapesjs_data,
                     status, revision
-                ) VALUES (?, ?, ?, ?, 'default', 'visual', ?, ?, 'draft', 1)
-            ")->execute([$targetWsId, $name, $slug, $html, $html, $jsonData]);
+                ) VALUES (?, ?, ?, ?, ?, 'default', 'visual', ?, ?, 'draft', 1)
+            ")->execute([$targetWsId, $targetCampaignId ?: null, $name, $slug, $html, $html, $jsonData]);
             $funnelId = (int)$pdo->lastInsertId();
             $newRev = 1;
         }
@@ -259,6 +340,7 @@ if ($action === 'publish') {
 
     $cur = ve_fetch_funnel($pdo, $targetWsId, $id);
     if (!$cur) JsonResponse::error('Pagina nao encontrada.', 404);
+    if ($targetCampaignId > 0 && (int)$cur['campaign_id'] !== $targetCampaignId) JsonResponse::error('Página pertence a outra campanha.', 403);
 
     if ((int)($cur['revision'] ?? 0) !== $expectedRev) {
         JsonResponse::send([
@@ -279,10 +361,11 @@ if ($action === 'publish') {
     // tudo pronto em draft_content, entao o published_content recebe o mesmo.
     $publishedHtml = $draftHtml;
     $pageTitle = $title !== '' ? $title : (string)$cur['name'];
+    $campaignOffer = null;
 
     try {
         $pdo->beginTransaction();
-        $pdo->prepare("
+        $update = $pdo->prepare("
             UPDATE funnels SET
                 status = 'published',
                 published_content = ?,
@@ -291,8 +374,21 @@ if ($action === 'publish') {
                 published_at = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP,
                 revision = revision + 1
-            WHERE id = ? AND workspace_id = ?
-        ")->execute([$publishedHtml, $publishedHtml, $projectRaw, $id, $targetWsId]);
+            WHERE id = ? AND workspace_id = ? AND revision = ?
+        ");
+        $update->execute([$publishedHtml, $publishedHtml, $projectRaw, $id, $targetWsId, $expectedRev]);
+        if ($update->rowCount() !== 1) {
+            $pdo->rollBack();
+            JsonResponse::error('A página foi alterada em outra aba. Recarregue antes de publicar.', 409, ['code' => 'revision_conflict']);
+        }
+        if (!empty($cur['campaign_id'])) {
+            $campaign = CampaignPage::campaign($pdo, $targetWsId, (int)$cur['campaign_id']);
+            if (!$campaign) throw new \RuntimeException('Campanha da página não encontrada.');
+            $project = json_decode($projectRaw, true) ?: [];
+            $mechanic = $project['upscaleFlow']['campaignMechanic'] ?? null;
+            $campaignOffer = CampaignPage::publishOffer($pdo, $campaign, $mechanic);
+            $pdo->prepare("UPDATE campaigns SET status = 'published', published_at = CURRENT_TIMESTAMP, ended_at = NULL WHERE id = ? AND workspace_id = ?")->execute([$campaign['id'], $targetWsId]);
+        }
         $pdo->commit();
     } catch (\Throwable $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
@@ -306,7 +402,7 @@ if ($action === 'publish') {
         'id'       => $id,
         'slug'     => $cur2['slug'],
         'revision' => (int)$cur2['revision'],
-        'public_url' => '/' . ltrim($cur2['slug'], '/'),
+        'public_url' => $campaignOffer ? '/o/' . $campaignOffer['slug'] : '/f/' . ltrim($cur2['slug'], '/'),
         'published_at' => $cur2['published_at'] ?? date('c'),
     ]);
 }

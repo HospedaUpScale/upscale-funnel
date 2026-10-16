@@ -29,7 +29,7 @@
     bm.add('ups-image', {
       label: 'Imagem', category: 'Mídia',
       media: '<svg viewBox="0 0 24 24" width="22" fill="currentColor"><path d="M21 5H3a2 2 0 00-2 2v10a2 2 0 002 2h18a2 2 0 002-2V7a2 2 0 00-2-2zM5 17l3.5-4.5 2.5 3 3.5-4.5L19 17H5z"/></svg>',
-      content: { type: 'ups-image', attributes: { src: '/assets/photo-ops-floor.jpg', alt: '' } },
+      content: { type: 'ups-image', attributes: { src: '/assets/editor-placeholder.svg', alt: '' } },
     });
 
     bm.add('ups-button', {

@@ -1,175 +1,166 @@
-/**
- * Camada de salvamento/publicação do editor visual.
- * Fala com /api/admin/visual-editor.php (ações load, save-draft, publish).
- *
- * - Debounce de salvamento automático (3s após alteração).
- * - Trava concorrência: enquanto um save está em voo, novos saves aguardam.
- * - Controle de revisão (expected_revision ↔ servidor).
- * - Avisa ao sair com alterações pendentes.
- */
 (function (window) {
-  'use strict';
-
-  var API = '../api/admin/visual-editor.php';
-  var SAVE_DEBOUNCE_MS = 3000;
-
+  "use strict";
   function create(opts) {
-    var editor = opts.editor;
     var state = {
       id: opts.id || 0,
       workspaceId: opts.workspaceId || 1,
       revision: 0,
-      name: 'Nova página',
-      slug: '',
-      saving: false,
-      queued: false,
+      campaignId: opts.campaignId || null,
+      name: "Nova página",
+      slug: "",
       dirty: false,
-      lastSavedAt: null,
-      token: opts.token || '',
-      onStatus: opts.onStatus || function () {},
+      token: opts.token || "",
     };
-
-    function headers() {
-      var h = { 'Content-Type': 'application/json' };
-      if (state.token) {
-        h['Authorization'] = 'Bearer ' + state.token;
-        h['X-Admin-Token'] = state.token;
-      }
-      return h;
+    var timer = null,
+      inflight = null,
+      version = 0;
+    function status(phase, data) {
+      opts.onStatus(Object.assign({ phase: phase }, data || {}));
     }
-
+    async function request(action, body) {
+      var headers = { "Content-Type": "application/json" };
+      if (state.token) headers.Authorization = "Bearer " + state.token;
+      var r = await fetch("../api/admin/visual-editor.php?action=" + action, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(
+          Object.assign(
+            {
+              action: action,
+              workspace_id: state.workspaceId,
+              campaign_id: state.campaignId,
+            },
+            body,
+          ),
+        ),
+      });
+      var data = await r.json();
+      if (!r.ok || data.status !== "success") {
+        var err = new Error(data.message || "HTTP " + r.status);
+        err.conflict = r.status === 409;
+        throw err;
+      }
+      return data;
+    }
+    function report(err) {
+      status(err.conflict ? "conflict" : "error", { message: err.message });
+    }
     async function load(id) {
-      state.onStatus({ phase: 'loading' });
-      var r = await fetch(API + '?action=load&workspace_id=' + state.workspaceId, {
-        method: 'POST', headers: headers(),
-        body: JSON.stringify({ action: 'load', id: id || 0, workspace_id: state.workspaceId }),
-      });
-      var data = await r.json();
-      if (!r.ok || data.status !== 'success') throw new Error(data.message || ('HTTP ' + r.status));
-      state.id = data.id || 0;
-      state.revision = data.revision || 0;
-      state.name = data.name || 'Nova página';
-      state.slug = data.slug || '';
-      // Carrega project data no editor
-      if (data.project_data) {
-        editor.loadProjectData(data.project_data);
-      }
-      state.dirty = false;
-      state.onStatus({ phase: 'loaded', data: data });
-      return data;
-    }
-
-    function markDirty() {
-      state.dirty = true;
-      state.onStatus({ phase: 'dirty' });
-      scheduleSave();
-    }
-
-    var saveTimer = null;
-    function scheduleSave() {
-      if (saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveDraft, SAVE_DEBOUNCE_MS);
-    }
-
-    async function saveDraft() {
-      if (state.saving) { state.queued = true; return; }
-      state.saving = true;
-      state.onStatus({ phase: 'saving' });
-
+      clearTimeout(timer);
+      status("loading");
       try {
-        var projectData = editor.getProjectData();
-        var html = editor.getHtml();
-        var css = editor.getCss();
-
-        var r = await fetch(API + '?action=save-draft&workspace_id=' + state.workspaceId, {
-          method: 'POST', headers: headers(),
-          body: JSON.stringify({
-            action: 'save-draft',
-            id: state.id,
-            workspace_id: state.workspaceId,
-            name: state.name,
-            slug: state.slug || state.name,
-            project_data: projectData,
-            html: wrapPublishedBody(html, css),
-            css: css,
-            expected_revision: state.revision,
-          }),
-        });
-        var data = await r.json();
-        if (r.status === 409 && data.code === 'revision_conflict') {
-          state.onStatus({ phase: 'conflict', current_revision: data.current_revision });
-          return;
-        }
-        if (!r.ok || data.status !== 'success') throw new Error(data.message || ('HTTP ' + r.status));
-        state.id = data.id;
-        state.slug = data.slug;
-        state.revision = data.revision;
+        var d = await request("load", { id: id || 0 });
+        state.id = d.id;
+        state.name = d.name;
+        state.slug = d.slug;
+        state.revision = d.revision;
+        state.campaignId = d.campaign_id || state.campaignId;
+        await opts.onLoad(d);
         state.dirty = false;
-        state.lastSavedAt = data.saved_at;
-        state.onStatus({ phase: 'saved', data: data });
+        status("loaded", { data: d });
+        return d;
       } catch (e) {
-        state.onStatus({ phase: 'error', message: String(e.message || e) });
+        report(e);
+        throw e;
+      }
+    }
+    function markDirty() {
+      version++;
+      state.dirty = true;
+      status("dirty");
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        saveDraft().catch(function () {});
+      }, 3000);
+    }
+    async function saveDraft() {
+      clearTimeout(timer);
+      if (inflight) {
+        await inflight;
+        if (state.dirty) return saveDraft();
+        return;
+      }
+      var current = version,
+        payload = opts.serialize();
+      status("saving");
+      inflight = (async function () {
+        try {
+          var d = await request(
+            "save-draft",
+            Object.assign(
+              {
+                id: state.id,
+                name: state.name,
+                slug: state.slug || state.name,
+                expected_revision: state.revision,
+              },
+              payload,
+            ),
+          );
+          state.id = d.id;
+          state.slug = d.slug;
+          state.revision = d.revision;
+          state.dirty = version !== current;
+          status("saved", { data: d });
+          return d;
+        } catch (e) {
+          report(e);
+          throw e;
+        }
+      })();
+      try {
+        return await inflight;
       } finally {
-        state.saving = false;
-        if (state.queued) { state.queued = false; scheduleSave(); }
+        inflight = null;
+        if (state.dirty && version !== current) {
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            saveDraft().catch(function () {});
+          }, 3000);
+        }
       }
     }
-
-    async function publish(opts2) {
-      // Garante que o rascunho atual esteja no servidor antes de publicar.
-      if (state.dirty || !state.id) {
+    async function publish() {
+      try {
+        if (inflight) await inflight;
+        // Capture even edits whose GrapesJS update event has not fired yet.
         await saveDraft();
-      }
-      state.onStatus({ phase: 'publishing' });
-      var r = await fetch(API + '?action=publish&workspace_id=' + state.workspaceId, {
-        method: 'POST', headers: headers(),
-        body: JSON.stringify({
-          action: 'publish',
+        if (state.dirty) await saveDraft();
+        status("publishing");
+        var d = await request("publish", {
           id: state.id,
-          workspace_id: state.workspaceId,
           expected_revision: state.revision,
-          title: (opts2 && opts2.title) || state.name,
-          description: (opts2 && opts2.description) || '',
-        }),
-      });
-      var data = await r.json();
-      if (r.status === 409 && data.code === 'revision_conflict') {
-        state.onStatus({ phase: 'conflict', current_revision: data.current_revision });
-        return null;
+          title: state.name,
+        });
+        state.revision = d.revision;
+        status("published", { data: d });
+        return d;
+      } catch (e) {
+        report(e);
+        throw e;
       }
-      if (!r.ok || data.status !== 'success') throw new Error(data.message || ('HTTP ' + r.status));
-      state.revision = data.revision;
-      state.onStatus({ phase: 'published', data: data });
-      return data;
     }
-
-    // Monta o body publicado incluindo o CSS do GrapesJS junto com o do template.
-    // O endpoint de publish aceita html pronto, mas o save-draft precisa de HTML
-    // standalone para também servir como preview rápido. Aqui concatenamos:
-    function wrapPublishedBody(html, css) {
-      var runtime = (window.veComponents && window.veComponents.publicRuntime) || '';
-      return '<style>' + css + '</style>\n' + html + '\n' + runtime;
-    }
-
-    // Aviso ao sair se tem alterações pendentes
-    window.addEventListener('beforeunload', function (ev) {
+    window.addEventListener("beforeunload", function (e) {
       if (state.dirty) {
-        ev.preventDefault();
-        ev.returnValue = 'Você tem alterações não salvas.';
-        return ev.returnValue;
+        e.preventDefault();
+        e.returnValue = "";
       }
     });
-
     return {
+      state: state,
       load: load,
       saveDraft: saveDraft,
       publish: publish,
       markDirty: markDirty,
-      state: state,
-      setName: function (n) { state.name = n; markDirty(); },
-      setSlug: function (s) { state.slug = s; markDirty(); },
+      setName: function (n) {
+        state.name = n;
+        markDirty();
+      },
+      setSlug: function (s) {
+        state.slug = s;
+        markDirty();
+      },
     };
   }
-
   window.veStorage = { create: create };
 })(window);

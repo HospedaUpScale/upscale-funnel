@@ -24,11 +24,11 @@ if ($slug === '') {
 }
 
 // Quando há slug (/f/{slug} ou /{slug}): busca o funil HTML correspondente
-$funnel = null;
+$funnel = $campaignPageOverride ?? null;
 $targetWsId = $domain ? (int)$domain['workspace_id'] : ($workspace ? (int)$workspace->id : 0);
 
 // 1. Se houver domínio customizado identificado, busca preferencialmente o funil deste domínio
-if ($domain) {
+if (!$funnel && $domain) {
     $stmt = $pdo->prepare("SELECT * FROM funnels WHERE custom_domain_id = ? AND slug = ? AND status = 'published' LIMIT 1");
     $stmt->execute([(int)$domain['id'], $slug]);
     $funnel = $stmt->fetch();
@@ -63,7 +63,15 @@ $scheme = $isHttps ? 'https' : 'http';
 $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? $host);
 $rawHtml = !empty($funnel['published_content']) ? $funnel['published_content'] : $funnel['html_content'];
 
+$campaignOfferUrl = '';
+if (!empty($funnel['campaign_id'])) {
+    $campaignOfferStmt = $pdo->prepare('SELECT slug FROM upsell_offers WHERE workspace_id = ? AND campaign_id = ? ORDER BY id ASC LIMIT 1');
+    $campaignOfferStmt->execute([(int)$funnel['workspace_id'], (int)$funnel['campaign_id']]);
+    if ($offerSlug = $campaignOfferStmt->fetchColumn()) $campaignOfferUrl = '/o/' . rawurlencode($offerSlug) . '?native=1';
+}
+
 $html = strtr($rawHtml, [
+    '{{campaign_offer_url}}' => htmlspecialchars($campaignOfferUrl, ENT_QUOTES, 'UTF-8'),
     '{{workspace_id}}' => (string)($funnel['workspace_id'] ?? $workspace->id),
     '{{workspace_slug}}' => $workspace->slug ?? '',
     '{{workspace_name}}' => htmlspecialchars($workspace->name ?? '', ENT_QUOTES, 'UTF-8'),

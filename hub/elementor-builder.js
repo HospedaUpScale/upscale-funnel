@@ -1873,6 +1873,10 @@
       .then(function(data) {
         var f = (data.funnels || []).find(function(x) { return x.id === id; });
         if (!f) return;
+        if (f.editor_type === 'visual') {
+          window.location.href = 'visual-editor.html?workspace_id=' + encodeURIComponent(wsId) + '&id=' + encodeURIComponent(f.id);
+          return;
+        }
 
         state.funnelId = f.id;
         state.name = f.name || 'Página';
@@ -1939,8 +1943,9 @@
         var countBadge = document.getElementById('builder-pages-count');
         if (countBadge) countBadge.textContent = funnels.length;
 
-        if (funnels.length > 0) {
-          var f = funnels.find(function(x) { return x.slug === 'oferta-especial'; }) || funnels[0];
+        var classicFunnels = funnels.filter(function(f) { return f.editor_type !== 'visual'; });
+        if (classicFunnels.length > 0) {
+          var f = classicFunnels.find(function(x) { return x.slug === 'oferta-especial'; }) || classicFunnels[0];
           state.funnelId = f.id;
           state.name = f.name || 'Oferta especial';
           state.slug = f.slug || 'oferta-especial';

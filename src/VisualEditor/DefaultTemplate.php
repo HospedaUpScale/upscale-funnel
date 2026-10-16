@@ -56,7 +56,7 @@ class DefaultTemplate
                         [
                             'type' => 'ups-image',
                             'attributes' => [
-                                'src' => '/assets/photo-ops-floor.jpg',
+                                'src' => '/assets/editor-placeholder.svg',
                                 'alt' => 'Imagem demonstrativa',
                             ],
                         ],

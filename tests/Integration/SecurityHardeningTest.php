@@ -260,4 +260,173 @@ class SecurityHardeningTest extends TestCase
         [$status2] = $this->http('GET', '/api/v1/winner.php?order_id=x2');
         $this->assertEquals(401, $status2, 'Consulta de ganhador por pedido deve exigir autenticação.');
     }
+    public function testVisualEditorRoundTripAndRevisionProtection(): void
+    {
+        $headers = ['Authorization: Bearer ' . self::SUPER_TOKEN];
+        $wsId = self::$ws['sec-a']['id'];
+        $path = '/api/admin/visual-editor.php';
+        $slug = 'editor-roundtrip-' . bin2hex(random_bytes(4));
+        $project = ['upscaleFlow' => ['template' => 'html', 'steps' => [
+            ['id' => 'inicio', 'name' => 'HTML', 'raw' => true, 'html' => '<h1>Original</h1>']
+        ]]];
+        $payload = ['workspace_id' => $wsId, 'name' => 'HTML importado', 'slug' => $slug,
+            'project_data' => $project, 'html' => '<!doctype html><html><body><h1>Original</h1></body></html>',
+            'expected_revision' => 0];
+        [$unauthorized] = $this->http('POST', $path . '?action=save-draft', $payload);
+        $this->assertEquals(401, $unauthorized);
+        [$status, $saved] = $this->http('POST', $path . '?action=save-draft', $payload, $headers);
+        $this->assertEquals(200, $status);
+        $id = (int) $saved['id'];
+        try {
+            [$draftStatus] = $this->http('GET', '/f/' . $slug);
+            $this->assertEquals(404, $draftStatus, 'Rascunhos não podem aparecer na URL pública.');
+            [$loadStatus, $loaded] = $this->http('POST', $path . '?action=load', ['workspace_id' => $wsId, 'id' => $id], $headers);
+            $this->assertEquals(200, $loadStatus);
+            $this->assertEquals($project, $loaded['project_data']);
+            [$conflict] = $this->http('POST', $path . '?action=publish', ['workspace_id' => $wsId, 'id' => $id, 'expected_revision' => 0], $headers);
+            $this->assertEquals(409, $conflict);
+            [$pubStatus, $published] = $this->http('POST', $path . '?action=publish', ['workspace_id' => $wsId, 'id' => $id, 'expected_revision' => 1], $headers);
+            $this->assertEquals(200, $pubStatus);
+            $this->assertEquals('/f/' . $slug, $published['public_url']);
+            [$publicStatus, , $html] = $this->http('GET', '/f/' . $slug);
+            $this->assertEquals(200, $publicStatus);
+            $this->assertStringContains('<h1>Original</h1>', $html);
+            $payload['id'] = $id;
+            $payload['expected_revision'] = 2;
+            $payload['html'] = '<h1>Novo rascunho</h1>';
+            [$updated] = $this->http('POST', $path . '?action=save-draft', $payload, $headers);
+            $this->assertEquals(200, $updated);
+            [, , $stillPublished] = $this->http('GET', '/f/' . $slug);
+            $this->assertStringContains('<h1>Original</h1>', $stillPublished, 'Salvar não deve substituir a versão publicada.');
+            [$staleSave] = $this->http('POST', $path . '?action=save-draft', $payload, $headers);
+            $this->assertEquals(409, $staleSave);
+        } finally {
+            self::$pdo->prepare('DELETE FROM funnels WHERE id = ?')->execute([$id]);
+        }
+    }
+
+    public function testVisualEditorRejectsReservedAddressAndOtherWorkspace(): void
+    {
+        $ws = self::$ws['sec-a'];
+        $headers = ['Authorization: Bearer adm_' . $ws['api_token']];
+        [$forbidden] = $this->http('POST', '/api/admin/visual-editor.php?action=load',
+            ['workspace_id' => self::$ws['sec-b']['id'], 'id' => 0], $headers);
+        $this->assertEquals(403, $forbidden);
+        [$reserved] = $this->http('POST', '/api/admin/visual-editor.php?action=save-draft',
+            ['workspace_id' => $ws['id'], 'slug' => 'hub', 'project_data' => [], 'html' => '<h1>x</h1>'], $headers);
+        $this->assertEquals(422, $reserved);
+    }
+
+    public function testTemplateLibrarySnapshotsAreIndependentAndScoped(): void
+    {
+        $path = '/api/admin/visual-editor.php?action=';
+        $wsId = self::$ws['sec-a']['id'];
+        $headers = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        $otherHeaders = ['Authorization: Bearer adm_' . self::$ws['sec-b']['api_token']];
+        $project = ['upscaleFlow' => ['template' => 'funil', 'steps' => [
+            ['id' => 'inicio', 'name' => 'Início', 'html' => '<h1>Modelo original</h1>', 'css' => ''],
+            ['id' => 'fim', 'name' => 'Fim', 'html' => '<h1>Obrigado</h1>', 'css' => '']
+        ]]];
+        $payload = ['workspace_id' => $wsId, 'name' => 'Meu modelo', 'category' => 'Funil', 'project_data' => $project];
+        [$unauthorized] = $this->http('POST', $path . 'save-template', $payload);
+        $this->assertEquals(401, $unauthorized);
+        [$savedStatus, $saved] = $this->http('POST', $path . 'save-template', $payload, $headers);
+        $this->assertEquals(200, $savedStatus);
+        $templateId = $saved['template_id'];
+        $copyId = 0;
+        try {
+            [$status, $loaded] = $this->http('POST', $path . 'load-template', ['workspace_id' => $wsId, 'template_id' => $templateId], $headers);
+            $this->assertEquals(200, $status);
+            $this->assertEquals($project, $loaded['template']['project_data']);
+            [$foreign] = $this->http('POST', $path . 'load-template', ['workspace_id' => self::$ws['sec-b']['id'], 'template_id' => $templateId], $otherHeaders);
+            $this->assertEquals(404, $foreign);
+            [$forbidden] = $this->http('POST', $path . 'list-templates', ['workspace_id' => $wsId], $otherHeaders);
+            $this->assertEquals(403, $forbidden);
+            [$listedStatus, $listed] = $this->http('POST', $path . 'list-templates', ['workspace_id' => $wsId], $headers);
+            $this->assertEquals(200, $listedStatus);
+            $this->assertTrue(in_array($templateId, array_column($listed['templates'], 'id')));
+            $copy = $project;
+            $copy['upscaleFlow']['steps'][0]['html'] = '<h1>Cópia editada</h1>';
+            [$copyStatus, $page] = $this->http('POST', $path . 'save-draft', [
+                'workspace_id' => $wsId, 'name' => 'Cópia', 'slug' => 'template-copy-' . bin2hex(random_bytes(4)),
+                'project_data' => $copy, 'html' => '<h1>Cópia editada</h1>', 'expected_revision' => 0
+            ], $headers);
+            $this->assertEquals(200, $copyStatus);
+            $copyId = $page['id'];
+            [, $unchanged] = $this->http('POST', $path . 'load-template', ['workspace_id' => $wsId, 'template_id' => $templateId], $headers);
+            $this->assertEquals($project, $unchanged['template']['project_data']);
+            [$deleted] = $this->http('POST', $path . 'delete-template', ['workspace_id' => $wsId, 'template_id' => $templateId], $headers);
+            $this->assertEquals(200, $deleted);
+            [$copyStillExists, $copyLoaded] = $this->http('POST', $path . 'load', ['workspace_id' => $wsId, 'id' => $copyId], $headers);
+            $this->assertEquals(200, $copyStillExists);
+            $this->assertEquals($copy, $copyLoaded['project_data']);
+        } finally {
+            self::$pdo->prepare('DELETE FROM page_templates WHERE id = ?')->execute([$templateId]);
+            if ($copyId) self::$pdo->prepare('DELETE FROM funnels WHERE id = ?')->execute([$copyId]);
+        }
+        [$invalid] = $this->http('POST', $path . 'save-template', array_merge($payload, ['cover_url' => 'javascript:alert(1)']), $headers);
+        $this->assertEquals(422, $invalid);
+    }
+
+    public function testCampaignPageKeepsOfferScopeAndExistingPublicLink(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $headers = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        $campaigns = [];
+        try {
+            foreach (['Primeira', 'Segunda'] as $title) {
+                [$status, $created] = $this->http('POST', '/api/admin/campaigns.php?workspace_id=' . $wsId,
+                    ['action' => 'create', 'title' => $title, 'ticket_price' => 30, 'status' => 'draft'], $headers);
+                $this->assertEquals(200, $status);
+                $campaigns[] = $created['campaign_id'];
+            }
+            [$firstId, $secondId] = $campaigns;
+            [, $a] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $firstId, null, $headers);
+            [, $b] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $secondId, null, $headers);
+            $this->assertTrue($a['offer']['id'] !== $b['offer']['id']);
+            $this->assertEquals($firstId, $a['offer']['campaign_id']);
+            $this->assertFalse($a['offer']['is_published']);
+            [$saved] = $this->http('POST', '/api/admin/offer.php?action=save_draft',
+                ['workspace_id' => $wsId, 'campaign_id' => $firstId, 'title' => 'Oferta exclusiva A', 'price' => 47], $headers);
+            $this->assertEquals(200, $saved);
+            [, $unchanged] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $secondId, null, $headers);
+            $this->assertEquals('Segunda', $unchanged['offer']['title']);
+            $path = '/api/admin/visual-editor.php?action=';
+            $project = ['upscaleFlow' => ['campaignMechanic' => 'direct', 'steps' => [
+                ['id' => 'oferta', 'name' => 'Upsell', 'html' => '<h1>Minha página da campanha</h1>']
+            ]]];
+            [$pageStatus, $page] = $this->http('POST', $path . 'save-draft', [
+                'workspace_id' => $wsId, 'campaign_id' => $firstId, 'name' => 'Página da campanha',
+                'slug' => 'pagina-campanha-' . bin2hex(random_bytes(4)), 'project_data' => $project,
+                'html' => '<h1>Minha página da campanha</h1><iframe data-campaign-offer src="{{campaign_offer_url}}"></iframe>', 'expected_revision' => 0
+            ], $headers);
+            $this->assertEquals(200, $pageStatus);
+            [$wrongCampaign] = $this->http('POST', $path . 'load', ['workspace_id' => $wsId, 'campaign_id' => $secondId, 'id' => $page['id']], $headers);
+            $this->assertEquals(403, $wrongCampaign);
+            [$publishedStatus, $published] = $this->http('POST', $path . 'publish',
+                ['workspace_id' => $wsId, 'campaign_id' => $firstId, 'id' => $page['id'], 'expected_revision' => 1], $headers);
+            $this->assertEquals(200, $publishedStatus);
+            $publicPath = parse_url($a['offer']['public_url'], PHP_URL_PATH);
+            $this->assertEquals($publicPath, $published['public_url']);
+            [$publicStatus, , $html] = $this->http('GET', $publicPath);
+            $this->assertEquals(200, $publicStatus);
+            $this->assertStringContains('Minha página da campanha', $html);
+            $this->assertStringContains($publicPath . '?native=1', $html);
+            [, , $native] = $this->http('GET', $publicPath . '?native=1');
+            $this->assertStringContains('Oferta exclusiva A', $native);
+            $this->assertStringContains('"mechanic":"direct"', $native);
+            [, $other] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $secondId, null, $headers);
+            $this->assertFalse($other['offer']['is_published']);
+            [$foreign] = $this->http('POST', $path . 'load-campaign',
+                ['workspace_id' => self::$ws['sec-b']['id'], 'campaign_id' => $firstId], ['Authorization: Bearer adm_' . self::$ws['sec-b']['api_token']]);
+            $this->assertEquals(404, $foreign);
+        } finally {
+            foreach ($campaigns as $id) {
+                self::$pdo->prepare('DELETE FROM funnels WHERE campaign_id = ?')->execute([$id]);
+                self::$pdo->prepare('DELETE FROM upsell_offers WHERE campaign_id = ?')->execute([$id]);
+                self::$pdo->prepare('DELETE FROM campaigns WHERE id = ?')->execute([$id]);
+            }
+        }
+    }
+
 }

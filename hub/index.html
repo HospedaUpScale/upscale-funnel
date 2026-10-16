@@ -700,6 +700,7 @@
           </div>
 
           <div class="page-header-actions">
+            <button type="button" class="btn-primary" onclick="abrirEscolhaFunil(selectedCampaignId)">Página e funil</button>
             <button type="button" class="btn-primary" onclick="abrirEditorOferta(selectedCampaignId)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
               Editar oferta
@@ -720,6 +721,20 @@
           <button type="button" class="subtab-btn" onclick="selecionarSubabaCampanha('resultados', this)">Resultados</button>
           <button type="button" class="subtab-btn" onclick="selecionarSubabaCampanha('publicacao', this)">Publicação</button>
         </div>
+
+        <section class="card" id="campaign-page-settings" style="margin:20px 0;">
+          <h3 class="card-title-clean">Página e funil desta campanha</h3>
+          <p class="card-subtitle-clean">Escolha a experiência do comprador. A página usa a oferta desta campanha e mantém o link da oferta.</p>
+          <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-top:16px;">
+            <label class="form-label" style="min-width:220px;">Tipo de funil
+              <select id="campaign-flow-type" class="form-select"><option value="scratch">Raspadinha → upsell</option><option value="wheel">Roleta → upsell</option><option value="direct">Direto para o upsell</option></select>
+            </label>
+            <button class="btn-primary" type="button" onclick="abrirPaginaCampanha()">Criar / editar página e etapas</button>
+            <button class="btn-secondary" type="button" onclick="abrirEditorOferta(selectedCampaignId)">Editar oferta e checkout</button>
+            <a id="campaign-offer-link" class="btn-secondary" target="_blank" rel="noopener" hidden>Abrir link da campanha ↗</a>
+          </div>
+          <p class="card-subtitle-clean" style="margin-top:12px;">No editor você pode usar modelos ou HTML pronto e editar todas as etapas. Publicar aplica a página, a oferta e o funil a esta campanha.</p>
+        </section>
 
         <!-- Conteúdo Aba 1: Resumo -->
         <div id="camp-subtab-resumo" class="subtab-pane active">
@@ -1166,6 +1181,7 @@
                           <select class="form-select" id="mechanic-type" onchange="alternarMecanica(); marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
                             <option value="scratch" selected>Raspadinha</option>
                             <option value="wheel">Roleta premiada</option>
+                            <option value="direct">Direto para o upsell</option>
                           </select>
                           <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Escolha como o comprador revela a oferta. A roleta sempre cai na oferta.</div>
                         </div>
@@ -1428,9 +1444,9 @@
             <p>Gerencie domínios externos e publique páginas de alta conversão.</p>
           </div>
           <div class="page-header-actions">
-            <button type="button" class="btn-primary" onclick="abrirTelaSelecaoModelos('sites')" style="min-height:36px; padding:0 16px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
+            <button type="button" class="btn-primary" onclick="navigate('campaigns')" style="min-height:36px; padding:0 16px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>+ Nova Página</span>
+              <span>Criar página na campanha</span>
             </button>
           </div>
         </div>
@@ -2014,7 +2030,7 @@
           <div class="elementor-drawer-head">
             <h3 class="elementor-drawer-title">Minhas Páginas</h3>
             <div style="display:flex; align-items:center; gap:8px;">
-              <a class="btn-primary" href="visual-editor.html?workspace_id=1" style="min-height:30px; padding:0 12px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center;" title="Novo editor visual (GrapesJS)">+ Editor Visual</a>
+              <a class="btn-primary" href="index.html#campaigns" onclick="event.preventDefault(); navigate('campaigns')" style="min-height:30px; padding:0 12px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center;" title="Novo editor visual (GrapesJS)">+ Página, funil ou HTML</a>
               <button type="button" class="btn-secondary" style="min-height:30px; padding:0 12px; font-size:12px;" onclick="abrirTelaSelecaoModelos('drawer')">+ Nova (clássico)</button>
               <button type="button" class="elementor-drawer-close" onclick="togglePagesDrawer()">✕</button>
             </div>
@@ -3257,6 +3273,7 @@
   var editorPageMode = /\/editor\.php$/i.test(window.location.pathname) || pageParams.get('editor') === '1';
   var requestedWorkspaceId = parseInt(pageParams.get('workspace_id')) || 0;
   var requestedCampaignId = parseInt(pageParams.get('campaign_id')) || 0;
+  if (requestedWorkspaceId) currentWsId = requestedWorkspaceId;
   var loginType = 'master';
   var accessibleWorkspaces = [];
   var sessionHandled = false;
@@ -3609,12 +3626,29 @@
     document.getElementById('detail-metric-orders').textContent = totalOrd;
     document.getElementById('hero-meta-price').textContent = (camp.ticket_price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+    var mechanic = camp.offer && camp.offer.mechanic || 'scratch';
+    document.getElementById('campaign-flow-type').value = mechanic;
+    var offerLink = document.getElementById('campaign-offer-link');
+    offerLink.hidden = !(camp.offer && camp.offer.public_url);
+    offerLink.href = camp.offer && camp.offer.public_url || '#';
     // Iframe snippet
-    var snippet = '<iframe src="' + window.location.origin + '/index.html?campaign_id=' + camp.id + '" width="100%" height="600" frameborder="0"></iframe>';
+    var snippet = '<iframe src="' + (camp.offer && camp.offer.public_url || window.location.origin + '/index.html?campaign_id=' + camp.id) + '" width="100%" height="600" frameborder="0"></iframe>';
     var snippetEl = document.getElementById('camp-iframe-snippet');
     if (snippetEl) snippetEl.value = snippet;
 
     navigate('campaign-details');
+  }
+
+  function abrirEscolhaFunil(campId) {
+    abrirDetalhesCampanha(campId);
+    document.getElementById('campaign-page-settings').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('campaign-flow-type').focus({ preventScroll: true });
+  }
+
+  function abrirPaginaCampanha() {
+    if (!selectedCampaignId) return;
+    var mechanic = document.getElementById('campaign-flow-type').value;
+    window.location.href = 'visual-editor.html?workspace_id=' + encodeURIComponent(currentWsId || 1) + '&campaign_id=' + encodeURIComponent(selectedCampaignId) + '&mechanic=' + encodeURIComponent(mechanic);
   }
 
   function selecionarSubabaCampanha(tabKey, btn) {
@@ -3816,7 +3850,7 @@
     var sel = document.getElementById('mechanic-type');
     var row = document.getElementById('scratch-texture-row');
     if (!sel || !row) return;
-    row.style.display = sel.value === 'wheel' ? 'none' : 'block';
+    row.style.display = sel.value === 'scratch' ? 'block' : 'none';
   }
 
   // Normalização de Slug em tempo real
@@ -3862,7 +3896,7 @@
       return;
     }
 
-    apiFetch('../api/admin/offer.php?action=check_slug&slug=' + encodeURIComponent(slug) + '&workspace_id=' + (currentWsId || 1))
+    apiFetch('../api/admin/offer.php?action=check_slug&slug=' + encodeURIComponent(slug) + '&workspace_id=' + (currentWsId || 1) + '&campaign_id=' + (selectedCampaignId || 0) + '&offer_id=' + (window.currentOfferId || 0))
       .then(function(res) {
         if (res.available) {
           if (feedback) {
@@ -3920,6 +3954,7 @@
 
     return {
       workspace_id: currentWsId || 1,
+      campaign_id: selectedCampaignId || null,
       title: title,
       subtitle: subtitle,
       price: price,
@@ -4000,7 +4035,7 @@
 
   function despublicarOferta() {
     if (!confirm('Deseja despublicar esta oferta? Ela não ficará mais acessível publicamente.')) return;
-    apiFetch('../api/admin/offer.php?action=unpublish&workspace_id=' + (currentWsId || 1), {
+    apiFetch('../api/admin/offer.php?action=unpublish&workspace_id=' + (currentWsId || 1) + '&campaign_id=' + (selectedCampaignId || 0), {
       method: 'POST',
       body: JSON.stringify({})
     })
@@ -4015,7 +4050,7 @@
   }
 
   function carregarConfiguracaoOferta() {
-    apiFetch('../api/admin/offer.php?workspace_id=' + (currentWsId || 1))
+    apiFetch('../api/admin/offer.php?workspace_id=' + (currentWsId || 1) + '&campaign_id=' + (selectedCampaignId || 0))
       .then(function(data) {
         if (data.status !== 'success' || !data.offer) return;
         var o = data.offer;
@@ -4121,11 +4156,16 @@
 
   /* ═══ CAMPANHAS / AÇÕES ═══ */
   function carregarCampanhas() {
-    apiFetch('../api/admin/campaigns.php?workspace_id=' + (currentWsId || 2))
+    return apiFetch('../api/admin/campaigns.php?workspace_id=' + (currentWsId || 2))
     .then(function(data) {
       if (data.status !== 'success') return;
       allCampaignsData = data.campaigns || [];
       renderizarCampanhas();
+      if (requestedCampaignId && allCampaignsData.some(function(c){return c.id === requestedCampaignId;})) {
+        var requested = requestedCampaignId;
+        requestedCampaignId = 0;
+        if (editorPageMode) abrirEditorOferta(requested); else abrirDetalhesCampanha(requested);
+      }
     })
     .catch(function(e) { console.error('Erro ao carregar campanhas:', e); });
   }
@@ -4160,6 +4200,7 @@
         <td><span class="badge ${badgeClass}"><span class="badge-dot-indicator"></span> ${badgeText}</span></td>
         <td style="text-align:right;">
           <div style="display:inline-flex; align-items:center; gap:8px;">
+            <button type="button" class="btn-primary" style="min-height:30px; padding:0 12px; font-size:12px;" onclick="abrirEscolhaFunil(${c.id})">Página e funil</button>
             <button type="button" class="btn-primary" style="min-height:30px; padding:0 12px; font-size:12px;" onclick="abrirDetalhesCampanha(${c.id})">
               Abrir campanha
             </button>
@@ -4274,7 +4315,7 @@
       fecharModalNovaAcao();
       if (data.status === 'success') {
         showToast('Campanha criada com sucesso!', 'success');
-        carregarCampanhas();
+        carregarCampanhas().then(function(){ abrirDetalhesCampanha(data.campaign_id); });
       } else showToast(data.message || 'Erro ao criar.', 'error');
     });
   }

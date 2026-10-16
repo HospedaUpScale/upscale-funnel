@@ -954,8 +954,8 @@
     $('step-1').className = 'step-item inactive';
     $('step-2').className = 'step-item active';
 
-    // Soltar confetes de comemoração
-    soltarConfete();
+    // No acesso direto, a oferta abre sem a animação de revelação.
+    if (CONFIG.mechanic !== 'direct') soltarConfete();
 
     // Transição suave para a tela de oferta (esconde qualquer mecânica ativa)
     setTimeout(function () {
@@ -964,7 +964,7 @@
       $('view-offer').classList.add('on');
       iniciarTimerOferta();
       iniciarMedia();
-    }, 600);
+    }, CONFIG.mechanic === 'direct' ? 0 : 600);
   }
 
   /* ══ NOME DO COMPRADOR + SAUDAÇÃO PERSONALIZADA ══ */
@@ -1092,6 +1092,7 @@
   }
 
   function ativarMecanica() {
+    if (CONFIG.mechanic === 'direct') { revelarOferta(); return; }
     var usarRoleta = CONFIG.mechanic === 'wheel';
     var vs = $('view-scratch');
     var vw = $('view-wheel');
@@ -1188,7 +1189,7 @@
     renderSaudacao();
 
     // Mecânica de revelação: raspadinha (padrão) ou roleta premiada
-    if (theme.mechanic === 'wheel' || theme.mechanic === 'scratch') CONFIG.mechanic = theme.mechanic;
+    if (['wheel', 'scratch', 'direct'].indexOf(theme.mechanic) !== -1) CONFIG.mechanic = theme.mechanic;
     if (Array.isArray(theme.wheel_segments) && theme.wheel_segments.length >= 2) {
       CONFIG.wheelSegments = theme.wheel_segments;
     }

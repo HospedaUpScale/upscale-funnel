@@ -11,6 +11,7 @@ require_once __DIR__ . '/../bootstrap.php';
 
 use App\Auth\AdminAuth;
 use App\Http\JsonResponse;
+use App\Campaigns\CampaignPage;
 
 $token = AdminAuth::extractBearerToken();
 $adminAuth = new AdminAuth($wsRepo, $config['super_admin_token'] ?? '');
@@ -71,6 +72,9 @@ if ($request->method() === 'GET') {
             o.quota_count as offer_quotas,
             o.is_active as offer_is_active,
             o.checkout_mode,
+            o.slug as offer_slug,
+            o.theme_config as offer_theme,
+            o.draft_config as offer_draft,
             f.id as funnel_id,
             f.name as funnel_name,
             f.slug as funnel_slug,
@@ -79,8 +83,8 @@ if ($request->method() === 'GET') {
             (SELECT COUNT(*) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_orders_paid,
             (SELECT COALESCE(SUM(ord.total_amount), 0) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_volume_paid
         FROM campaigns c
-        LEFT JOIN upsell_offers o ON o.campaign_id = c.id
-        LEFT JOIN funnels f ON f.campaign_id = c.id
+        LEFT JOIN upsell_offers o ON o.id = (SELECT MIN(oi.id) FROM upsell_offers oi WHERE oi.campaign_id = c.id AND oi.workspace_id = c.workspace_id)
+        LEFT JOIN funnels f ON f.id = (SELECT MAX(fi.id) FROM funnels fi WHERE fi.campaign_id = c.id AND fi.workspace_id = c.workspace_id)
         WHERE c.workspace_id = ?
         ORDER BY 
             CASE 
@@ -94,6 +98,8 @@ if ($request->method() === 'GET') {
     $campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $formatted = array_map(function($c) use ($baseUrl) {
+        $offerDraft = json_decode($c['offer_draft'] ?? '', true) ?: [];
+        $offerTheme = $offerDraft['theme'] ?? (json_decode($c['offer_theme'] ?? '', true) ?: []);
         $statusNormalized = in_array($c['status'], ['active', 'published']) ? 'published' : ($c['status'] === 'ended' ? 'ended' : 'draft');
         return [
             'id'                   => (int)$c['id'],
@@ -114,7 +120,9 @@ if ($request->method() === 'GET') {
                 'price'         => (float)$c['offer_price'],
                 'quota_count'   => (int)$c['offer_quotas'],
                 'is_active'     => (bool)$c['offer_is_active'],
-                'checkout_mode' => $c['checkout_mode']
+                'checkout_mode' => $c['checkout_mode'],
+                'public_url' => !empty($c['offer_slug']) ? $baseUrl . '/o/' . $c['offer_slug'] : null,
+                'mechanic' => $offerTheme['mechanic'] ?? 'scratch'
             ] : null,
             'funnel'               => $c['funnel_id'] ? [
                 'id'            => (int)$c['funnel_id'],
@@ -171,8 +179,9 @@ if ($request->method() === 'POST') {
         $stmtUp->execute([$campaignId, $targetWsId]);
 
         // Ativa a oferta vinculada de upsell para receber tráfego
-        $pdo->prepare("UPDATE upsell_offers SET is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE campaign_id = ? OR (workspace_id = ? AND is_active = 0)")
-            ->execute([$campaignId, $targetWsId]);
+        $campaign = CampaignPage::campaign($pdo, $targetWsId, $campaignId);
+        if (!$campaign) JsonResponse::error('Campanha não encontrada.', 404);
+        CampaignPage::publishOffer($pdo, $campaign);
 
         JsonResponse::send([
             'status'       => 'success',
@@ -246,6 +255,10 @@ if ($request->method() === 'POST') {
             $stmtIns->execute([$targetWsId, $title, $ticketPrice, $extPlatform, $extCampId, $status]);
             $campaignId = (int)$pdo->lastInsertId();
         }
+
+        $savedCampaign = CampaignPage::campaign($pdo, $targetWsId, $campaignId);
+        if (!$savedCampaign) JsonResponse::error('Campanha não encontrada.', 404);
+        CampaignPage::offer($pdo, $savedCampaign);
 
         JsonResponse::send([
             'status'       => 'success',
