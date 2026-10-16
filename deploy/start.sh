@@ -5,18 +5,24 @@ mkdir -p /var/www/html/storage /var/www/html/api/logs
 chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs
 chmod -R 775 /var/www/html/storage /var/www/html/api/logs
 
-# Roda migrations na primeira execução
-if [ ! -f /var/www/html/storage/.migrated ]; then
-    echo "Running migrations..."
-    php /var/www/html/scripts/migrate.php || echo "Migration notice (proceeding)..."
+# Roda migrations a cada start.
+# IMPORTANTE: NÃO esconder o erro. Em deploys anteriores o `|| echo ...` mascarava
+# falhas de conexão com o banco e ainda criava /storage/.migrated, deixando o
+# sistema travado sem tabelas (ex.: "Table 'workspaces' doesn't exist").
+# O migrator é idempotente (só aplica o que falta), então rodar a cada start é seguro.
+echo "Running migrations..."
+if php /var/www/html/scripts/migrate.php; then
     touch /var/www/html/storage/.migrated
     echo "Migrations completed!"
-fi
 
-# Garante o administrador global a cada start (idempotente), se as credenciais existirem.
-if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
-    echo "Garantindo administrador global..."
-    php /var/www/html/scripts/create_admin.php || echo "Aviso: falha ao configurar admin (seguindo)."
+    # Admin global só faz sentido se as tabelas existem.
+    if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
+        echo "Garantindo administrador global..."
+        php /var/www/html/scripts/create_admin.php || echo "Aviso: falha ao configurar admin (seguindo)."
+    fi
+else
+    echo "ERRO: migrations falharam. Verifique DB_HOST/DB_DATABASE/DB_USERNAME/DB_PASSWORD no Ambiente."
+    echo "O container vai subir mesmo assim, mas o site não funcionará ate as migrations rodarem."
 fi
 
 # O banco SQLite e a pasta storage/ precisam ser gravaveis pelo PHP-FPM (www-data).
