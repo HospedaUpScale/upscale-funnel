@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS order_access_tokens (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     token VARCHAR(64) NOT NULL UNIQUE,
-    workspace_id BIGINT UNSIGNED NOT NULL,
+    workspace_id INT UNSIGNED NOT NULL,
     external_order_id VARCHAR(120) NULL,
     customer_name VARCHAR(150) NULL,
     customer_phone VARCHAR(50) NULL,
