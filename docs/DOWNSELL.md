@@ -9,3 +9,5 @@ Quando a alternativa estiver publicada, a oferta principal passa a mostrar um li
 Publicar o downsell não substitui a página principal da campanha. Despublicar ou excluir a última página publicada de downsell remove o caminho público para a alternativa. As páginas de downsell da mesma campanha compartilham essa oferta alternativa.
 
 O deploy deve executar as migrations usuais, incluindo `0024_downsell_offers` (MySQL/SQLite). A migração classifica as ofertas existentes como principais (`upsell`), preservando seus valores e conteúdos. O checkout usa o ID e o preço publicado da oferta alternativa; valores de rascunho não alteram o preço público.
+
+A oferta alternativa também pode ser configurada antes de salvar a campanha, pelo botão **Criar oferta de downsell** no formulário. O menu separa **Domínios**, **Funis** e **Editor de páginas**; a lista geral permanece em **Páginas**. Campanhas e páginas usam paginação de 10 itens, com os filtros aplicados antes da divisão em páginas.

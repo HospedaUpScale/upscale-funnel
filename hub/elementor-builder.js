@@ -819,7 +819,7 @@
   }
   function mostrarEditorSelecionado() {
     fecharPreviaModal();
-    window.navigate('sites', {skipEditorLoad:true});
+    window.navigate('page-editor', {skipEditorLoad:true});
     window.selecionarSubabaDominios('funis', null, {skipEditorLoad:true});
     prepararEditor();
     var drawer=document.getElementById('builder-pages-drawer'),backdrop=document.getElementById('builder-drawer-backdrop');
@@ -2605,7 +2605,7 @@
     }
 
     // Manter navegação de 'Domínios e funis' destacada na sidebar
-    var navBtnSites = document.getElementById('nav-btn-sites');
+    var navBtnSites = document.getElementById('nav-btn-page-editor');
     if (navBtnSites) {
       document.querySelectorAll('.nav-item-btn').forEach(function(btn) { btn.classList.remove('active'); });
       navBtnSites.classList.add('active');
@@ -2632,7 +2632,7 @@
     } else if (templatePickerOrigin === 'pages') {
       window.navigate('pages');
     } else if (templatePickerOrigin === 'drawer') {
-      if (window.navigate) window.navigate('sites');
+      if (window.navigate) window.navigate('page-editor');
       var funisTab = document.getElementById('sites-subtab-funis');
       if (funisTab && window.selecionarSubabaDominios) {
         window.selecionarSubabaDominios('funis');
@@ -2643,7 +2643,7 @@
     } else if (templatePickerOrigin === 'dash') {
       if (window.navigate) window.navigate('dash');
     } else {
-      if (window.navigate) window.navigate('sites');
+      if (window.navigate) window.navigate('page-editor');
       if (window.selecionarSubabaDominios) {
         window.selecionarSubabaDominios('funis');
       }

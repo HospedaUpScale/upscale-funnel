@@ -37,15 +37,15 @@ body.in-editor .content-body {
   overflow: hidden !important;
 }
 
-body.in-editor #view-sites {
+body.in-editor #view-page-editor {
   padding: 0 !important;
   margin: 0 !important;
   height: 100vh !important;
   overflow: hidden !important;
 }
 
-body.in-editor #view-sites > .page-header-row,
-body.in-editor #view-sites > .subtabs-nav {
+body.in-editor #view-page-editor > .page-header-row,
+body.in-editor #view-page-editor > .subtabs-nav {
   display: none !important;
 }
 
@@ -101,13 +101,13 @@ body.in-editor .sidebar-nav .nav-item-btn:hover {
   color: #0f172a !important;
 }
 
-body.in-editor #nav-btn-sites,
+body.in-editor #nav-btn-page-editor,
 body.in-editor .sidebar-nav .nav-item-btn.active {
   background: #eff6ff !important;
   color: #205bff !important;
 }
 
-body.in-editor #nav-btn-sites svg,
+body.in-editor #nav-btn-page-editor svg,
 body.in-editor .sidebar-nav .nav-item-btn.active svg {
   color: #205bff !important;
 }

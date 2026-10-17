@@ -11,3 +11,5 @@ O sistema monta o título `Booster Ouro 200X` e preenche os títulos da raspadin
 Para alterar uma campanha existente, abra seus detalhes e clique em **Editar campanha e Booster**. Os dados são carregados do rascunho atual da oferta. As alterações são salvas no rascunho; publique a oferta ou uma página para atualizar a versão pública. Os textos gerados podem ser personalizados no editor depois.
 
 O downsell mantém seus próprios dados. Cores, vídeo e outras configurações da oferta são preservados. Clientes antigos da API podem continuar criando campanhas sem os novos campos; quando algum campo `booster_name`, `booster_multiplier` ou `booster_price` é enviado, os três são obrigatórios e validados antes de salvar a campanha e sua oferta em uma transação.
+
+Na criação da campanha, o botão **Criar oferta de downsell** abre campos independentes de nome, multiplicador e valor. A campanha e as duas ofertas são salvas na mesma transação, após validar todos os campos. O downsell permanece em rascunho até sua página ser publicada. Fechar a configuração em uma campanha existente preserva a oferta alternativa já criada.

@@ -43,9 +43,9 @@ final class CampaignPage
         return ['title' => $name . ' ' . $multiplier . 'X', 'quota_count' => $multiplier, 'price' => round((float)$price, 2)];
     }
 
-    public static function saveBoosterDraft(PDO $pdo, array $campaign, array $values): void
+    public static function saveBoosterDraft(PDO $pdo, array $campaign, array $values, string $role = 'upsell'): void
     {
-        $offer = self::offer($pdo, $campaign);
+        $offer = self::offer($pdo, $campaign, $role);
         $draft = json_decode($offer['draft_config'] ?? '', true) ?: [];
         $theme = $draft['theme'] ?? (json_decode($offer['theme_config'] ?? '', true) ?: []);
         $theme['headline_highlight'] = $values['title'];

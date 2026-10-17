@@ -66,6 +66,7 @@ if ($request->method() === 'GET') {
     $stmt = $pdo->prepare("
         SELECT 
             c.*,
+            (SELECT MIN(d.id) FROM upsell_offers d WHERE d.workspace_id = c.workspace_id AND d.campaign_id = c.id AND d.offer_role = 'downsell') as downsell_id,
             o.id as offer_id,
             o.title as offer_title,
             o.price as offer_price,
@@ -105,6 +106,7 @@ if ($request->method() === 'GET') {
             'id'                   => (int)$c['id'],
             'workspace_id'         => (int)$c['workspace_id'],
             'title'                => $c['title'],
+            'has_downsell'          => !empty($c['downsell_id']),
             'ticket_price'         => (float)$c['ticket_price'],
             'primary_funnel_id'     => $c['primary_funnel_id'] ? (int)$c['primary_funnel_id'] : null,
             'external_platform'    => $c['external_platform'],
@@ -231,7 +233,10 @@ if ($request->method() === 'POST') {
 
     // 3.3 CRIAR OU EDITAR AÇÃO
     if ($action === 'save' || $action === 'create') {
-        try { $booster = CampaignPage::boosterInput($input); }
+        try {
+            $booster = CampaignPage::boosterInput($input);
+            $downsell = !empty($input['downsell_enabled']) ? CampaignPage::boosterInput(['booster_name'=>$input['downsell_name'] ?? '', 'booster_multiplier'=>$input['downsell_multiplier'] ?? null, 'booster_price'=>$input['downsell_price'] ?? null]) : null;
+        }
         catch (\InvalidArgumentException $e) { JsonResponse::error($e->getMessage(), 422); }
         if ($campaignId && !CampaignPage::campaign($pdo, $targetWsId, $campaignId)) JsonResponse::error('Campanha não encontrada neste workspace.', 404);
         $title = trim($input['title'] ?? 'Nova Ação de Rifa');
@@ -265,6 +270,7 @@ if ($request->method() === 'POST') {
         if (!$savedCampaign) JsonResponse::error('Campanha não encontrada.', 404);
         CampaignPage::offer($pdo, $savedCampaign);
         if ($booster !== null) CampaignPage::saveBoosterDraft($pdo, $savedCampaign, $booster);
+        if ($downsell !== null) CampaignPage::saveBoosterDraft($pdo, $savedCampaign, $downsell, 'downsell');
         $pdo->commit();
 
         JsonResponse::send([

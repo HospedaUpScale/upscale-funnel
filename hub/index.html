@@ -12,7 +12,7 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
-  <link rel="stylesheet" href="elementor-builder.css?v=4.0">
+  <link rel="stylesheet" href="elementor-builder.css?v=4.1">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -23,9 +23,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=4.0" defer></script>
-  <script src="pages-manager.js?v=4" defer></script>
-  <script src="editor-workspace.js?v=4" defer></script>
+  <script src="elementor-builder.js?v=4.1" defer></script>
+  <script src="list-pagination.js?v=1" defer></script>
+<script src="pages-manager.js?v=5" defer></script>
+  <script src="editor-workspace.js?v=5" defer></script>
 </head>
 <body>
 
@@ -280,16 +281,18 @@
         <span>Parceiros</span>
       </button>
 
-      <button class="nav-item-btn" id="nav-btn-pages" onclick="navigate('pages')">
+      <button class="nav-item-btn" id="nav-btn-pages" title="Páginas" onclick="navigate('pages')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3h10l4 4v14H5zM14 3v5h5M8 12h8M8 16h8"/></svg><span>Páginas</span>
       </button>
 
       <!-- 6. Domínios e funis -->
-      <button class="nav-item-btn" id="nav-btn-sites" onclick="navigate('sites')">
+      <button class="nav-item-btn" id="nav-btn-sites" title="Domínios" onclick="navigate('sites')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        <span>Domínios e funis</span>
+        <span>Domínios</span>
       </button>
 
+      <button class="nav-item-btn" id="nav-btn-funnels" onclick="navigate('funnels')" title="Funis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 4h18l-7 8v7l-4 2v-9z"/></svg><span>Funis</span></button>
+      <button class="nav-item-btn" id="nav-btn-page-editor" onclick="navigate('page-editor')" title="Editor de páginas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h10v4H8v12H4zM12 17l7-10 3 2-7 10-4 1z"/></svg><span>Editor de páginas</span></button>
       <!-- 7. Integrações -->
       <button class="nav-item-btn" id="nav-btn-integrations" onclick="navigate('integrations')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><path d="M17.5 14v7M14 17.5h7"/></svg>
@@ -1465,21 +1468,10 @@
       <div id="view-sites" class="view-pane">
         <div class="page-header-row">
           <div class="page-header-info">
-            <h1>Domínios e funis</h1>
-            <p>Gerencie domínios externos e publique páginas de alta conversão.</p>
+            <h1>Domínios</h1>
+            <p>Conecte os domínios usados para publicar suas páginas.</p>
           </div>
-          <div class="page-header-actions">
-            <button type="button" class="btn-primary" onclick="navigate('campaigns')" style="min-height:36px; padding:0 16px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>Criar página na campanha</span>
-            </button>
-          </div>
-        </div>
 
-        <!-- Abas Principais: Domínios Conectados vs Editor de Funis HTML -->
-        <div class="subtabs-nav">
-          <button type="button" class="subtab-btn active" onclick="selecionarSubabaDominios('dominios', this)">Domínios Conectados</button>
-          <button type="button" class="subtab-btn" onclick="selecionarSubabaDominios('funis', this)">Editor de Funis HTML</button>
         </div>
 
         <!-- ABA 1: DOMÍNIOS CONECTADOS -->
@@ -1554,6 +1546,8 @@
         </div>
 
         <!-- ABA 2: EDITOR DE FUNIS VISUAL ESTILO ELEMENTOR -->
+      </div>
+      <div id="view-page-editor" class="view-pane">
         <div id="sites-subtab-funis" class="subtab-pane">
           <div class="elementor-shell">
 
@@ -1562,12 +1556,12 @@
               <div class="elementor-topbar-left">
                 <span class="elementor-topbar-brand-logo">upScale</span>
                 
-                <button type="button" class="elementor-topbar-back-btn" onclick="voltarParaDominios()" title="Voltar para Domínios">
+                <button type="button" class="elementor-topbar-back-btn" onclick="navigate('pages')" title="Voltar para Páginas">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                 </button>
 
                 <div class="elementor-breadcrumb-wrap">
-                  <span class="elementor-crumb-parent">Funis</span>
+                  <span class="elementor-crumb-parent">Páginas</span>
                   <span class="elementor-crumb-sep">/</span>
                   <strong class="elementor-crumb-active" id="builder-crumb-page-title" onclick="focarNomePagina()" title="Clique para editar o nome da página">Oferta especial</strong>
                 </div>
@@ -3028,6 +3022,14 @@
         <p id="campaign-booster-summary" role="status" style="font-size:13px;margin:0;"></p>
         <p style="font-size:12px;color:var(--text-muted);margin:0;">Esses dados preenchem a oferta, a raspadinha e a roleta desta campanha. Alterações ficam em rascunho até publicar a oferta ou uma página. O downsell tem configuração própria.</p>
       </fieldset>
+      <button type="button" class="btn-secondary" id="campaign-downsell-toggle" aria-expanded="false" onclick="alternarDownsellCampanha()">+ Criar oferta de downsell</button>
+      <fieldset id="campaign-downsell-fields" hidden disabled style="border:1px solid var(--border-light);border-radius:12px;padding:14px;">
+        <legend>Oferta de downsell</legend>
+        <label class="form-label" for="new-action-downsell-name">Nome da outra oferta</label><input class="form-input" id="new-action-downsell-name" maxlength="150" required>
+        <label class="form-label" for="new-action-downsell-multiplier">Quantas vezes (X)</label><input type="number" class="form-input" id="new-action-downsell-multiplier" min="1" max="1000000" step="1" value="100" required>
+        <label class="form-label" for="new-action-downsell-price">Valor do downsell (R$)</label><input type="number" class="form-input" id="new-action-downsell-price" min="0.01" max="99999999.99" step="0.01" required>
+        <p style="font-size:12px;">Esta oferta fica em rascunho. Depois de criar a campanha, abra o downsell para editar a página e publicar.</p>
+      </fieldset>
       <div>
         <label class="form-label" for="new-action-status">Status da campanha</label>
         <select class="form-select" id="new-action-status">
@@ -3698,8 +3700,11 @@
   /* ═══ NAVEGAÇÃO ENTRE TELAS ═══ */
   function navigate(viewId, options) {
     options = options || {};
+    var funnelView=viewId==='funnels';
+    if(funnelView)viewId='pages';
+    window.funnelListOnly=funnelView;
     document.body.classList.remove('in-template-picker');
-    if (viewId !== 'sites') {
+    if (viewId !== 'page-editor') {
       document.body.classList.remove('in-editor');
     }
     if (window.fecharPreviaModal) window.fecharPreviaModal();
@@ -3715,7 +3720,7 @@
     var targetPane = document.getElementById('view-' + viewId);
     if (targetPane) targetPane.classList.add('active');
 
-    var navBtn = document.getElementById('nav-btn-' + viewId);
+    var navBtn = document.getElementById('nav-btn-' + (funnelView?'funnels':viewId));
     if (navBtn) navBtn.classList.add('active');
 
     closeSidebar();
@@ -3730,14 +3735,17 @@
       customers: 'Clientes / Workspaces',
       partners: 'Parceiros e comissões',
       pages: 'Páginas',
-      sites: 'Domínios e funis',
+      sites: 'Domínios',
+      funnels: 'Funis',
+      'page-editor': 'Editor de páginas',
       integrations: 'Central de Integrações',
       settings: 'Configurações'
     };
-    var currentName = breadcrumbTitles[viewId] || 'Visão geral';
+    var currentName = funnelView?'Funis':breadcrumbTitles[viewId] || 'Visão geral';
     var bc = document.getElementById('breadcrumb-current');
     if (bc) bc.textContent = currentName;
-    if (window.location.hash !== '#' + viewId) history.replaceState(null, '', '#' + viewId);
+    var route=funnelView?'funnels':viewId;
+    if (window.location.hash !== '#' + route) history.replaceState(null, '', '#' + route);
 
     // Carregamento de dados por tela
     if (viewId === 'dash' || viewId === 'tx') carregarMetricas();
@@ -3746,7 +3754,9 @@
     if (viewId === 'customers') renderizarClientesTabela();
     if (viewId === 'partners') carregarParceiro();
     if (viewId === 'pages') carregarGerenciadorPaginas();
-    if (viewId === 'sites') { carregarDominios(); if (!options.skipEditorLoad) carregarFunis(); }
+    if (viewId === 'sites') carregarDominios();
+    if (viewId === 'page-editor') { document.body.classList.add('in-editor'); if (!options.skipEditorLoad) carregarFunis(); }
+    if (viewId === 'funnels') carregarGerenciadorPaginas();
     if (viewId === 'integrations') verificarIntegracoes();
   }
 
@@ -4373,12 +4383,16 @@
     var tbody = document.getElementById('actions-table-body');
     if (!tbody) return;
 
-    if (!allCampaignsData.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:28px; color:var(--text-muted);">Nenhuma campanha cadastrada ainda. Clique em "+ Nova campanha" acima.</td></tr>';
+    var query=document.getElementById('camp-search-input').value.trim().toLowerCase(),status=document.getElementById('camp-status-filter').value;
+    var rows=allCampaignsData.filter(function(c){return (!query||(c.title+' '+c.id).toLowerCase().includes(query))&&(!status||c.status===status);});
+    var table=tbody.closest('table');if(!table.id)table.id='campaigns-table';
+    rows=paginarLista(rows,paginadorDepois(table),renderizarCampanhas);
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:28px; color:var(--text-muted);">Nenhuma campanha encontrada. Ajuste os filtros ou crie uma nova campanha.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = allCampaignsData.map(function(c) {
+    tbody.innerHTML = rows.map(function(c) {
       var isPub = c.status === 'published';
       var isEnded = c.status === 'ended';
       var badgeClass = isPub ? 'badge-success' : (isEnded ? 'badge-neutral' : 'badge-warning');
@@ -4419,25 +4433,7 @@
     }).join('');
   }
 
-  function filtrarCampanhasNaTabela() {
-    var q = (document.getElementById('camp-search-input').value || '').toLowerCase().trim();
-    var st = (document.getElementById('camp-status-filter').value || '').trim();
-    var filtrados = allCampaignsData.filter(function(c) {
-      var matchQ = !q || c.title.toLowerCase().includes(q) || String(c.id).includes(q);
-      var matchSt = !st || c.status === st;
-      return matchQ && matchSt;
-    });
-    var tbody = document.getElementById('actions-table-body');
-    if (!filtrados.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:28px; color:var(--text-muted);">Nenhuma campanha encontrada para os filtros selecionados.</td></tr>';
-      return;
-    }
-    // Renderiza a lista filtrada
-    var old = allCampaignsData;
-    allCampaignsData = filtrados;
-    renderizarCampanhas();
-    allCampaignsData = old;
-  }
+  function filtrarCampanhasNaTabela() { renderizarCampanhas(); }
 
   function toggleRowMenu(btn, ev) {
     if (ev) ev.stopPropagation();
@@ -4492,6 +4488,10 @@
     });
   }
 
+  function alternarDownsellCampanha(force) {
+    var fields=document.getElementById('campaign-downsell-fields'),open=typeof force==='boolean'?force:fields.hidden;
+    fields.hidden=fields.disabled=!open;var button=document.getElementById('campaign-downsell-toggle');button.setAttribute('aria-expanded',String(open));button.textContent=open?'Fechar configuração do downsell':'+ Criar oferta de downsell';
+  }
   var editingCampaignId = null;
   function atualizarResumoBooster() {
     var name=document.getElementById('new-action-booster-name').value.trim().replace(/\b\d+\s*x\b/gi,'').trim();
@@ -4518,6 +4518,7 @@
       document.getElementById('new-action-booster-name').value=offer.title.replace(/\b\d+\s*x\b/gi,'').trim();
       document.getElementById('new-action-booster-multiplier').value=offer.quota_count;
       document.getElementById('new-action-booster-price').value=offer.price;
+      if(camp.has_downsell){var alternative=await apiFetch('../api/admin/offer.php?workspace_id='+workspace+'&campaign_id='+id+'&offer_role=downsell');if(workspace!==currentWsId||editingCampaignId!==id)return;if(alternative.status!=='success')throw new Error(alternative.message);var alt=Object.assign({},alternative.offer,alternative.offer.draft_config||{});alternarDownsellCampanha(true);document.getElementById('new-action-downsell-name').value=alt.title.replace(/\b\d+\s*x\b/gi,'').trim();document.getElementById('new-action-downsell-multiplier').value=alt.quota_count;document.getElementById('new-action-downsell-price').value=alt.price;}
       atualizarResumoBooster();
     } catch(e){showToast(e.message,'error');}
   }
@@ -4526,7 +4527,7 @@
     document.getElementById('campaign-ended-option').hidden=true;document.getElementById('campaign-ended-option').disabled=true;
     document.getElementById('campaign-form-heading').textContent='Criar Nova Campanha de Rifa';
     document.getElementById('campaign-form-submit').textContent='Criar Campanha';
-    document.getElementById('form-nova-acao').reset();
+    document.getElementById('form-nova-acao').reset();alternarDownsellCampanha(false);
     atualizarResumoBooster();
     document.getElementById('modal-nova-acao').showModal();
   }
@@ -4545,6 +4546,8 @@
       booster_name:document.getElementById('new-action-booster-name').value.trim(),
       booster_multiplier:Number(document.getElementById('new-action-booster-multiplier').value),
       booster_price:Number(document.getElementById('new-action-booster-price').value)};
+    payload.downsell_enabled=!document.getElementById('campaign-downsell-fields').disabled;
+    if(payload.downsell_enabled){payload.downsell_name=document.getElementById('new-action-downsell-name').value.trim();payload.downsell_multiplier=Number(document.getElementById('new-action-downsell-multiplier').value);payload.downsell_price=Number(document.getElementById('new-action-downsell-price').value);}
     button.disabled=true;
     try {
       var data=await apiFetch('../api/admin/campaigns.php?workspace_id='+workspace,{method:'POST',body:JSON.stringify(payload)});
@@ -5411,29 +5414,7 @@
   /* ═══ SUBABAS DE DOMÍNIOS E FUNIS ═══ */
   function selecionarSubabaDominios(tabKey, btn, options) {
     options = options || {};
-    var isFunis = (tabKey === 'funis');
-    var paneDom = document.getElementById('sites-subtab-dominios');
-    var paneFunis = document.getElementById('sites-subtab-funis');
-    if (paneDom) paneDom.classList.toggle('active', !isFunis);
-    if (paneFunis) paneFunis.classList.toggle('active', isFunis);
-
-    var btns = document.querySelectorAll('#view-sites .subtabs-nav .subtab-btn');
-    btns.forEach(function(b) { b.classList.remove('active'); });
-    if (btn) {
-      btn.classList.add('active');
-    } else {
-      var targetBtn = isFunis ? btns[1] : btns[0];
-      if (targetBtn) targetBtn.classList.add('active');
-    }
-
-    if (isFunis) {
-      document.body.classList.add('in-editor');
-      if (!options.skipEditorLoad && window.initElementorBuilder) {
-        window.initElementorBuilder();
-      }
-    } else {
-      document.body.classList.remove('in-editor');
-    }
+    navigate(tabKey==='funis'?'page-editor':'sites', options);
   }
   window.selecionarSubabaDominios = selecionarSubabaDominios;
 

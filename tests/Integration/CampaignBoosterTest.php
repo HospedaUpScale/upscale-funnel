@@ -44,6 +44,22 @@ class CampaignBoosterTest extends TestCase
         $this->assertEquals($alternative['price'], CampaignPage::offer($this->pdo, $campaign, 'downsell')['price']);
         $this->assertEquals(0.5, (float)CampaignPage::campaign($this->pdo, 1, $campaign['id'])['ticket_price']);
     }
+    public function testDownsellConfigurationUsesIndependentDraftAndPrice(): void
+    {
+        $this->pdo->exec("INSERT INTO campaigns (workspace_id, title, ticket_price) VALUES (1, 'Campaign with alternative', 0.5)");
+        $campaign = CampaignPage::campaign($this->pdo, 1, (int)$this->pdo->lastInsertId());
+        CampaignPage::saveBoosterDraft($this->pdo, $campaign, CampaignPage::boosterInput(['booster_name'=>'Principal','booster_multiplier'=>200,'booster_price'=>19.9]));
+        CampaignPage::saveBoosterDraft($this->pdo, $campaign, CampaignPage::boosterInput(['booster_name'=>'Alternativa','booster_multiplier'=>50,'booster_price'=>4.9]), 'downsell');
+        $main = CampaignPage::offer($this->pdo, $campaign);
+        $alternative = CampaignPage::offer($this->pdo, $campaign, 'downsell');
+        $this->assertEquals('Principal 200X', $main['title']);
+        $this->assertEquals(19.9, (float)$main['price']);
+        $this->assertEquals('Alternativa 50X', $alternative['title']);
+        $this->assertEquals(4.9, (float)$alternative['price']);
+        $this->assertEquals(0, (int)$alternative['is_published']);
+        $this->assertTrue($main['id'] !== $alternative['id']);
+    }
+
     public function testBoosterInputRejectsInvalidFinancialAndMultiplierValues(): void
     {
         foreach ([['',200,10], ['Booster',0,10], ['Booster',1.5,10], ['Booster',200,-1], ['Booster',200,'invalid']] as [$name,$times,$price]) {
