@@ -2,7 +2,7 @@
   'use strict';
   var ready=false,last={},activeTab='content';
   var groups={
-    content:['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label','title','subtitle','price','quota_count','offer_headline_start','offer_headline_highlight','cta_label','cta_subtext','timer_minutes'],
+    content:['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label','title','subtitle','price','quota_count','offer_headline_start','offer_headline_highlight','cta_label','cta_subtext','decline_label','timer_minutes'],
     media:['vturb_embed','video_src'],
     appearance:['page_bg','primary_color','accent_color','card_bg','card_bg_alt','title_from','title_to','text_color','text_secondary','cta_bg','cta_text','badge_bg','badge_text','border_color','foil_start','foil_end','sound_enabled','sound_volume'],
     payment:['checkout_mode','legacy_checkout_url']
@@ -43,9 +43,10 @@
     var page=activeTab==='page';document.getElementById('editor-page-tools').hidden=!page;document.getElementById('editor-form-scroll').hidden=page;
     var screen=last.stage==='scratch'?last.mechanic:'offer';
     var heading=page?'Blocos da página':activeTab==='content'?(screen==='wheel'?'Conteúdo da roleta':screen==='scratch'?'Conteúdo da raspadinha':'Conteúdo da oferta'):titles[activeTab];
-    document.getElementById('editor-panel-heading').textContent=heading;
+    document.getElementById('editor-panel-heading').textContent=activeTab==='content'&&last.offerRole==='downsell'?'Conteúdo do downsell':heading;
+    document.querySelector('.editor-shared-notice').textContent=last.offerRole==='downsell'?'Oferta alternativa desta campanha. Edite o preço e publique para disponibilizar o link de recusa.':'Os dados da oferta principal são compartilhados pelas páginas desta campanha.';
     Object.keys(titles).forEach(function(key){document.getElementById('editor-panel-tab-'+key).setAttribute('aria-selected',String(activeTab===key));});
-    Object.keys(groups).forEach(function(key){var panel=document.getElementById('editor-field-panel-'+key);panel.hidden=activeTab!==key;panel.querySelectorAll('.editor-field-row').forEach(function(row){row.hidden=key==='content'&&row.dataset.screen!==screen;});});
+    Object.keys(groups).forEach(function(key){var panel=document.getElementById('editor-field-panel-'+key);panel.hidden=activeTab!==key;panel.querySelectorAll('.editor-field-row').forEach(function(row){row.hidden=(key==='content'&&row.dataset.screen!==screen)||(row.dataset.field==='decline_label'&&last.offerRole==='downsell');});});
     document.querySelectorAll('[data-color-field]').forEach(function(picker){var value=document.getElementById('inline-offer-'+picker.dataset.colorField).value;if(/^#[0-9a-f]{6}$/i.test(value))picker.value=value;});
     document.getElementById('builder-inline-offer').open=true;
     // A link is relevant only for an external checkout.

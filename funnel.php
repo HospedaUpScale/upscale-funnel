@@ -75,8 +75,9 @@ $rawHtml = !empty($funnel['published_content']) ? $funnel['published_content'] :
 
 $campaignOfferUrl = '';
 if (!empty($funnel['campaign_id'])) {
-    $campaignOfferStmt = $pdo->prepare('SELECT slug FROM upsell_offers WHERE workspace_id = ? AND campaign_id = ? ORDER BY id ASC LIMIT 1');
-    $campaignOfferStmt->execute([(int)$funnel['workspace_id'], (int)$funnel['campaign_id']]);
+    $offerRole = $funnel['template_slug'] === 'funil-downsell' ? 'downsell' : 'upsell';
+    $campaignOfferStmt = $pdo->prepare('SELECT slug FROM upsell_offers WHERE workspace_id = ? AND campaign_id = ? AND offer_role = ? ORDER BY id ASC LIMIT 1');
+    $campaignOfferStmt->execute([(int)$funnel['workspace_id'], (int)$funnel['campaign_id'], $offerRole]);
     if ($offerSlug = $campaignOfferStmt->fetchColumn()) $campaignOfferUrl = '/o/' . rawurlencode($offerSlug) . '?native=1';
 }
 

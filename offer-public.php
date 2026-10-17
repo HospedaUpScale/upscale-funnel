@@ -133,7 +133,7 @@ if (!$offer) {
 
 // O mesmo link da oferta passa a servir a página publicada da campanha.
 // native=1 é usado somente no bloco de checkout, evitando recursão do funil.
-if (!empty($offer['campaign_id']) && ($request->get('native') !== '1')) {
+if (($offer['offer_role'] ?? 'upsell') !== 'downsell' && !empty($offer['campaign_id']) && ($request->get('native') !== '1')) {
     $pageStmt = $pdo->prepare("SELECT f.* FROM funnels f JOIN campaigns c ON c.primary_funnel_id = f.id AND c.id = f.campaign_id AND c.workspace_id = f.workspace_id WHERE f.workspace_id = ? AND f.campaign_id = ? AND f.status = 'published' LIMIT 1");
     $pageStmt->execute([(int)$offer['workspace_id'], (int)$offer['campaign_id']]);
     if ($campaignPageOverride = $pageStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -176,7 +176,15 @@ if ($request->get('native') === '1') {
     elseif ($experience !== 'campaign') $theme['mechanic'] = 'direct';
 }
 
+$downsellUrl = '';
+if (($offer['offer_role'] ?? 'upsell') === 'upsell' && !empty($offer['campaign_id'])) {
+    $alternative = $pdo->prepare("SELECT slug FROM upsell_offers WHERE workspace_id = ? AND campaign_id = ? AND offer_role = 'downsell' AND is_published = 1 AND is_active = 1 ORDER BY id ASC LIMIT 1");
+    $alternative->execute([(int)$offer['workspace_id'], (int)$offer['campaign_id']]);
+    if ($alternativeSlug = $alternative->fetchColumn()) $downsellUrl = '/o/' . rawurlencode($alternativeSlug) . '?native=1&experience=direct';
+}
+
 $payloadForHtml = [
+    'downsell_url'        => $downsellUrl,
     'id'                  => (int)$offer['id'],
     'workspace_id'        => (int)$offer['workspace_id'],
     'title'               => $title,

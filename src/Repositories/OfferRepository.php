@@ -32,8 +32,8 @@ class OfferRepository
     public function defaultActiveForWorkspace(int $workspaceId): ?array
     {
         $stmt = $this->pdo->prepare("
-            SELECT * FROM upsell_offers 
-            WHERE workspace_id = ? AND is_active = 1 
+            SELECT * FROM upsell_offers
+            WHERE workspace_id = ? AND is_active = 1 AND offer_role = 'upsell'
             ORDER BY id ASC LIMIT 1
         ");
         $stmt->execute([$workspaceId]);

@@ -54,6 +54,11 @@ function buildFunnelUrls(string $slug, ?string $domainName): array
     ];
 }
 
+function syncDownsellPublication(PDO $pdo, int $workspaceId): void
+{
+    $pdo->prepare("UPDATE upsell_offers SET is_published = 0 WHERE workspace_id = ? AND offer_role = 'downsell' AND NOT EXISTS (SELECT 1 FROM funnels f WHERE f.workspace_id = upsell_offers.workspace_id AND f.campaign_id = upsell_offers.campaign_id AND f.template_slug = 'funil-downsell' AND f.status = 'published')")->execute([$workspaceId]);
+}
+
 // Ações rápidas GET (como listagem de ofertas, templates ou checagem de slug)
 $action = $request->get('action') ?? ($request->all()['action'] ?? '');
 
@@ -177,7 +182,7 @@ if ($request->method() === 'POST') {
     $postAction = $input['action'] ?? 'save';
 
     if ($postAction === 'set_primary') {
-        $q = $pdo->prepare("SELECT campaign_id FROM funnels WHERE id = ? AND workspace_id = ? AND status = 'published'");
+        $q = $pdo->prepare("SELECT campaign_id FROM funnels WHERE id = ? AND workspace_id = ? AND status = 'published' AND template_slug != 'funil-downsell'");
         $q->execute([$id, $targetWsId]);
         $campaignId = (int)$q->fetchColumn();
         if (!$campaignId) JsonResponse::error('Escolha uma página publicada vinculada à campanha.', 422);
@@ -192,6 +197,7 @@ if ($request->method() === 'POST') {
         $stmtUnpub->execute([$id, $targetWsId]);
         if (!$stmtUnpub->rowCount()) JsonResponse::error('Página não encontrada.', 404);
         $pdo->prepare('UPDATE campaigns SET primary_funnel_id = NULL WHERE primary_funnel_id = ? AND workspace_id = ?')->execute([$id, $targetWsId]);
+        syncDownsellPublication($pdo, $targetWsId);
         JsonResponse::success(['message' => 'Página despublicada com sucesso. Ela não está mais acessível publicamente.', 'status_value' => 'draft']);
     }
 
@@ -277,6 +283,9 @@ if ($request->method() === 'POST') {
     $blocksConfig = isset($input['blocks_config']) ? (is_string($input['blocks_config']) ? $input['blocks_config'] : json_encode($input['blocks_config'], JSON_UNESCAPED_UNICODE)) : null;
     $settingsConfig = isset($input['settings_config']) ? (is_string($input['settings_config']) ? $input['settings_config'] : json_encode($input['settings_config'], JSON_UNESCAPED_UNICODE)) : null;
     $experience = $settingsConfig ? json_decode($settingsConfig, true) : [];
+    $offerRole = $templateSlug === 'funil-downsell' ? 'downsell' : 'upsell';
+    if (!in_array($offerRole, ['upsell', 'downsell'], true)) JsonResponse::error('Tipo de oferta inválido.', 422);
+    if ($offerRole === 'downsell' && !$campaign) JsonResponse::error('Selecione a campanha do downsell.', 422);
     $mechanic = $experience['experience']['mechanic'] ?? null;
     if ($mechanic !== null && !in_array($mechanic, ['scratch', 'wheel', 'direct'], true)) JsonResponse::error('Experiência inválida.', 422);
 
@@ -410,8 +419,8 @@ if ($request->method() === 'POST') {
 
         $pdo->prepare("UPDATE funnels SET is_home = 0 WHERE workspace_id = ?")->execute([$targetWsId]);
         if ($isPublishAction && $campaign) {
-            $campaignOffer = CampaignPage::publishOffer($pdo, $campaign, $mechanic);
-            $pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ? AND workspace_id = ? AND primary_funnel_id IS NULL')->execute([$funnelId, $campaignId, $targetWsId]);
+            $campaignOffer = CampaignPage::publishOffer($pdo, $campaign, $mechanic, $offerRole);
+            if ($offerRole !== 'downsell') $pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ? AND workspace_id = ? AND primary_funnel_id IS NULL')->execute([$funnelId, $campaignId, $targetWsId]);
             $pdo->prepare("UPDATE campaigns SET status = 'published', published_at = CURRENT_TIMESTAMP, ended_at = NULL WHERE id = ? AND workspace_id = ?")->execute([$campaignId, $targetWsId]);
         }
         $pdo->commit();
@@ -446,6 +455,7 @@ if ($request->method() === 'DELETE') {
     $stmt->execute([$id, $targetWsId]);
     if ($stmt->rowCount() === 0) JsonResponse::error('Funil não encontrado.', 404);
     $pdo->prepare('UPDATE campaigns SET primary_funnel_id = NULL WHERE primary_funnel_id = ? AND workspace_id = ?')->execute([$id, $targetWsId]);
+    syncDownsellPublication($pdo, $targetWsId);
     JsonResponse::success(['message' => 'Página removida com sucesso.']);
 }
 

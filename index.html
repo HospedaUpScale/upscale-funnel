@@ -578,6 +578,9 @@
   .offer-mode .offer-badge {background:var(--badge-bg);color:var(--badge-text);border-color:var(--badge-text);}
   .pix-modal {background:var(--card-bg);color:var(--text-color);}
   .btn-cta:hover {background:var(--btn-bg);filter:brightness(.92);}
+  .decline-offer {display:block;margin:14px auto 0;text-align:center;font-size:12px;font-weight:400;color:var(--text-secondary);text-decoration:underline;opacity:.75;}
+  .decline-offer[hidden] {display:none;}
+  .decline-offer:hover,.decline-offer:focus-visible {opacity:1;}
 </style>
 </head>
 <body>
@@ -710,6 +713,7 @@
         </svg>
       </button>
 
+      <a id="decline-offer" class="decline-offer" hidden>Não quero esta oferta. Ver outra opção</a>
       <p class="cta-subtext"><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8H4v-8a2 2 0 0 1 2-2h1zm2 0h6V7a3 3 0 0 0-6 0v3z"/></svg><span id="cta-subtext">Pagamento via Pix</span></p>
       <a href="#condicoes" class="footer-terms">Consultar condições da oferta</a>
     </div>
@@ -1238,6 +1242,15 @@
       logoBox.classList.remove('visible');
     }
 
+    var decline=$('decline-offer'),alternative=d.downsell_url||'';
+    decline.textContent=theme.decline_label||'Não quero esta oferta. Ver outra opção';
+    decline.hidden=!alternative;
+    if(alternative&&/^\/o\/[a-z0-9-]+(?:\?|$)/i.test(alternative)){
+      var alternativeUrl=new URL(alternative,location.origin);
+      ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','nome','name','first_name','customer_name','telefone','phone','celular','email','cpf','order_id','pedido_id','id','token','workspace','workspace_id'].forEach(function(key){var value=new URLSearchParams(location.search).get(key);if(value)alternativeUrl.searchParams.set(key,value);});
+      decline.href=alternativeUrl.pathname+alternativeUrl.search;
+    }else{decline.hidden=true;decline.removeAttribute('href');}
+
     // Cores e Variáveis CSS
     if (theme.page_bg) document.documentElement.style.setProperty('--page-bg', theme.page_bg);
     if (theme.card_bg) document.documentElement.style.setProperty('--card-bg', theme.card_bg);
@@ -1401,6 +1414,7 @@
     $('pix-modal').showModal();
   }
   if(isEditorPreview){
+    $('decline-offer').addEventListener('click',function(e){e.preventDefault();window.parent.parent.postMessage({type:'upscale:edit-downsell'},location.origin);});
     var editFields={'scratch-title-start':'headline_start','highlight-booster':'headline_highlight','main-subtitle':'subtitle_text','wheel-title-start':'wheel_heading','wheel-highlight':'wheel_highlight','wheel-subtitle':'wheel_subtitle','offer-title':'title','offer-subtitle':'subtitle','offer-price':'price','offer-headline-start':'offer_headline_start','offer-headline-highlight':'offer_headline_highlight','cta-subtext':'cta_subtext'};
     Object.keys(editFields).forEach(function(id){var el=$(id);if(!el)return;el.style.cursor='text';el.title='Clique para editar este conteúdo';el.addEventListener('click',function(){var target=window.parent.parent;target.postMessage({type:'upscale:edit-offer-field',field:editFields[id]},window.location.origin);});});
   }

@@ -34,11 +34,14 @@ if ($auth && $auth['role'] !== 'super_admin') {
 }
 
 $targetCampaignId = (int)$request->get('campaign_id', 0);
+$offerRole = (string)$request->get('offer_role', 'upsell');
+if (!in_array($offerRole, ['upsell', 'downsell'], true)) JsonResponse::error('Tipo de oferta inválido.', 422);
+if ($offerRole === 'downsell' && $targetCampaignId <= 0) JsonResponse::error('Selecione a campanha do downsell.', 422);
 $campaignOffer = null;
 if ($targetCampaignId > 0) {
     $campaign = CampaignPage::campaign($pdo, $targetWsId, $targetCampaignId);
     if (!$campaign) JsonResponse::error('Campanha não encontrada neste workspace.', 404);
-    $campaignOffer = CampaignPage::offer($pdo, $campaign);
+    $campaignOffer = CampaignPage::offer($pdo, $campaign, $offerRole);
 }
 
 // Helper para normalizar slug
@@ -118,8 +121,8 @@ if ($action === 'check_slug') {
 // 2. GET: Carregar dados completos da oferta ativa
 if ($request->method() === 'GET') {
     $stmt = $pdo->prepare("
-        SELECT * FROM upsell_offers 
-        WHERE workspace_id = ? AND is_active = 1 
+        SELECT * FROM upsell_offers
+        WHERE workspace_id = ? AND is_active = 1 AND offer_role = 'upsell'
         ORDER BY id ASC LIMIT 1
     ");
     $stmt->execute([$targetWsId]);
@@ -129,7 +132,7 @@ if ($request->method() === 'GET') {
         $defaultSlug = 'kit-bobzao-booster-200x';
         $stmtIns = $pdo->prepare("
             INSERT INTO upsell_offers (
-                workspace_id, title, subtitle, price, quota_count, checkout_mode, 
+                workspace_id, title, subtitle, price, quota_count, checkout_mode,
                 slug, is_published, published_at, is_active
             ) VALUES (?, 'Booster 200X Ouro', 'Kit Bobzão Bitruck + Ford F250', 90.00, 200, 'pix_native', ?, 1, CURRENT_TIMESTAMP, 1)
         ");
@@ -168,11 +171,18 @@ if ($request->method() === 'GET') {
     $mergedTheme = OfferTheme::merge($themeConfig);
     $slug = !empty($offer['slug']) ? $offer['slug'] : normalizeOfferSlug($offer['title'] ?? 'booster-oferta');
     $isPublished = (bool)($offer['is_published'] ?? 0);
+    $downsellUrl = '';
+    if ($targetCampaignId > 0 && $offerRole === 'upsell') {
+        $alternative = $pdo->prepare("SELECT slug FROM upsell_offers WHERE workspace_id = ? AND campaign_id = ? AND offer_role = 'downsell' ORDER BY id ASC LIMIT 1");
+        $alternative->execute([$targetWsId, $targetCampaignId]);
+        if ($alternativeSlug = $alternative->fetchColumn()) $downsellUrl = '/o/' . rawurlencode($alternativeSlug) . '?native=1&experience=direct';
+    }
     $baseUrl = getSystemBaseUrl();
 
     JsonResponse::send([
         'status' => 'success',
         'offer'  => [
+            'downsell_url'        => $downsellUrl,
             'id'                  => (int)$offer['id'],
             'workspace_id'        => (int)$offer['workspace_id'],
             'campaign_id'         => $offer['campaign_id'] ? (int)$offer['campaign_id'] : null,
@@ -200,7 +210,7 @@ if ($request->method() === 'POST') {
     $input = $request->all();
 
     // Buscar oferta existente
-    $stmt = $pdo->prepare("SELECT * FROM upsell_offers WHERE workspace_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1");
+    $stmt = $pdo->prepare("SELECT * FROM upsell_offers WHERE workspace_id = ? AND is_active = 1 AND offer_role = 'upsell' ORDER BY id ASC LIMIT 1");
     $stmt->execute([$targetWsId]);
     $existing = $campaignOffer ?: $stmt->fetch();
 

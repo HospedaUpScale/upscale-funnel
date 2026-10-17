@@ -109,6 +109,7 @@ class OfferTheme
             'headline_start'        => 'Raspe e descubra seu',
             'headline_highlight'    => 'Booster',
             'subtitle_text'         => 'Uma condição especial para esta campanha.',
+            'decline_label'         => 'Não quero esta oferta. Ver outra opção',
             'cta_label'             => 'ATIVAR MEU BOOSTER AGORA',
             'offer_headline_start' => 'Seu Booster está',
             'offer_headline_highlight' => 'pronto para ativar.',

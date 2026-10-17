@@ -27,7 +27,7 @@
       var address=node('td'),actions=node('td'),group=node('div');group.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
       if(p.is_published){var link=node('a','/f/'+p.slug+' ↗');link.href=p.public_url;link.target='_blank';link.rel='noopener';address.append(link);}else address.textContent='/f/'+p.slug;
       group.append(button('Editar',function(){openPage(p);}),button('Duplicar',function(){action(p,'duplicate');}));
-      if(p.is_published){group.append(button('Copiar link',function(){window.copiarValor(p.public_url);}));if(p.campaign_id&&!p.is_primary)group.append(button('Tornar principal',function(){action(p,'set_primary');}));group.append(button('Despublicar',function(){action(p,'unpublish');}));}
+      if(p.is_published){group.append(button('Copiar link',function(){window.copiarValor(p.public_url);}));if(p.campaign_id&&!p.is_primary&&p.template_slug!=='funil-downsell')group.append(button('Tornar principal',function(){action(p,'set_primary');}));group.append(button('Despublicar',function(){action(p,'unpublish');}));}
       group.append(button('Excluir',function(){action(p,'delete');}));actions.append(group);row.append(name,campaign,status,address,actions);body.append(row);
     });table.append(body);container.append(table);
   }
@@ -50,7 +50,7 @@
   }
   function renderizarExperienciasCampanhas(container,items){
     container.replaceChildren();if(!items.length){container.append(node('p','Nenhuma campanha disponível.'));return;}
-    items.forEach(function(c){var row=node('div'),label=node('strong',c.title),actions=node('div');row.className='native-campaign-entry';actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';['scratch','wheel','direct'].forEach(function(mechanic){actions.append(button({scratch:'Editar raspadinha',wheel:'Editar roleta',direct:'Editar oferta'}[mechanic],function(){window.editarExperienciaCampanha(c.id,mechanic);}));});row.append(label,actions);container.append(row);});
+    items.forEach(function(c){var row=node('div'),label=node('strong',c.title),actions=node('div');row.className='native-campaign-entry';actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';['scratch','wheel','direct','downsell'].forEach(function(mechanic){actions.append(button({scratch:'Editar raspadinha',wheel:'Editar roleta',direct:'Editar oferta',downsell:'Criar / editar downsell'}[mechanic],function(){window.editarExperienciaCampanha(c.id,mechanic);}));});row.append(label,actions);container.append(row);});
   }
   window.renderizarExperienciasCampanhas=renderizarExperienciasCampanhas;
   function criarPaginaDaCampanha(id){if(!id)return;window.abrirTelaSelecaoModelos('campaign',id);}

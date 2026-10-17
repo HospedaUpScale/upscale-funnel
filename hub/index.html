@@ -23,9 +23,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=3.9" defer></script>
-  <script src="pages-manager.js?v=3" defer></script>
-  <script src="editor-workspace.js?v=3" defer></script>
+  <script src="elementor-builder.js?v=4.0" defer></script>
+  <script src="pages-manager.js?v=4" defer></script>
+  <script src="editor-workspace.js?v=4" defer></script>
 </head>
 <body>
 
@@ -1607,6 +1607,7 @@
               <button type="button" id="builder-stage-scratch" onclick="preverEtapaOferta('scratch')" aria-pressed="false" disabled>1 · Revelação</button>
               <button type="button" id="builder-stage-offer" onclick="preverEtapaOferta('offer')" aria-pressed="false" disabled>2 · Oferta</button>
               <button type="button" id="builder-stage-checkout" onclick="preverEtapaOferta('checkout')" aria-pressed="false" disabled>3 · Checkout</button>
+<button type="button" id="builder-open-downsell" onclick="editarExperienciaCampanha(selectedCampaignId,'downsell')" disabled>Criar / editar downsell</button>
               <span id="builder-stage-status" role="status">Selecione uma campanha para editar as etapas.</span>
             </nav>
             <!-- 2. CORPO PRINCIPAL (3 COLUNAS: 280px | 1fr | 320px) -->
@@ -1674,7 +1675,8 @@
 <label class="form-label" for="inline-offer-border_color">Bordas</label><input type="text" id="inline-offer-border_color" class="form-input" placeholder="rgba(23,100,255,.45)" oninput="atualizarOfertaInline('border_color')">
 <label class="form-label" for="inline-offer-foil_start">Raspadinha: início do gradiente</label><input type="text" id="inline-offer-foil_start" class="form-input" placeholder="#0c2247" oninput="atualizarOfertaInline('foil_start')">
 <label class="form-label" for="inline-offer-foil_end">Raspadinha: fim do gradiente</label><input type="text" id="inline-offer-foil_end" class="form-input" placeholder="#1764ff" oninput="atualizarOfertaInline('foil_end')">
-<label class="form-label" for="inline-offer-page_bg" style="display:block;margin-top:12px;">Cor de fundo</label>
+<label class="form-label" for="inline-offer-decline_label">Link discreto para outra oferta</label><input type="text" id="inline-offer-decline_label" class="form-input" oninput="atualizarOfertaInline('decline_label')">
+                  <label class="form-label" for="inline-offer-page_bg" style="display:block;margin-top:12px;">Cor de fundo</label>
                   <input type="color" id="inline-offer-page_bg" class="form-input" oninput="atualizarOfertaInline('page_bg')">
                   <label class="form-label" for="inline-offer-primary_color" style="display:block;margin-top:12px;">Cor principal</label>
                   <input type="color" id="inline-offer-primary_color" class="form-input" oninput="atualizarOfertaInline('primary_color')">
@@ -2392,6 +2394,17 @@
                 <h3 class="tp-card-title">Oferta direta</h3><p class="tp-card-desc">Abre diretamente a tela final da oferta, com vídeo e checkout.</p>
                 <ul class="tp-features-list"><li>Oferta vinculada à campanha</li><li>Textos, vídeo, preço e cores editáveis</li><li>Checkout e publicação integrados</li></ul>
                 <div class="tp-card-footer"><button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('funil-direct', event)">Ampliar prévia</button><button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('funil-direct', event)">Selecionar</button></div>
+              </div>
+            </div>
+            <div class="tp-card" id="tp-card-funil-downsell" data-template-id="funil-downsell" onclick="selecionarModeloPicker('funil-downsell', event)">
+              <div class="tp-card-preview-box tp-funnel-preview" onclick="selecionarModeloPicker('funil-downsell', event)" title="Selecionar e abrir este funil no editor">
+                <span class="tp-funnel-icon" aria-hidden="true">→</span>
+                <strong>Downsell</strong><span>Recusa → Outra oferta → Checkout</span>
+              </div>
+              <div class="tp-card-body">
+                <h3 class="tp-card-title">Downsell</h3><p class="tp-card-desc">Crie uma oferta alternativa para quem não aceitar a oferta principal.</p>
+                <ul class="tp-features-list"><li>Preço e textos próprios</li><li>Textos, vídeo, preço e cores editáveis</li><li>Link discreto abaixo do botão principal</li></ul>
+                <div class="tp-card-footer"><button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('funil-downsell', event)">Ampliar prévia</button><button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('funil-downsell', event)">Selecionar</button></div>
               </div>
             </div>
 

@@ -13,22 +13,23 @@ final class CampaignPage
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function offer(PDO $pdo, array $campaign): array
+    public static function offer(PDO $pdo, array $campaign, string $role = 'upsell'): array
     {
-        $stmt = $pdo->prepare('SELECT * FROM upsell_offers WHERE campaign_id = ? AND workspace_id = ? ORDER BY id ASC LIMIT 1');
-        $stmt->execute([$campaign['id'], $campaign['workspace_id']]);
+        if (!in_array($role, ['upsell', 'downsell'], true)) throw new \InvalidArgumentException('Tipo de oferta inválido.');
+        $stmt = $pdo->prepare('SELECT * FROM upsell_offers WHERE campaign_id = ? AND workspace_id = ? AND offer_role = ? ORDER BY id ASC LIMIT 1');
+        $stmt->execute([$campaign['id'], $campaign['workspace_id'], $role]);
         if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) return $row;
         // Cada campanha recebe sua própria oferta em rascunho, nunca a de outra campanha.
-        $slug = 'campanha-' . $campaign['id'] . '-' . bin2hex(random_bytes(3));
-        $pdo->prepare("INSERT INTO upsell_offers (workspace_id, campaign_id, title, subtitle, price, quota_count, slug, is_published, is_active) VALUES (?, ?, ?, ?, ?, 1, ?, 0, 1)")
-            ->execute([$campaign['workspace_id'], $campaign['id'], $campaign['title'], '', $campaign['ticket_price'], $slug]);
-        $stmt->execute([$campaign['id'], $campaign['workspace_id']]);
+        $slug = ($role === 'downsell' ? 'downsell-' : 'campanha-') . $campaign['id'] . '-' . bin2hex(random_bytes(3));
+        $pdo->prepare("INSERT INTO upsell_offers (workspace_id, campaign_id, title, subtitle, price, quota_count, slug, is_published, is_active, offer_role, theme_config) VALUES (?, ?, ?, ?, ?, 1, ?, 0, 1, ?, ?)")
+            ->execute([$campaign['workspace_id'], $campaign['id'], ($role === 'downsell' ? 'Uma alternativa para você' : $campaign['title']), '', $campaign['ticket_price'], $slug, $role, $role === 'downsell' ? json_encode(['mechanic'=>'direct','offer_headline_start'=>'Uma nova condição','offer_headline_highlight'=>'para você aproveitar.','cta_label'=>'QUERO ESTA OFERTA']) : null]);
+        $stmt->execute([$campaign['id'], $campaign['workspace_id'], $role]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public static function publishOffer(PDO $pdo, array $campaign, ?string $mechanic = null): array
+    public static function publishOffer(PDO $pdo, array $campaign, ?string $mechanic = null, string $role = 'upsell'): array
     {
-        $offer = self::offer($pdo, $campaign);
+        $offer = self::offer($pdo, $campaign, $role);
         $draft = json_decode($offer['draft_config'] ?? '', true) ?: [];
         $theme = $draft['theme'] ?? (json_decode($offer['theme_config'] ?? '', true) ?: []);
         if ($mechanic !== null && in_array($mechanic, ['scratch', 'wheel', 'direct'], true)) $theme['mechanic'] = $mechanic;
