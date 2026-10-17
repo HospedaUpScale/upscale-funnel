@@ -13,6 +13,11 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.jit=1255" >> /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.jit_buffer_size=64M" >> /usr/local/etc/php/conf.d/opcache.ini
 
+# Limites de upload do PHP alinhados ao api/admin/upload.php (imagens até 15 MB).
+# O padrão do PHP é 2 MB, o que barraria a maioria das fotos de capa.
+RUN echo "upload_max_filesize=15M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size=16M" >> /usr/local/etc/php/conf.d/uploads.ini
+
 # PHP-FPM tuning para 50k+ acessos
 RUN echo "pm = dynamic" > /usr/local/etc/php-fpm.d/zz-performance.conf \
     && echo "pm.max_children = 50" >> /usr/local/etc/php-fpm.d/zz-performance.conf \
@@ -29,9 +34,11 @@ COPY . /var/www/html
 WORKDIR /var/www/html
 
 # Permissões
-RUN mkdir -p /var/www/html/storage /var/www/html/api/logs \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs \
-    && chmod -R 775 /var/www/html/storage /var/www/html/api/logs
+# uploads/ recebe as imagens enviadas pelo painel (api/admin/upload.php).
+# Monte um volume persistente nesse caminho no painel de deploy, senão as imagens somem a cada novo deploy.
+RUN mkdir -p /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads \
+    && chmod -R 775 /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
 
 # Script de inicialização (limpa quebras de linha CRLF do Windows)
 COPY deploy/start.sh /start.sh

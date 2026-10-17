@@ -31,3 +31,6 @@ Thumbs.db
 
 # Cache local (rate limit)
 storage/cache/
+
+# Imagens enviadas pelo painel (ficam no volume do servidor, não no git)
+uploads/

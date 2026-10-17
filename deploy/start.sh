@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# Cria diretórios necessários
-mkdir -p /var/www/html/storage /var/www/html/api/logs
-chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs
-chmod -R 775 /var/www/html/storage /var/www/html/api/logs
+# Cria diretórios necessários (uploads/ = imagens enviadas pelo painel; monte um volume nele)
+mkdir -p /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
+chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
+chmod -R 775 /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
 
 # Roda migrations a cada start.
 # IMPORTANTE: NÃO esconder o erro. Em deploys anteriores o `|| echo ...` mascarava
