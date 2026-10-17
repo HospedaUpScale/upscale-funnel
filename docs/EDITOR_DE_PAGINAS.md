@@ -90,3 +90,11 @@ Acima da prévia, **Página completa**, **Revelação** (raspadinha/roleta), **O
 Clique nos títulos, descrições e preço da prévia nativa para focar o campo correspondente na lateral. Os textos da raspadinha e da roleta, antes fixos no renderizador, também são configuráveis e persistem no tema. Os comandos de prévia são aceitos somente em `?preview=1` e da mesma origem; páginas públicas mantêm o fluxo real de pagamento.
 
 Validação em navegador: seleção pela miniatura; dados e identidade das telas reais; navegação entre etapas; edição por clique e persistência; publicação no mesmo renderizador; reabertura por campanha; HTML personalizado preservado; prévia ampliada com dados reais; checkout do editor sem chamadas de pagamento e checkout publicado com API simulada. Nenhuma cobrança real foi gerada.
+
+## Organização do editor
+
+A lateral separa **Conteúdo**, **Mídia**, **Aparência** e **Pagamento**. Conteúdo acompanha a etapa: raspadinha, roleta ou oferta, sem misturar os textos das demais telas. Mídia concentra VTurb/MP4; Aparência reúne cores e som; Pagamento mostra o modo de checkout e o endereço quando externo. A configuração da campanha e do tipo de funil fica recolhida em um único bloco.
+
+Nas telas nativas, o painel de propriedades de blocos fica oculto para ampliar a prévia. **Página completa** mantém as ferramentas de elementos, camadas e propriedades para HTML personalizado. O rodapé da lateral mantém **Salvar rascunho** e **Páginas** acessíveis, sem depender da posição de rolagem do formulário. Clicar em conteúdo da prévia abre a aba do campo correspondente.
+
+A reorganização reutiliza os mesmos campos e identificadores do editor; não altera páginas publicadas, modelos ou dados salvos. Validação em navegador: visibilidade por etapa, edição e persistência em todas as abas, foco pela prévia, ferramentas de página personalizada e acesso ao painel de propriedades em 1024 px.

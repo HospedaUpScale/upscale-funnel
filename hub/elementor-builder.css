@@ -2917,3 +2917,44 @@ body.tp-modal-open {
 .builder-funnel-stages { flex-shrink:0; }
 
 #tp-existing-section,#tp-native-section { scroll-margin-top:80px; }
+
+/* Editor: conteúdo por etapa e ferramentas de página em espaços separados. */
+.elementor-body { grid-template-columns:320px minmax(0,1fr) 300px; }
+.editor-native-mode .elementor-body { grid-template-columns:340px minmax(0,1fr); }
+.editor-native-mode #builder-right-inspector { display:none; }
+.editor-panel-header { padding:20px 20px 14px; flex-shrink:0; }
+.editor-panel-eyebrow { color:#94a3b8;font-size:10px;letter-spacing:.12em;font-weight:700; }
+.editor-panel-header h2 { margin:6px 0 0;font-size:18px;line-height:1.3;color:#0f172a; }
+.editor-panel-tabs { display:flex;flex-wrap:wrap;gap:4px;padding:0 14px 14px;border-bottom:1px solid #e2e8f0;flex-shrink:0; }
+.editor-panel-tabs button { border:0;background:transparent;color:#64748b;padding:9px 10px;border-radius:8px;font:600 12px Inter,sans-serif;cursor:pointer; }
+.editor-panel-tabs button[aria-selected="true"] { background:#edf3ff;color:#1764ff; }
+.editor-form-scroll { flex:1;min-height:0;overflow:auto;padding:16px 20px; }
+.editor-campaign-settings { border:1px solid #e2e8f0;border-radius:10px;margin-bottom:18px; }
+.editor-campaign-settings > summary { padding:12px;font-size:12px;font-weight:600;color:#475569;cursor:pointer; }
+.editor-campaign-settings #builder-experience-panel { border:0!important;padding:0 12px 12px!important; }
+.editor-campaign-settings button[onclick="editarEtapasOferta()"] { display:none; }
+.editor-campaign-settings #builder-flow-hint { font-size:11px!important; }
+.editor-offer-form { border:0;padding:0; }
+.editor-offer-form > summary { display:none; }
+.editor-offer-form #builder-offer-status { font-size:12px!important;line-height:1.5;color:#64748b;margin:0 0 16px!important; }
+.editor-field-row { margin:0 0 18px; }
+.editor-field-row label { display:block;font-size:12px;font-weight:600;color:#475569;margin:0 0 8px; }
+.editor-field-row .form-input { width:100%;max-width:100%;min-height:42px;box-sizing:border-box; }
+.editor-field-row textarea { resize:vertical;min-height:112px;line-height:1.5; }
+.editor-field-row input[type="color"] { padding:5px;cursor:pointer; }
+.editor-field-check { display:flex;justify-content:space-between;align-items:center;gap:12px; }
+.editor-field-check label { margin:0; }
+.editor-field-check input[type="checkbox"] { width:20px;min-height:20px;height:20px; }
+.editor-shared-notice { font-size:11px;line-height:1.6;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:14px;margin:20px 0 0; }
+.editor-panel-footer { display:flex;gap:8px;padding:14px 16px;border-top:1px solid #e2e8f0;background:white;flex-shrink:0; }
+.editor-panel-footer button { min-height:40px;font-size:12px; }
+.editor-panel-footer button:first-child { flex:1; }
+.editor-page-tools { display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden; }
+.editor-field-panel[hidden],.editor-field-row[hidden],.editor-form-scroll[hidden],.editor-page-tools[hidden],.editor-panel-tabs button[hidden] { display:none!important; }
+.editor-native-mode .elementor-canvas-area { background:#f1f4f9; }
+.builder-funnel-stages { padding:12px 18px;gap:8px; }
+@media(max-width:1100px){.elementor-body{grid-template-columns:280px minmax(300px,1fr)260px;overflow:auto}.editor-native-mode .elementor-body{grid-template-columns:300px minmax(320px,1fr)}}
+@media(max-width:700px){.elementor-body{grid-template-columns:240px minmax(320px,1fr)260px;overflow:auto}.editor-native-mode .elementor-body{grid-template-columns:240px minmax(320px,1fr)}.editor-panel-header{padding:14px}.editor-form-scroll{padding:14px}.editor-panel-tabs{padding:0 8px 10px}.editor-panel-tabs button{padding:8px;font-size:11px}.builder-funnel-stages span{display:none}}
+
+.elementor-shell .elementor-sidebar { height:100%; min-height:0; }
+.editor-page-tools .elementor-sidebar-footer-pages { display:none; }

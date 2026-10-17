@@ -161,8 +161,9 @@
       else if(!theme.vturb_embed.trim()){offer.vturb_account_id='';offer.vturb_player_id='';theme.vturb_script_url='';}
     }
     offer.theme=theme;state.flowOffer=offer;state.offerDirty=true;
-    if(!['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label'].includes(changed))state.inlinePreviewScreen='offer';
-    else state.inlinePreviewScreen=state.mechanic==='direct'?'offer':'scratch';
+    if(['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label'].includes(changed))state.inlinePreviewScreen=state.mechanic==='direct'?'offer':'scratch';
+    else if(['checkout_mode','legacy_checkout_url'].includes(changed))state.inlinePreviewScreen='checkout';
+    else if(!['page_bg','primary_color','accent_color','sound_enabled','sound_volume'].includes(changed))state.inlinePreviewScreen='offer';
     if(state.previewTarget!=='experience'){state.previewTarget='experience';renderPreview(false);}
     atualizarNavegacaoEtapas();
     document.getElementById('builder-offer-status').textContent='Alterações da oferta ainda não salvas.';marcarModificado();enviarOfertaInline();
@@ -171,7 +172,8 @@
     var ready=!!state.flowOffer,stage=state.previewTarget==='page'?'page':state.inlinePreviewScreen;
     ['page','scratch','offer','checkout'].forEach(function(name){var btn=document.getElementById('builder-stage-'+name);if(!btn)return;btn.disabled=name!=='page'&&(!ready||(name==='scratch'&&state.mechanic==='direct'));btn.setAttribute('aria-pressed',String(stage===name));});
     document.getElementById('builder-stage-scratch').textContent=state.mechanic==='wheel'?'1 · Roleta':'1 · Raspadinha';
-    document.getElementById('builder-stage-status').textContent=ready?'Edite as telas reais da campanha. O checkout é demonstrativo na prévia.':'Selecione uma campanha para editar as etapas.';
+    document.getElementById('builder-stage-status').textContent=ready?'Prévia interativa · sem cobranças':'Selecione uma campanha para editar as etapas.';
+    if(window.organizarPainelEditor)window.organizarPainelEditor({target:state.previewTarget,stage:state.inlinePreviewScreen,mechanic:state.mechanic});
   }
   function preverEtapaOferta(screen){
     if(!['page','scratch','offer','checkout'].includes(screen))return;
@@ -3057,7 +3059,7 @@
       if(event.data.type==='upscale:edit-offer-field'&&event.origin===window.location.origin){
         var trusted=['builder-iframe','builder-iframe-mobile'].some(function(id){var outer=document.getElementById(id);return outer&&outer.contentDocument&&Array.from(outer.contentDocument.querySelectorAll('iframe[data-campaign-offer]')).some(function(frame){return frame.contentWindow===event.source;});});
         var field=typeof event.data.field==='string'?inlineField(event.data.field):null;
-        if(trusted&&field){document.getElementById('builder-inline-offer').open=true;field.focus();field.scrollIntoView({block:'nearest'});}
+        if(trusted&&field){if(window.focarCampoOferta)window.focarCampoOferta(event.data.field);else{document.getElementById('builder-inline-offer').open=true;field.focus();field.scrollIntoView({block:'nearest'});}}
       }
       if (event.data.type === 'elementor:select') {
         selecionarElementoPeloId(event.data);
