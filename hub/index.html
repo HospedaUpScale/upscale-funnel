@@ -924,6 +924,8 @@
                       <input type="number" class="form-input" id="camp-quotas" value="200" oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
                     </div>
                   </div>
+                  <div><label class="form-label" for="camp-offer-headline-start">Título da tela final</label><input type="text" class="form-input" id="camp-offer-headline-start" value="Seu Booster está" oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();"></div>
+                  <div><label class="form-label" for="camp-offer-headline-highlight">Destaque da tela final</label><input type="text" class="form-input" id="camp-offer-headline-highlight" value="pronto para ativar." oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();"></div>
                   <div>
                     <label class="form-label" for="camp-cta">Texto do Botão de Ativação (CTA)</label>
                     <input type="text" class="form-input" id="camp-cta" value="ATIVAR MEU BOOSTER 200X" oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
@@ -4012,6 +4014,8 @@
       timer_minutes: timerMin,
       cta_label: ctaText,
       cta_subtext: ctaSub,
+      offer_headline_start: document.getElementById('camp-offer-headline-start').value.trim(),
+      offer_headline_highlight: document.getElementById('camp-offer-headline-highlight').value.trim(),
       show_logo: document.getElementById('toggle-campaign-logo').checked,
       logo_url: document.getElementById('campaign-logo-url').value.trim()
     };
@@ -4163,6 +4167,8 @@
           document.getElementById('mechanic-type').value = t.mechanic;
           alternarMecanica();
         }
+        document.getElementById('camp-offer-headline-start').value = t.offer_headline_start || 'Seu Booster está';
+        document.getElementById('camp-offer-headline-highlight').value = t.offer_headline_highlight || 'pronto para ativar.';
         if (t.cta_label) document.getElementById('camp-cta').value = t.cta_label;
         if (t.cta_subtext) document.getElementById('camp-cta-subtext').value = t.cta_subtext;
         if (t.timer_minutes) document.getElementById('camp-timer-minutes').value = t.timer_minutes;

@@ -107,6 +107,8 @@ class OfferTheme
             'headline_highlight'    => 'Booster',
             'subtitle_text'         => 'Uma condição especial para esta campanha.',
             'cta_label'             => 'ATIVAR MEU BOOSTER AGORA',
+            'offer_headline_start' => 'Seu Booster está',
+            'offer_headline_highlight' => 'pronto para ativar.',
             'cta_subtext'           => 'Liberação imediata via Pix em 1 clique',
             'modal_win_title'       => 'PARABÉNS! VOCÊ DESBLOQUEOU',
             'show_steps'            => true,

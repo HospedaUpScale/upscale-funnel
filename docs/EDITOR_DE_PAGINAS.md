@@ -33,3 +33,11 @@ Em **Editar oferta e checkout → Aparência → Área de raspagem**, configure 
 Ative o PHP, execute `php scripts/migrate.php` e inicie `php -S 127.0.0.1:8000 router.php`. Não é mais necessário baixar dependências de um editor visual externo. Execute `php scripts/test.php`.
 
 A falha preexistente `testMasterCanListAllUsersWithWorkspacesAndRoles` ocorre quando o seed não contém usuário. O restante da suíte e o teste de navegador do fluxo campanha → editor clássico → roleta nativa passaram. Nenhuma cobrança real foi efetuada nos testes.
+
+## Tela final da oferta
+
+Após revelar a raspadinha ou roleta, a oferta usa apresentação ampla e responsiva com etapa concluída, selo de desbloqueio, título em duas partes, vídeo antes do produto/preço, cronômetro e CTA de pagamento. O acesso direto usa a mesma apresentação. O preço, produto, vídeo e botão continuam usando os dados da oferta publicada.
+
+Em **Editar oferta e checkout → Conteúdo**, os campos **Título da tela final** e **Destaque da tela final** alteram a chamada principal. São salvos no rascunho e publicados junto ao tema. Sem vídeo configurado, o player e a frase que convida a assistir ficam ocultos. A prévia permite voltar à roleta/raspadinha e restaura a apresentação inicial.
+
+Validação: layout sem rolagem horizontal em 320, 390, 941 e 1440 px; preço configurado, cronômetro, retorno da prévia e Pix simulado. Salvamento/reabertura/publicação dos textos e integração VTurb v4/MP4 verificados com carregador externo simulado.

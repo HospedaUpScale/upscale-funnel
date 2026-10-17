@@ -484,6 +484,46 @@
     font-size: 12px; color: var(--text-secondary); margin-top: 10px; text-align: center;
   }
 
+
+  /* Tela final: apresentação ampla após a revelação. */
+  #rp.offer-mode { max-width: 920px; padding: 28px 24px 36px; }
+  .offer-mode .campaign-eyebrow { font-size: clamp(10px, 2vw, 18px); letter-spacing: .28em; margin-bottom: 28px; }
+  .offer-mode .stepper { max-width: 680px; margin-bottom: 30px; }
+  .offer-mode .step-circle { width: 44px; height: 44px; font-size: 23px; }
+  .offer-mode .step-label { font-size: clamp(12px, 2.5vw, 21px); }
+  .offer-mode #step-1 .step-circle { background: var(--accent-color, #A6F568); border-color: var(--accent-color, #A6F568); color: #06152D; box-shadow: none; }
+  .offer-mode #step-1 + .step-line { background: var(--primary-color, #1764FF); }
+  .offer-mode .greeting { display: none; }
+  .offer-hero { margin-bottom: 30px; }
+  .offer-mode .offer-badge { background: transparent; border: 2px solid var(--accent-color, #A6F568); color: var(--accent-color, #A6F568); padding: 8px 22px; letter-spacing: .18em; font-size: clamp(10px, 2vw, 18px); margin-bottom: 20px; border-radius: 30px; }
+  .offer-headline { font-family: var(--font-heading); font-weight: 900; font-size: clamp(30px, 7.6vw, 72px); line-height: 1.12; letter-spacing: -.045em; margin: 0 0 16px; overflow-wrap: anywhere; }
+  #offer-headline-highlight { color: var(--primary-color, #1764FF); }
+  .offer-intro { font-size: clamp(15px, 3.2vw, 28px); line-height: 1.4; color: var(--text-secondary); }
+  .offer-mode .media-box { border: 0; border-radius: 14px; margin-bottom: 48px; }
+  .offer-mode .offer-card { background: transparent; border: 0; padding: 0; border-radius: 0; box-shadow: none; text-align: left; }
+  .offer-section-label { color: var(--text-secondary); letter-spacing: .14em; font-weight: 700; font-size: clamp(11px, 2vw, 18px); margin-bottom: 10px; }
+  .offer-mode .offer-main-title { font-size: clamp(26px, 6vw, 58px); line-height: 1.18; overflow-wrap: anywhere; }
+  .offer-mode .offer-desc { font-size: clamp(13px, 2vw, 18px); }
+  .offer-mode .offer-price-line { justify-content: flex-start; flex-wrap: wrap; gap: 16px; margin: 16px 0 26px; }
+  .offer-price-prefix { color: var(--text-secondary); font-size: clamp(17px, 3.4vw, 30px); }
+  .offer-mode .offer-price-val { font-size: clamp(42px, 9vw, 86px); color: var(--accent-color, #A6F568); text-shadow: none; line-height: 1.15; }
+  .offer-mode .timer-box { background: transparent; border: 0; border-top: 1px solid rgba(133,174,231,.3); border-radius: 0; padding: 22px 0; font-size: clamp(14px, 3vw, 27px); margin-bottom: 10px; gap: 12px; }
+  .offer-timer-label { display: flex; align-items: center; gap: 14px; }
+  .offer-timer-label svg { width: 36px; height: 36px; color: var(--primary-color, #1764FF); flex-shrink: 0; }
+  .offer-mode .timer-clock { color: var(--text-color, #fff); font-size: clamp(26px, 5vw, 44px); }
+  .offer-mode .btn-cta { min-height: clamp(64px, 12vw, 110px); font-size: clamp(17px, 3.6vw, 34px); border-radius: 16px; box-shadow: none; }
+  .offer-mode .btn-cta svg { width: 34px; height: 34px; }
+  .offer-mode .cta-subtext { display: flex; justify-content: center; align-items: center; gap: 12px; font-size: clamp(12px, 2.8vw, 23px); margin: 24px 0 30px; }
+  .cta-subtext svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .offer-mode .footer-terms { display: block; text-align: center; font-size: clamp(12px, 2.5vw, 20px); }
+  @media (max-width: 480px) {
+    #rp.offer-mode { padding: 22px 16px 28px; }
+    .offer-mode .step-circle { width: 32px; height: 32px; font-size: 17px; }
+    .offer-mode .media-box { margin-bottom: 28px; }
+    .offer-timer-label { gap: 8px; }
+    .offer-timer-label svg { width: 26px; height: 26px; }
+  }
+
   /* MODAL DE PIX NATIVO (1-CLIQUE) */
   .pix-dialog {
     position: fixed; inset: 0; margin: auto;
@@ -631,28 +671,25 @@
 
   <!-- ══ VISTA 2: OFERTA REVELADA ══ -->
   <div class="view-offer" id="view-offer">
+    <div class="offer-hero">
+      <div class="offer-badge">OFERTA DESBLOQUEADA</div>
+      <h1 class="offer-headline"><span id="offer-headline-start">Seu Booster está</span><br><span id="offer-headline-highlight">pronto para ativar.</span></h1>
+      <p class="offer-intro" id="offer-intro">Confira os detalhes da sua oferta no vídeo abaixo.</p>
+    </div>
+    <div class="media-box hidden" id="media-box">
+      <video id="offer-video" playsinline muted controls></video>
+    </div>
     <div class="offer-card">
-      <div class="offer-badge">
-        <span class="offer-badge-dot"></span>
-        <span>OFERTA DESBLOQUEADA</span>
-      </div>
-
-      <h2 class="offer-main-title" id="offer-title">Booster 200X Ouro</h2>
+      <p class="offer-section-label">SUA CONDIÇÃO ESPECIAL</p>
+      <h2 class="offer-main-title" id="offer-title">Ative seu Booster</h2>
       <p class="offer-desc" id="offer-subtitle">Kit Bobzão Bitruck + Ford F250 Azul Metálico</p>
-
       <div class="offer-price-line">
-        <span style="font-size: 18px; color: var(--text-secondary);">Por apenas</span>
+        <span class="offer-price-prefix">Por apenas</span>
         <span class="offer-price-val" id="offer-price">R$ 90,00</span>
       </div>
-
       <div class="timer-box">
-        <span>Tempo restante para ativar:</span>
-        <span class="timer-clock" id="timer-clock">03:00</span>
-      </div>
-
-      <!-- Container de Vídeo / Vturb (se houver) -->
-      <div class="media-box hidden" id="media-box">
-        <video id="offer-video" playsinline muted controls></video>
+        <span class="offer-timer-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>Tempo para ativar</span>
+        <span class="timer-clock" id="timer-clock" role="timer">03:00</span>
       </div>
 
       <button type="button" class="btn-cta" id="btn-cta">
@@ -662,7 +699,8 @@
         </svg>
       </button>
 
-      <p class="cta-subtext" id="cta-subtext">Pagamento via Pix instantâneo · Cotas ativadas na hora.</p>
+      <p class="cta-subtext"><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8H4v-8a2 2 0 0 1 2-2h1zm2 0h6V7a3 3 0 0 0-6 0v3z"/></svg><span id="cta-subtext">Pagamento via Pix</span></p>
+      <a href="#condicoes" class="footer-terms">Consultar condições da oferta</a>
     </div>
   </div>
 
@@ -948,6 +986,13 @@
     revelarOferta();
   });
 
+  function apresentarOferta(ativa) {
+    root.classList.toggle('offer-mode', ativa);
+    $('campaign-eyebrow').textContent = ativa ? 'UPSCALE · CAMPANHA OFICIAL' : CONFIG.subtitle;
+    $('step-1').querySelector('.step-circle').textContent = ativa ? '✓' : '1';
+    $('step-3').className = 'step-item inactive';
+  }
+
   /* ══ REVELAÇÃO DA OFERTA (UMA ÚNICA VEZ) ══ */
   function revelarOferta() {
     if (revelado) return;
@@ -966,6 +1011,7 @@
 
     // Transição suave para a tela de oferta (esconde qualquer mecânica ativa)
     setTimeout(function () {
+      apresentarOferta(true);
       $('view-scratch').style.display = 'none';
       var vw = $('view-wheel'); if (vw) vw.classList.remove('on');
       $('view-offer').classList.add('on');
@@ -1138,7 +1184,7 @@
 
     if (d.subtitle) {
       CONFIG.subtitle = d.subtitle;
-      $('campaign-eyebrow').textContent = d.subtitle;
+      $('campaign-eyebrow').textContent = revelado ? 'UPSCALE · CAMPANHA OFICIAL' : d.subtitle;
       $('offer-subtitle').textContent = d.subtitle;
     }
 
@@ -1153,6 +1199,8 @@
     if (d.vturb_account_id !== undefined) CONFIG.vturbAccount = d.vturb_account_id || '';
 
     var theme = d.theme || {};
+    $('offer-headline-start').textContent = theme.offer_headline_start || 'Seu Booster está';
+    $('offer-headline-highlight').textContent = theme.offer_headline_highlight || 'pronto para ativar.';
     if(window.upscaleSounds)upscaleSounds.configure({enabled:theme.sound_enabled!==false,volume:theme.sound_volume===undefined?.2:theme.sound_volume});
     CONFIG.vturbScriptUrl = theme.vturb_script_url || '';
     CONFIG.vturbAspectRatio = Number(theme.vturb_aspect_ratio) || 56.25;
@@ -1230,6 +1278,8 @@
       if(window.upscaleSounds)upscaleSounds.stop();
       if (d.screen === 'offer') {
         revelado = true;
+        apresentarOferta(true);
+        iniciarTimerOferta();
         iniciarMedia();
         $('view-scratch').style.display = 'none';
         var vw1 = $('view-wheel'); if (vw1) vw1.classList.remove('on');
@@ -1238,6 +1288,7 @@
         $('step-2').className = 'step-item active';
       } else {
         revelado = false;
+        apresentarOferta(false);
         tocou = false;
         raspando = false;
         wheelSpun = false;
@@ -1255,11 +1306,14 @@
   });
 
   /* ══ CRONÔMETRO DE URGÊNCIA ══ */
+  var offerTimer = null;
   function iniciarTimerOferta() {
+    clearInterval(offerTimer);
     var total = Math.max(60, Math.round(CONFIG.timerMinutes * 60));
     var resta = total;
     var el = $('timer-clock');
-    var timer = setInterval(function () {
+    el.textContent = ('0' + Math.floor(resta / 60)).slice(-2) + ':' + ('0' + (resta % 60)).slice(-2);
+    var timer = offerTimer = setInterval(function () {
       resta--;
       if (resta <= 0) {
         clearInterval(timer);
@@ -1280,6 +1334,7 @@
     if(!/^https:\/\/scripts\.converteai\.net\/[a-zA-Z0-9_-]+\/players\/[a-zA-Z0-9_-]+\/(?:v[0-9]+\/)?player\.js$/.test(scriptUrl))scriptUrl='';
     if(!/^[a-zA-Z0-9_-]+$/.test(player))player='';
     var source=player?'vturb':CONFIG.videoSrc?'mp4':'none';
+    $('offer-intro').hidden = source === 'none';
     var signature=JSON.stringify([source,player,CONFIG.vturbAccount,scriptUrl,CONFIG.videoSrc,CONFIG.vturbAspectRatio]);
     if(mediaBox.dataset.mediaSignature===signature)return;
     mediaBox.dataset.mediaSignature=signature;
