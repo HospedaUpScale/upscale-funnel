@@ -2869,3 +2869,13 @@ body.tp-modal-open {
 
 
 
+
+/* Funis nativos na mesma galeria de Pressel e páginas livres. */
+.tp-funnel-preview { background: radial-gradient(at top left,#123e88,#06152d); color: #fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; padding:28px 16px; }
+.tp-funnel-preview strong { font-size:20px; }
+.tp-funnel-preview > span:last-child { font-size:13px; color:#b0c4df; }
+.tp-funnel-icon { color:#a6f568; font-size:64px; line-height:1; }
+.tp-campaign-panel { padding:20px; border:1px solid #b8d1ff; background:#eff6ff; border-radius:14px; margin:20px 0; color:#0f172a; }
+.tp-campaign-panel[hidden] { display:none; }
+.tp-campaign-panel .form-label { color:#0f172a; }
+.tp-campaign-panel p { font-size:13px; line-height:1.5; margin:12px 0; }

@@ -45,3 +45,11 @@ Validação: layout sem rolagem horizontal em 320, 390, 941 e 1440 px; preço co
 ## Assistente de textos com Claude
 
 A aba **Conteúdo** inclui um assistente para sugerir os seis textos principais da oferta. A sugestão é revisada antes de ser aplicada e segue o fluxo normal de salvar/publicar. Veja [configuração da API Claude no EasyPanel e limites de consumo](CLAUDE_API.md).
+
+## Criar funis pela galeria de novas páginas
+
+Em **Nova página**, os modelos **Funil com raspadinha**, **Funil com roleta** e **Oferta direta** ficam na mesma galeria de Pressel Premium, Booster Padrão e Página em Branco. Selecione o modelo, escolha a campanha e clique em **Usar este modelo**. A campanha é obrigatória nesses três modelos, pois fornece os dados da oferta e o checkout.
+
+A criação gera uma página independente em rascunho com a experiência escolhida e o vínculo da campanha. A página publicada continua ativa até publicar a nova. O editor mantém aberto o rascunho recém-criado, mesmo se foi aberto a partir do endereço de outra página. Na lateral, **Editar etapas e oferta** salva alterações da página antes de abrir o editor da oferta da campanha, onde se configuram textos, vídeo, preço, cores, mecânica, áudio e checkout.
+
+A prévia ampliada desses três modelos mostra a sequência do funil, sem executar checkout ou tracking. A prévia do editor usa os dados reais da campanha. O teste de navegador verificou os três modelos, campanha obrigatória, salvamento do vínculo e mecânica, preservação da publicação anterior e acesso ao editor das etapas.

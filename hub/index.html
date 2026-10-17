@@ -12,7 +12,7 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
-  <link rel="stylesheet" href="elementor-builder.css?v=3.3">
+  <link rel="stylesheet" href="elementor-builder.css?v=3.4">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -23,7 +23,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=3.6" defer></script>
+  <script src="elementor-builder.js?v=3.4" defer></script>
 </head>
 <body>
 
@@ -1616,6 +1616,7 @@
                   <select id="builder-flow-campaign" class="form-select" onchange="vincularCampanhaExperiencia(this.value)"><option value="">Selecione uma campanha</option></select>
                   <label class="form-label" for="builder-flow-type" style="margin-top:10px;">Experiência do comprador</label>
                   <select id="builder-flow-type" class="form-select" onchange="alterarExperienciaFunil(this.value)"><option value="scratch">Raspadinha</option><option value="wheel">Roleta</option><option value="direct">Direto para o upsell</option></select>
+                  <button type="button" class="btn-secondary" onclick="editarEtapasOferta()" style="width:100%;margin-top:10px;">Editar etapas e oferta</button>
                   <button id="builder-insert-experience" type="button" class="btn-primary" onclick="inserirExperienciaFunil()" style="width:100%;margin-top:10px;">Inserir experiência na página</button>
                   <p id="builder-flow-hint" role="status" style="font-size:12px;line-height:1.5;margin:8px 0 0;color:var(--text-muted);">A experiência é inserida como um bloco. O restante da página é preservado.</p>
                 </section>
@@ -2110,7 +2111,7 @@
             <div>
               <span class="tp-tag">NOVA PÁGINA</span>
               <h1 class="tp-heading">Escolha o modelo da sua página</h1>
-              <p class="tp-desc">Comece com uma estrutura pronta ou crie sua página do zero.</p>
+              <p class="tp-desc">Escolha uma pressel, um funil com raspadinha ou roleta, uma oferta direta ou uma página em branco.</p>
             </div>
             <!-- Stepper -->
             <div class="tp-stepper">
@@ -2316,6 +2317,40 @@
               </div>
             </div>
 
+            <div class="tp-card" id="tp-card-funil-scratch" data-template-id="funil-scratch" onclick="selecionarModeloPicker('funil-scratch')">
+              <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-scratch', event)" title="Ampliar prévia da sequência">
+                <span class="tp-funnel-icon" aria-hidden="true">✦</span>
+                <strong>Funil com raspadinha</strong><span>Revele → Confira → Ative</span>
+              </div>
+              <div class="tp-card-body">
+                <h3 class="tp-card-title">Funil com raspadinha</h3><p class="tp-card-desc">O visitante raspa, confere a oferta e ativa pelo checkout.</p>
+                <ul class="tp-features-list"><li>Oferta vinculada à campanha</li><li>Textos, vídeo, preço e cores editáveis</li><li>Checkout e publicação integrados</li></ul>
+                <div class="tp-card-footer"><button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('funil-scratch', event)">Ampliar prévia</button><button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('funil-scratch', event)">Selecionar</button></div>
+              </div>
+            </div>
+            <div class="tp-card" id="tp-card-funil-wheel" data-template-id="funil-wheel" onclick="selecionarModeloPicker('funil-wheel')">
+              <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-wheel', event)" title="Ampliar prévia da sequência">
+                <span class="tp-funnel-icon" aria-hidden="true">◉</span>
+                <strong>Funil com roleta</strong><span>Revele → Confira → Ative</span>
+              </div>
+              <div class="tp-card-body">
+                <h3 class="tp-card-title">Funil com roleta</h3><p class="tp-card-desc">O visitante gira a roleta, confere a oferta e ativa pelo checkout.</p>
+                <ul class="tp-features-list"><li>Oferta vinculada à campanha</li><li>Textos, vídeo, preço e cores editáveis</li><li>Checkout e publicação integrados</li></ul>
+                <div class="tp-card-footer"><button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('funil-wheel', event)">Ampliar prévia</button><button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('funil-wheel', event)">Selecionar</button></div>
+              </div>
+            </div>
+            <div class="tp-card" id="tp-card-funil-direct" data-template-id="funil-direct" onclick="selecionarModeloPicker('funil-direct')">
+              <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-direct', event)" title="Ampliar prévia da sequência">
+                <span class="tp-funnel-icon" aria-hidden="true">→</span>
+                <strong>Oferta direta</strong><span>Confira → Ative</span>
+              </div>
+              <div class="tp-card-body">
+                <h3 class="tp-card-title">Oferta direta</h3><p class="tp-card-desc">Abre diretamente a tela final da oferta, com vídeo e checkout.</p>
+                <ul class="tp-features-list"><li>Oferta vinculada à campanha</li><li>Textos, vídeo, preço e cores editáveis</li><li>Checkout e publicação integrados</li></ul>
+                <div class="tp-card-footer"><button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('funil-direct', event)">Ampliar prévia</button><button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('funil-direct', event)">Selecionar</button></div>
+              </div>
+            </div>
+
             <!-- ── CARD 3: PÁGINA EM BRANCO ── -->
             <div class="tp-card" id="tp-card-pagina-em-branco" data-template-id="pagina-em-branco" onclick="selecionarModeloPicker('pagina-em-branco')">
               <div class="tp-card-selected-badge">
@@ -2374,6 +2409,14 @@
             </div>
 
           </div>
+
+          <section id="tp-funnel-campaign-panel" hidden class="tp-campaign-panel">
+            <label class="form-label" for="tp-funnel-campaign">Campanha deste funil</label>
+            <select id="tp-funnel-campaign" class="form-select" onchange="document.getElementById('tp-funnel-campaign-status').textContent = this.value ? 'Campanha selecionada. Clique em Usar este modelo.' : 'Selecione uma campanha para continuar.';"><option value="">Selecione uma campanha</option></select>
+            <p id="tp-funnel-campaign-status" role="status">Escolha a campanha que fornece a oferta e o checkout.</p>
+            <p>A nova página será criada como rascunho. A versão atual da campanha continua publicada até você publicar a nova página.</p>
+            <button type="button" class="tp-btn-preview-link" onclick="voltarOrigemTemplatePicker(); navigate('campaigns');">Criar uma campanha</button>
+          </section>
 
           <!-- Nota Auxiliar Centralizada -->
           <div class="tp-bottom-note">

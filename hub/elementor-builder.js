@@ -61,6 +61,13 @@
     state.mechanic=mechanic;applyExperience(true);
   }
   function inserirExperienciaFunil(){applyExperience(true);}
+  async function editarEtapasOferta() {
+    var campaignId = window.selectedCampaignId;
+    if (!campaignId) { flowMessage('Selecione uma campanha primeiro.'); return; }
+    if ((state.isModified || !state.funnelId) && !await salvarFunilRascunho()) return;
+    if (window.selectedCampaignId === campaignId) window.abrirEditorOferta(campaignId);
+  }
+
   async function vincularCampanhaExperiencia(value, generation) {
     if (!generation) generation = ++state.flowControlsGeneration;
     var id=parseInt(value)||0;
@@ -1694,7 +1701,7 @@
     }
 
     var wsId = window.currentWsId || 2;
-    window.apiFetch('../api/admin/funnels.php', {
+    return window.apiFetch('../api/admin/funnels.php', {
       method: 'POST',
       body: JSON.stringify({
         action: 'save',
@@ -1724,14 +1731,17 @@
         atualizarDisplayLinkPublico();
         window.showToast && window.showToast('Rascunho salvo com sucesso!', 'success');
         carregarListaGaveta();
+        return true;
       } else {
         window.showToast && window.showToast(data.message || 'Erro ao salvar rascunho.', 'error');
         marcarModificado();
+        return false;
       }
     })
     .catch(function(e) {
       console.error(e);
       window.showToast && window.showToast('Falha na comunicação ao salvar.', 'error');
+      return false;
     });
   }
 
@@ -2032,7 +2042,7 @@
 
         var campaignId = window.selectedCampaignId || 0;
         var classicFunnels = campaignId ? funnels.filter(function(f) { return f.campaign_id === campaignId; }) : funnels;
-        var requestedId = parseInt(new URLSearchParams(window.location.search).get('funnel_id')) || 0;
+        var requestedId = state.funnelId || parseInt(new URLSearchParams(window.location.search).get('funnel_id')) || 0;
         if (classicFunnels.length > 0) {
           var f = classicFunnels.find(function(x) { return x.id === requestedId; }) || classicFunnels.find(function(x) { return x.slug === 'oferta-especial'; }) || classicFunnels[0];
           window.selectedCampaignId = f.campaign_id || null;
@@ -2515,6 +2525,9 @@
       defaultSlugPrefix: 'booster',
       cardId: 'tp-card-booster-padrao'
     },
+    'funil-scratch': {id:'funil-scratch', name:'Funil com raspadinha', templateSlug:'funil-scratch', defaultSlugPrefix:'funil-scratch', cardId:'tp-card-funil-scratch', mechanic:'scratch'},
+    'funil-wheel': {id:'funil-wheel', name:'Funil com roleta', templateSlug:'funil-wheel', defaultSlugPrefix:'funil-wheel', cardId:'tp-card-funil-wheel', mechanic:'wheel'},
+    'funil-direct': {id:'funil-direct', name:'Oferta direta', templateSlug:'funil-direct', defaultSlugPrefix:'funil-direct', cardId:'tp-card-funil-direct', mechanic:'direct'},
     'pagina-em-branco': {
       id: 'pagina-em-branco',
       name: 'Página em Branco',
@@ -2530,6 +2543,7 @@
   function abrirTelaSelecaoModelos(origem) {
     templatePickerOrigin = origem || 'editor';
     selecionarModeloPicker('pressel-premium-campanhas');
+    carregarCampanhasModeloFunil();
 
     // Fechar prévia caso estivesse aberta
     fecharPreviaModal();
@@ -2590,14 +2604,15 @@
     }
   }
 
-  function selecionarModeloPicker(modelId) {
+  function selecionarModeloPicker(modelId, event) {
+    if (event) event.stopPropagation();
     if (!TEMPLATE_PICKER_DEFS[modelId]) modelId = 'pressel-premium-campanhas';
     selectedTemplatePickerId = modelId;
 
     var def = TEMPLATE_PICKER_DEFS[modelId];
 
     // Atualizar classes e botões nos 3 cards
-    ['pressel-premium-campanhas', 'booster-padrao', 'pagina-em-branco'].forEach(function(id) {
+    Object.keys(TEMPLATE_PICKER_DEFS).forEach(function(id) {
       var cardDef = TEMPLATE_PICKER_DEFS[id];
       var cardEl = document.getElementById(cardDef.cardId);
       if (!cardEl) return;
@@ -2617,6 +2632,9 @@
       }
     });
 
+    var campaignPanel = document.getElementById('tp-funnel-campaign-panel');
+    if (campaignPanel) campaignPanel.hidden = !def.mechanic;
+
     // Atualizar nome na barra inferior fixa
     var bottomName = document.getElementById('tp-bottom-selected-name');
     if (bottomName) {
@@ -2624,9 +2642,39 @@
     }
   }
 
+  var pickerCampaignGeneration = 0;
+  function carregarCampanhasModeloFunil() {
+    var select = document.getElementById('tp-funnel-campaign');
+    var status = document.getElementById('tp-funnel-campaign-status');
+    var generation = ++pickerCampaignGeneration;
+    var wsId = window.currentWsId || 2;
+    select.replaceChildren(new Option('Selecione uma campanha', '')); select.disabled = true;
+    status.textContent = 'Carregando campanhas…';
+    window.apiFetch('../api/admin/campaigns.php?workspace_id=' + wsId).then(function(data) {
+      if (generation !== pickerCampaignGeneration || (window.currentWsId || 2) !== wsId) return;
+      if (data.status !== 'success') throw new Error(data.message || 'Não foi possível carregar as campanhas.');
+      (data.campaigns || []).forEach(function(c) { select.add(new Option(c.title, String(c.id))); });
+      select.value = window.selectedCampaignId ? String(window.selectedCampaignId) : '';
+      select.disabled = false;
+      status.textContent = (data.campaigns || []).length ? 'Escolha a campanha que fornece a oferta e o checkout.' : 'Crie uma campanha primeiro para vincular a oferta ao funil.';
+    }).catch(function(error) {
+      if (generation === pickerCampaignGeneration) status.textContent = error.message;
+    });
+  }
+
+  function getNativeFunnelTemplate(mechanic, preview) {
+    var labels = {scratch:'Raspadinha', wheel:'Roleta', direct:'Oferta direta'};
+    if (preview) {
+      return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#06152d;color:white;font-family:system-ui;padding:40px 20px;text-align:center}main{max-width:640px;margin:auto}small{color:#a6f568;letter-spacing:3px}h1{font-size:38px}section{background:#0c2247;border:1px solid #1764ff;border-radius:16px;padding:30px;margin:18px 0}strong{color:#a6f568}p{color:#b0c4df;line-height:1.6}</style></head><body><main><small>PRÉVIA DA SEQUÊNCIA</small><h1>' + labels[mechanic] + '</h1>' + (mechanic === 'direct' ? '' : '<section><strong>1 · REVELE</strong><p>' + (mechanic === 'wheel' ? 'Gire a roleta para revelar sua oferta.' : 'Raspe para revelar sua oferta.') + '</p></section>') + '<section><strong>2 · CONFIRA</strong><p>Tela final com vídeo, detalhes e preço da campanha.</p></section><section><strong>3 · ATIVE</strong><p>Botão de ativação e checkout configurado na campanha.</p></section><p>As informações reais aparecem após vincular a campanha. Todas as etapas são configuradas no editor da oferta.</p></main></body></html>';
+    }
+    return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + labels[mechanic] + '</title><style>html,body{margin:0;background:#06152d}iframe{display:block;width:100%;height:1800px;min-height:100vh;border:0}</style></head><body><section data-block-id="campaign-experience" data-block-type="html"><iframe data-campaign-offer="true" src="' + flowFrameSource(mechanic) + '" title="Experiência e oferta da campanha"></iframe></section><script>document.querySelector("iframe").addEventListener("load",function(){var frame=this;try{var root=frame.contentDocument.getElementById("rp");if(!root)return;var resize=function(){frame.style.height=Math.max(640,Math.ceil(root.getBoundingClientRect().height)+100)+"px";};new ResizeObserver(resize).observe(root);resize();}catch(e){}});<\/script></body></html>';
+  }
+
   function getTemplateHtmlForModel(modelId, sanitizeForPreview) {
     var html = '';
-    if (modelId === 'pressel-premium-campanhas' || modelId === 'pressel-premium') {
+    if (TEMPLATE_PICKER_DEFS[modelId] && TEMPLATE_PICKER_DEFS[modelId].mechanic) {
+      html = getNativeFunnelTemplate(TEMPLATE_PICKER_DEFS[modelId].mechanic, sanitizeForPreview);
+    } else if (modelId === 'pressel-premium-campanhas' || modelId === 'pressel-premium') {
       if (window.PresselPremium) {
         var cfg = window.PresselPremium.getDefaultConfig();
         if (cfg && cfg.settings && cfg.settings.seo) {
@@ -2821,6 +2869,14 @@
   }
 
   function confirmarUsoModelo() {
+    var selectedDef = TEMPLATE_PICKER_DEFS[selectedTemplatePickerId];
+    var campaignId = selectedDef && selectedDef.mechanic ? parseInt(document.getElementById('tp-funnel-campaign').value, 10) || 0 : null;
+    if (selectedDef && selectedDef.mechanic && !campaignId) {
+      document.getElementById('tp-funnel-campaign-panel').scrollIntoView({block:'center'});
+      document.getElementById('tp-funnel-campaign-status').textContent = 'Selecione uma campanha antes de criar este funil.';
+      document.getElementById('tp-funnel-campaign').focus();
+      return;
+    }
     var btn = document.getElementById('btn-tp-confirmar');
     if (btn) {
       btn.disabled = true;
@@ -2842,12 +2898,13 @@
       body: JSON.stringify({
         action: 'save',
         workspace_id: wsId,
+        campaign_id: campaignId,
         name: generatedName,
         slug: generatedSlug,
         custom_domain_id: null,
         template_slug: def.templateSlug,
         settings_config: {
-          experience: { mechanic: state.mechanic },
+          experience: { mechanic: def.mechanic || 'scratch' },
           tracking: {
             meta_pixel_id: '',
             cta_track_event: 'InitiateCheckout'
@@ -2864,6 +2921,10 @@
       }
 
       if (data.status === 'success') {
+        window.selectedCampaignId = data.campaign_id || null;
+        window.requestedCampaignMechanic = null;
+        state.mechanic = def.mechanic || 'scratch';
+        state.flowOffer = null;
         state.funnelId = data.funnel_id;
         state.name = generatedName;
         state.slug = data.slug || generatedSlug;
@@ -3049,6 +3110,7 @@
   window.switchSidebarTab = switchSidebarTab;
   window.alterarExperienciaFunil = alterarExperienciaFunil;
   window.inserirExperienciaFunil = inserirExperienciaFunil;
+  window.editarEtapasOferta = editarEtapasOferta;
   window.vincularCampanhaExperiencia = vincularCampanhaExperiencia;
   window.inserirBloco = inserirBloco;
   window.desmarcarElemento = desmarcarElemento;
