@@ -12,6 +12,8 @@
   // ══ ESTADO GLOBAL DO BUILDER ══
   var state = {
     funnelId: null,
+    pageLoadGeneration: 0,
+    editorPrepared: false,
     name: 'Oferta Especial',
     slug: 'oferta-especial',
     templateSlug: 'default',
@@ -782,12 +784,26 @@
   }
 
   // ══ INICIALIZAR O BUILDER ══
-  function initBuilder() {
+  function prepararEditor() {
+    if (state.editorPrepared) return;
     setupCodeMirror();
+    setupEventListeners();
+    state.editorPrepared = true;
     carregarOfertasWorkspace();
     carregarDominiosBuilder();
-    setupEventListeners();
     setBuilderZoom(75);
+  }
+  function mostrarEditorSelecionado() {
+    fecharPreviaModal();
+    window.navigate('sites', {skipEditorLoad:true});
+    window.selecionarSubabaDominios('funis', null, {skipEditorLoad:true});
+    prepararEditor();
+    var drawer=document.getElementById('builder-pages-drawer'),backdrop=document.getElementById('builder-drawer-backdrop');
+    if(drawer)drawer.classList.remove('open');if(backdrop)backdrop.classList.remove('open');
+    if(state.codeMirror){state.codeMirror.setValue(state.currentHtml);state.codeMirror.refresh();}
+  }
+  function initBuilder() {
+    prepararEditor();
     carregarFunilInicial();
   }
 
@@ -869,7 +885,7 @@
   // ══ CONFIGURAÇÃO DO EDITOR CODEMIRROR ══
   function setupCodeMirror() {
     var textarea = document.getElementById('funnel-code-editor');
-    if (!textarea) return;
+    if (!textarea || state.codeMirror) return;
 
     if (window.CodeMirror) {
       state.codeMirror = window.CodeMirror.fromTextArea(textarea, {
@@ -923,8 +939,6 @@
     var previewCampaign = (window.allCampaignsData || []).find(function(c){return c.id === window.selectedCampaignId;});
     if (state.flowOffer) htmlToInject=htmlToInject.split('{{campaign_offer_url}}').join('/index.html?preview=1&native=1');
     else if (previewCampaign && previewCampaign.offer && previewCampaign.offer.public_url) htmlToInject = htmlToInject.split('{{campaign_offer_url}}').join(previewCampaign.offer.public_url + '?native=1');
-    iframe.srcdoc = htmlToInject;
-
     // Atualiza o display da URL pública no footer da barra lateral
     atualizarDisplayLinkPublico();
 
@@ -947,6 +961,7 @@
         iframe.contentWindow.postMessage({ action: 'selectBlock', blockId: state.selectedBlockId }, '*');
       }
     };
+    iframe.srcdoc = htmlToInject;
   }
 
   // ══ HISTÓRICO UNDO / REDO ══
@@ -2030,54 +2045,36 @@
       });
   }
 
-  function abrirPaginaElementor(id) {
-    var wsId = window.currentWsId || 2;
-    window.apiFetch('../api/admin/funnels.php?workspace_id=' + wsId)
-      .then(function(data) {
-        var f = (data.funnels || []).find(function(x) { return x.id === id; });
-        if (!f) return;
-
-        window.selectedCampaignId = f.campaign_id || null;
-        state.funnelId = f.id;
-        state.name = f.name || 'Página';
-        state.slug = f.slug || 'pagina';
-        state.templateSlug = f.template_slug || 'default';
-        state.customDomainId = f.custom_domain_id || null;
-        state.customDomainName = f.domain || '';
-        state.currentHtml = f.draft_content || f.html_content || getDefaultTemplate();
-        refreshExperienceControls(f);
-
-        if (f.settings_config) {
-          try {
-            var cfg = typeof f.settings_config === 'string' ? JSON.parse(f.settings_config) : f.settings_config;
-            if (cfg && cfg.tracking) {
-              state.metaPixelId = cfg.tracking.meta_pixel_id || '';
-              state.ctaTrackEvent = cfg.tracking.cta_track_event || 'InitiateCheckout';
-            }
-          } catch(e) {}
-        }
-
-        var nameInput = document.getElementById('funnel-name');
-        if (nameInput) nameInput.value = state.name;
-
-        var slugInput = document.getElementById('funnel-slug');
-        if (slugInput) slugInput.value = state.slug;
-
-        var domSelect = document.getElementById('builder-funnel-domain-select');
-        if (domSelect) domSelect.value = state.customDomainId ? String(state.customDomainId) : '';
-
-        var pixelInput = document.getElementById('builder-pixel-id-input');
-        if (pixelInput) pixelInput.value = state.metaPixelId;
-
-        var pixelEventSel = document.getElementById('builder-pixel-event-select');
-        if (pixelEventSel) pixelEventSel.value = state.ctaTrackEvent || 'InitiateCheckout';
-
-        if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
-        renderPreview(true);
-        marcarSalvo(f.status === 'published' ? 'Página no ar' : 'Rascunho salvo');
-        atualizarDisplayLinkPublico();
-        togglePagesDrawer();
-      });
+  function aplicarPaginaSelecionada(f) {
+    clearTimeout(state.debounceTimer);
+    ++state.flowControlsGeneration;
+    state.flowOffer=null;state.offerDirty=false;state.inlinePreviewScreen='scratch';
+    state.historyStack=[];state.historyIndex=-1;state.selectedBlockId=null;state.lastHtmlEditedId=null;
+    window.selectedCampaignId=f.campaign_id||null;window.requestedCampaignMechanic=null;
+    state.funnelId=f.id;state.name=f.name||'Página';state.slug=f.slug||'pagina';
+    state.templateSlug=f.template_slug||'default';state.customDomainId=f.custom_domain_id||null;state.customDomainName=f.domain||'';
+    // Even an intentionally empty draft belongs to this page; never substitute another model.
+    state.currentHtml=f.draft_content!==null&&f.draft_content!==undefined?f.draft_content:(f.html_content||'');
+    var config={};try{config=typeof f.settings_config==='string'?JSON.parse(f.settings_config):f.settings_config||{};}catch(e){}
+    state.metaPixelId=config.tracking&&config.tracking.meta_pixel_id||'';
+    state.ctaTrackEvent=config.tracking&&config.tracking.cta_track_event||'InitiateCheckout';
+    state.mechanic=config.experience&&config.experience.mechanic||'scratch';
+    [['funnel-name',state.name],['funnel-slug',state.slug],['builder-funnel-domain-select',state.customDomainId||''],['builder-pixel-id-input',state.metaPixelId],['builder-pixel-event-select',state.ctaTrackEvent]].forEach(function(pair){var el=document.getElementById(pair[0]);if(el)el.value=pair[1];});
+    if(state.codeMirror)state.codeMirror.setValue(state.currentHtml);
+    renderPreview(true);marcarSalvo(f.status==='published'?'Página no ar':'Rascunho salvo');atualizarDisplayLinkPublico();
+    refreshExperienceControls(f);
+  }
+  async function abrirPaginaElementor(id) {
+    id=parseInt(id,10);var wsId=window.currentWsId||2,generation=++state.pageLoadGeneration;
+    try{
+      var data=await window.apiFetch('../api/admin/funnels.php?workspace_id='+wsId);
+      if(generation!==state.pageLoadGeneration||wsId!==(window.currentWsId||2))return;
+      if(data.status!=='success')throw new Error(data.message||'Não foi possível carregar a página.');
+      var f=(data.funnels||[]).find(function(page){return page.id===id;});
+      if(!f)throw new Error('Página não encontrada neste workspace.');
+      mostrarEditorSelecionado();aplicarPaginaSelecionada(f);
+      var status=document.getElementById('tp-existing-status');if(status)status.textContent='';
+    }catch(e){if(generation===state.pageLoadGeneration)window.showToast(e.message,'error');}
   }
 
   function novoFunilElementor() {
@@ -2096,82 +2093,27 @@
   }
 
   // ══ CARREGAR FUNIL INICIAL DO WORKSPACE ══
-  function carregarFunilInicial() {
-    var wsId = window.currentWsId || 2;
-    window.apiFetch('../api/admin/funnels.php?workspace_id=' + wsId)
-      .then(function(data) {
-        var funnels = data.funnels || [];
-        var countBadge = document.getElementById('builder-pages-count');
-        if (countBadge) countBadge.textContent = funnels.length;
-
-        var campaignId = window.selectedCampaignId || 0;
-        var classicFunnels = campaignId ? funnels.filter(function(f) { return f.campaign_id === campaignId; }) : funnels;
-        var requestedId = state.funnelId || parseInt(new URLSearchParams(window.location.search).get('funnel_id')) || 0;
-        if (classicFunnels.length > 0) {
-          var f = classicFunnels.find(function(x) { return x.id === requestedId; }) || classicFunnels.find(function(x) { return x.slug === 'oferta-especial'; }) || classicFunnels[0];
-          window.selectedCampaignId = f.campaign_id || null;
-          state.funnelId = f.id;
-          state.name = f.name || 'Oferta especial';
-          state.slug = f.slug || 'oferta-especial';
-          state.templateSlug = f.template_slug || 'default';
-          state.customDomainId = f.custom_domain_id || null;
-          state.customDomainName = f.domain || '';
-          state.currentHtml = f.draft_content || f.html_content || getDefaultTemplate();
-          refreshExperienceControls(f);
-
-          if (f.settings_config) {
-            try {
-              var cfg = typeof f.settings_config === 'string' ? JSON.parse(f.settings_config) : f.settings_config;
-              if (cfg && cfg.tracking) {
-                state.metaPixelId = cfg.tracking.meta_pixel_id || '';
-                state.ctaTrackEvent = cfg.tracking.cta_track_event || 'InitiateCheckout';
-              }
-            } catch(e) {}
-          }
-          
-          var nameInput = document.getElementById('funnel-name');
-          if (nameInput) nameInput.value = state.name;
-
-          var slugInput = document.getElementById('funnel-slug');
-          if (slugInput) slugInput.value = state.slug;
-
-          var domSelect = document.getElementById('builder-funnel-domain-select');
-          if (domSelect) domSelect.value = state.customDomainId ? String(state.customDomainId) : '';
-
-          var pixelInput = document.getElementById('builder-pixel-id-input');
-          if (pixelInput) pixelInput.value = state.metaPixelId;
-
-          var pixelEventSel = document.getElementById('builder-pixel-event-select');
-          if (pixelEventSel) pixelEventSel.value = state.ctaTrackEvent || 'InitiateCheckout';
-
-          marcarSalvo(f.status === 'published' ? 'Página no ar' : 'Rascunho');
-        } else {
-          state.funnelId = null;
-          state.currentHtml = getDefaultTemplate();
-          if (campaignId) {
-            var campaign = (window.allCampaignsData || []).find(function(c){return c.id === campaignId;});
-            if (campaign && campaign.offer && campaign.offer.public_url) {
-              state.name = campaign.title;
-              state.slug = 'campanha-' + campaignId;
-              state.currentHtml = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Oferta</title></head><body style="margin:0"><iframe data-campaign-offer src="{{campaign_offer_url}}&experience=campaign" title="Oferta da campanha" style="width:100%;min-height:100vh;border:0"></iframe></body></html>';
-              var nameField = document.getElementById('funnel-name'); if(nameField) nameField.value=state.name;
-              var slugField = document.getElementById('funnel-slug'); if(slugField) slugField.value=state.slug;
-            }
-          }
-          refreshExperienceControls(null);
-          marcarSalvo('Rascunho');
-        }
-
-        if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
-        renderPreview(true);
-        atualizarDisplayLinkPublico();
-      })
-      .catch(function(e) {
-        state.currentHtml = getDefaultTemplate();
-        if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
-        renderPreview(true);
-        atualizarDisplayLinkPublico();
-      });
+  async function carregarFunilInicial() {
+    var wsId=window.currentWsId||2,generation=++state.pageLoadGeneration,campaignId=window.selectedCampaignId||0;
+    try{
+      var data=await window.apiFetch('../api/admin/funnels.php?workspace_id='+wsId);
+      if(generation!==state.pageLoadGeneration||wsId!==(window.currentWsId||2))return;
+      if(data.status!=='success')throw new Error(data.message||'Não foi possível carregar as páginas.');
+      var funnels=data.funnels||[],badge=document.getElementById('builder-pages-count');if(badge)badge.textContent=funnels.length;
+      var pages=campaignId?funnels.filter(function(f){return f.campaign_id===campaignId;}):funnels;
+      var requestedId=state.funnelId||parseInt(new URLSearchParams(window.location.search).get('funnel_id'))||0;
+      var page=pages.find(function(f){return f.id===requestedId;});
+      if(requestedId&&!page){
+        // An explicit URL or selection may not silently open an unrelated first page.
+        if(new URLSearchParams(window.location.search).get('funnel_id')&&!state.funnelId)throw new Error('A página solicitada não foi encontrada neste workspace ou campanha.');
+      }
+      page=page||pages.find(function(f){return f.slug==='oferta-especial';})||pages[0];
+      if(page){aplicarPaginaSelecionada(page);return;}
+      state.funnelId=null;state.flowOffer=null;state.offerDirty=false;state.currentHtml=getDefaultTemplate();
+      if(campaignId){state.currentHtml=getNativeFunnelTemplate('scratch',false);state.name='Nova página da campanha';state.slug='campanha-'+campaignId;}
+      if(state.codeMirror)state.codeMirror.setValue(state.currentHtml);
+      refreshExperienceControls(null);renderPreview(true);marcarSalvo('Rascunho');atualizarDisplayLinkPublico();
+    }catch(e){if(generation===state.pageLoadGeneration){flowMessage(e.message);window.showToast(e.message,'error');}}
   }
 
   // ══ COMPONENTE VISUAL DE HOSPEDAGEM (ESTILO HOSPEDAGEM / VERCEL / HOSTINGER) ══
@@ -2574,6 +2516,8 @@
   var selectedTemplatePickerId = 'pressel-premium-campanhas';
   var templatePickerOrigin = 'editor';
   var templatePickerCampaignId = null;
+  var templatePickerBusy=false;
+  var pendingPickerSelection=false;
 
   var TEMPLATE_PICKER_DEFS = {
     'pressel-premium-campanhas': {
@@ -2607,9 +2551,11 @@
 
   function abrirTelaSelecaoModelos(origem, campaignId) {
     templatePickerCampaignId = parseInt(campaignId, 10) || null;
+    pendingPickerSelection=false;
     templatePickerOrigin = origem || 'editor';
     selecionarModeloPicker('pressel-premium-campanhas');
     carregarCampanhasModeloFunil();
+    carregarFunisCriados();
 
     // Fechar prévia caso estivesse aberta
     fecharPreviaModal();
@@ -2675,6 +2621,7 @@
   }
 
   function selecionarModeloPicker(modelId, event) {
+    if(templatePickerBusy)return;
     if (event) event.stopPropagation();
     if (!TEMPLATE_PICKER_DEFS[modelId]) modelId = 'pressel-premium-campanhas';
     selectedTemplatePickerId = modelId;
@@ -2694,7 +2641,7 @@
       if (btn) {
         if (isSelected) {
           btn.classList.add('selected');
-          btn.textContent = '✓ Selecionado';
+          btn.textContent = 'Abrir no editor';
         } else {
           btn.classList.remove('selected');
           btn.textContent = 'Selecionar';
@@ -2710,6 +2657,37 @@
     if (bottomName) {
       bottomName.textContent = def.name;
     }
+    if(event){pendingPickerSelection=true;confirmarUsoModelo();}
+  }
+
+  function selecionarCampanhaModeloFunil(value){
+    document.getElementById('tp-funnel-campaign-status').textContent=value?'Campanha selecionada.':'Selecione uma campanha para continuar.';
+    if(value&&pendingPickerSelection&&!templatePickerBusy)confirmarUsoModelo();
+  }
+
+  var existingPickerPages=[],existingPickerGeneration=0;
+  function filtrarFunisCriados(){
+    var list=document.getElementById('tp-existing-list'),query=document.getElementById('tp-existing-search').value.trim().toLowerCase();
+    list.replaceChildren();var visible=existingPickerPages.filter(function(p){return (p.name+' '+p.slug+' '+(p.campaign_name||'')).toLowerCase().includes(query);});
+    document.getElementById('tp-existing-status').textContent=visible.length?visible.length+' página(s) disponível(is).':'Nenhuma página criada encontrada. Escolha um modelo abaixo para começar.';
+    visible.forEach(function(p){
+      var item=document.createElement('div');item.className='tp-existing-item';
+      var content=document.createElement('div'),title=document.createElement('strong'),meta=document.createElement('small'),button=document.createElement('button');
+      title.textContent=p.name;meta.textContent=(p.campaign_name||'Sem campanha')+' · /f/'+p.slug+' · '+(p.is_published?'Publicada':'Rascunho');
+      content.append(title,meta);button.type='button';button.className='tp-btn-select';button.textContent='Abrir no editor';
+      button.onclick=async function(){button.disabled=true;button.textContent='Abrindo…';await abrirPaginaElementor(p.id);button.disabled=false;button.textContent='Abrir no editor';};
+      item.append(content,button);list.append(item);
+    });
+  }
+  async function carregarFunisCriados(){
+    var generation=++existingPickerGeneration,wsId=window.currentWsId||2,campaignId=templatePickerCampaignId;
+    existingPickerPages=[];document.getElementById('tp-existing-search').value='';document.getElementById('tp-existing-list').replaceChildren();document.getElementById('tp-existing-status').textContent='Carregando páginas e funis…';
+    try{
+      var data=await window.apiFetch('../api/admin/funnels.php?summary=1&workspace_id='+wsId+(campaignId?'&campaign_id='+campaignId:''));
+      if(generation!==existingPickerGeneration||wsId!==(window.currentWsId||2))return;
+      if(data.status!=='success')throw new Error(data.message||'Não foi possível carregar os funis.');
+      existingPickerPages=data.funnels||[];filtrarFunisCriados();
+    }catch(e){if(generation===existingPickerGeneration)document.getElementById('tp-existing-status').textContent=e.message;}
   }
 
   var pickerCampaignGeneration = 0;
@@ -2939,6 +2917,7 @@
   }
 
   function confirmarUsoModelo() {
+    if(templatePickerBusy)return;
     var selectedDef = TEMPLATE_PICKER_DEFS[selectedTemplatePickerId];
     var campaignId = templatePickerCampaignId || (selectedDef && selectedDef.mechanic ? parseInt(document.getElementById('tp-funnel-campaign').value, 10) || 0 : null);
     if (selectedDef && selectedDef.mechanic && !campaignId) {
@@ -2947,6 +2926,8 @@
       document.getElementById('tp-funnel-campaign').focus();
       return;
     }
+    templatePickerBusy=true;
+    var creationGeneration=++state.pageLoadGeneration;
     var btn = document.getElementById('btn-tp-confirmar');
     if (btn) {
       btn.disabled = true;
@@ -2985,70 +2966,25 @@
       })
     })
     .then(function(data) {
+      templatePickerBusy=false;
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<span>Usar este modelo</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
       }
 
       if (data.status === 'success') {
-        window.selectedCampaignId = data.campaign_id || null;
-        window.requestedCampaignMechanic = null;
-        state.mechanic = def.mechanic || 'scratch';
-        state.flowOffer = null;
-        state.funnelId = data.funnel_id;
-        state.name = generatedName;
-        state.slug = data.slug || generatedSlug;
-        state.templateSlug = def.templateSlug;
-        state.customDomainId = null;
-        state.customDomainName = '';
-        state.metaPixelId = '';
-        state.currentHtml = initialHtml;
-
-        // Atualizar inputs no editor
-        var nameInput = document.getElementById('funnel-name');
-        if (nameInput) nameInput.value = state.name;
-
-        var slugInput = document.getElementById('funnel-slug');
-        if (slugInput) slugInput.value = state.slug;
-
-        var domTopbar = document.getElementById('builder-funnel-domain-select');
-        if (domTopbar) domTopbar.value = '';
-
-        var pixInput = document.getElementById('builder-pixel-id-input');
-        if (pixInput) pixInput.value = '';
-
-        if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
-
-        // Voltar para a visualização do editor
-        fecharPreviaModal();
-        document.body.classList.remove('in-template-picker');
-
-        var pickerPane = document.getElementById('view-template-picker');
-        if (pickerPane) pickerPane.classList.remove('active');
-
-        if (window.navigate) {
-          window.navigate('sites');
-        } else {
-          document.querySelectorAll('.view-pane').forEach(function(p) { p.classList.remove('active'); });
-          var sitesView = document.getElementById('view-sites');
-          if (sitesView) sitesView.classList.add('active');
-        }
-
-        if (window.selecionarSubabaDominios) {
-          window.selecionarSubabaDominios('funis');
-        }
-
-        renderPreview(true);
-        marcarSalvo('Rascunho criado');
-        atualizarDisplayLinkPublico();
+        if(creationGeneration!==state.pageLoadGeneration||wsId!==(window.currentWsId||2))return;
+        ++state.pageLoadGeneration;pendingPickerSelection=false;
+        mostrarEditorSelecionado();
+        aplicarPaginaSelecionada({id:data.funnel_id,campaign_id:data.campaign_id,name:generatedName,slug:data.slug||generatedSlug,template_slug:def.templateSlug,draft_content:initialHtml,status:'draft',settings_config:{experience:{mechanic:def.mechanic||'scratch'}}});
         carregarListaGaveta();
-
-        window.showToast && window.showToast('Página "' + generatedName + '" criada com sucesso a partir do modelo selecionado!', 'success');
+        window.showToast && window.showToast('Modelo aberto no editor como novo rascunho.', 'success');
       } else {
         window.showToast && window.showToast(data.message || 'Erro ao criar página com modelo.', 'error');
       }
     })
     .catch(function(e) {
+      templatePickerBusy=false;
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<span>Usar este modelo</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
@@ -3244,6 +3180,8 @@
   window.abrirTelaSelecaoModelos = abrirTelaSelecaoModelos;
   window.voltarOrigemTemplatePicker = voltarOrigemTemplatePicker;
   window.selecionarModeloPicker = selecionarModeloPicker;
+  window.selecionarCampanhaModeloFunil = selecionarCampanhaModeloFunil;
+  window.filtrarFunisCriados = filtrarFunisCriados;
   window.ampliarPreviaModal = ampliarPreviaModal;
   window.fecharPreviaModal = fecharPreviaModal;
   window.setPreviaModalDevice = setPreviaModalDevice;

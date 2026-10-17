@@ -4,7 +4,7 @@
   function ws(){return window.currentWsId||1;}
   function node(tag,text){var el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;}
   function button(text,fn){var b=node('button',text);b.type='button';b.className='btn-secondary';b.style.cssText='font-size:12px;padding:6px 10px;min-height:30px;';b.onclick=fn;return b;}
-  function openPage(page){window.location.href='index.html?workspace_id='+ws()+'&page_editor=1&funnel_id='+page.id+(page.campaign_id?'&campaign_id='+page.campaign_id:'')+'#sites';}
+  function openPage(page){window.abrirPaginaElementor(page.id);}
   async function action(page,kind){
     if(kind==='delete'&&!window.confirm('Excluir a página “'+page.name+'”? Esta ação não pode ser desfeita.'))return;
     if(kind==='unpublish'&&!window.confirm('Retirar esta página do ar? O link próprio ficará indisponível.'))return;

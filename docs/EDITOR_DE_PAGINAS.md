@@ -48,7 +48,7 @@ A aba **Conteúdo** inclui um assistente para sugerir os seis textos principais 
 
 ## Criar funis pela galeria de novas páginas
 
-Em **Nova página**, os modelos **Funil com raspadinha**, **Funil com roleta** e **Oferta direta** ficam na mesma galeria de Pressel Premium, Booster Padrão e Página em Branco. Selecione o modelo, escolha a campanha e clique em **Usar este modelo**. A campanha é obrigatória nesses três modelos, pois fornece os dados da oferta e o checkout.
+Em **Nova página**, os modelos **Funil com raspadinha**, **Funil com roleta** e **Oferta direta** ficam na mesma galeria de Pressel Premium, Booster Padrão e Página em Branco. Clique em **Selecionar** para abrir o modelo no editor como novo rascunho. Nos funis nativos sem campanha selecionada, escolha a campanha solicitada; o editor abre automaticamente em seguida. A campanha é obrigatória nesses três modelos, pois fornece os dados da oferta e o checkout.
 
 A criação gera uma página independente em rascunho com a experiência escolhida e o vínculo da campanha. A página publicada continua ativa até publicar a nova. O editor mantém aberto o rascunho recém-criado, mesmo se foi aberto a partir do endereço de outra página. Na lateral, **Editar etapas e oferta** abre **Conteúdo da oferta** no próprio editor da página, sem navegação para outra tela.
 
@@ -68,3 +68,12 @@ A lateral **Conteúdo da oferta** permite editar título, subtítulo, preço, co
 A oferta pertence à campanha e é compartilhada por suas páginas. Alterar o rascunho não troca o conteúdo nativo publicado; publicar a oferta atualiza os dados comuns usados por todas as páginas da campanha. O Pix usa o preço do snapshot publicado, preservando o valor enquanto se edita um novo rascunho. A página nativa envia o ID da sua própria oferta ao checkout.
 
 A migration `0023_campaign_primary_page` preserva como principal a página publicada mais recente de cada campanha existente. Validação: múltiplas páginas com URLs distintas, escolha explícita da principal e isolamento entre workspaces; gestão pela interface; criação dentro da campanha; edição no mesmo editor, persistência e publicação; VTurb com carregador simulado e Pix com gateway de teste, sem cobrança real.
+
+
+## Seleção e abertura imediata no editor
+
+A galeria inclui **Páginas e funis já criados**, com busca e botão **Abrir no editor**. Essa ação abre o conteúdo salvo e mantém o mesmo ID, sem criar uma cópia. Também funciona a partir da área Páginas e da gaveta lateral do editor.
+
+Nos modelos iniciais, **Selecionar** abre o novo rascunho diretamente, sem precisar de um segundo clique em **Usar este modelo**. Quando o modelo exige campanha, a abertura acontece após essa escolha. **Ampliar prévia** continua sendo apenas visualização.
+
+O carregamento do editor é inicializado uma única vez; respostas atrasadas de seleções anteriores são descartadas e o histórico é reiniciado ao trocar de página. Falhas ao carregar uma página informada explicitamente não abrem um modelo diferente silenciosamente. O teste de navegador verificou os seis modelos, abertura de funis salvos nas três entradas e respostas que chegam fora da ordem das seleções (CodeMirror simulado para contar inicializações, sem dependência do CDN).

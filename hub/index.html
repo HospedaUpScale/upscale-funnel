@@ -12,7 +12,7 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
-  <link rel="stylesheet" href="elementor-builder.css?v=3.5">
+  <link rel="stylesheet" href="elementor-builder.css?v=3.6">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -23,8 +23,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=3.5" defer></script>
-  <script src="pages-manager.js?v=1" defer></script>
+  <script src="elementor-builder.js?v=3.6" defer></script>
+  <script src="pages-manager.js?v=2" defer></script>
 </head>
 <body>
 
@@ -2178,11 +2178,19 @@
             </div>
           </div>
 
-          <!-- Grid dos 3 Modelos Lado a Lado -->
+          <section class="tp-existing-section" aria-labelledby="tp-existing-title">
+            <h2 id="tp-existing-title">Páginas e funis já criados</h2>
+            <p>Abra uma página existente diretamente no editor, com o conteúdo salvo.</p>
+            <label for="tp-existing-search">Buscar página ou funil</label>
+            <input id="tp-existing-search" class="form-input" type="search" placeholder="Nome da página ou campanha" oninput="filtrarFunisCriados()">
+            <p id="tp-existing-status" role="status"></p><div id="tp-existing-list" class="tp-existing-list"></div>
+          </section>
+          <h2 style="margin:24px 0 16px;">Começar com um modelo</h2>
+          <!-- Modelos disponíveis -->
           <div class="tp-cards-grid">
             
             <!-- ── CARD 1: PRESSEL PREMIUM — CAMPANHAS (SELECIONADO POR PADRÃO) ── -->
-            <div class="tp-card selected" id="tp-card-pressel-premium-campanhas" data-template-id="pressel-premium-campanhas" onclick="selecionarModeloPicker('pressel-premium-campanhas')">
+            <div class="tp-card selected" id="tp-card-pressel-premium-campanhas" data-template-id="pressel-premium-campanhas" onclick="selecionarModeloPicker('pressel-premium-campanhas', event)">
               <span class="tp-badge-rec">
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 Recomendado
@@ -2281,7 +2289,7 @@
             </div>
 
             <!-- ── CARD 2: PÁGINA BOOSTER PADRÃO ── -->
-            <div class="tp-card" id="tp-card-booster-padrao" data-template-id="booster-padrao" onclick="selecionarModeloPicker('booster-padrao')">
+            <div class="tp-card" id="tp-card-booster-padrao" data-template-id="booster-padrao" onclick="selecionarModeloPicker('booster-padrao', event)">
               <div class="tp-card-selected-badge">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
@@ -2368,7 +2376,7 @@
               </div>
             </div>
 
-            <div class="tp-card" id="tp-card-funil-scratch" data-template-id="funil-scratch" onclick="selecionarModeloPicker('funil-scratch')">
+            <div class="tp-card" id="tp-card-funil-scratch" data-template-id="funil-scratch" onclick="selecionarModeloPicker('funil-scratch', event)">
               <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-scratch', event)" title="Ampliar prévia da sequência">
                 <span class="tp-funnel-icon" aria-hidden="true">✦</span>
                 <strong>Funil com raspadinha</strong><span>Revele → Confira → Ative</span>
@@ -2379,7 +2387,7 @@
                 <div class="tp-card-footer"><button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('funil-scratch', event)">Ampliar prévia</button><button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('funil-scratch', event)">Selecionar</button></div>
               </div>
             </div>
-            <div class="tp-card" id="tp-card-funil-wheel" data-template-id="funil-wheel" onclick="selecionarModeloPicker('funil-wheel')">
+            <div class="tp-card" id="tp-card-funil-wheel" data-template-id="funil-wheel" onclick="selecionarModeloPicker('funil-wheel', event)">
               <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-wheel', event)" title="Ampliar prévia da sequência">
                 <span class="tp-funnel-icon" aria-hidden="true">◉</span>
                 <strong>Funil com roleta</strong><span>Revele → Confira → Ative</span>
@@ -2390,7 +2398,7 @@
                 <div class="tp-card-footer"><button type="button" class="tp-btn-preview-link" onclick="ampliarPreviaModal('funil-wheel', event)">Ampliar prévia</button><button type="button" class="tp-btn-select" onclick="selecionarModeloPicker('funil-wheel', event)">Selecionar</button></div>
               </div>
             </div>
-            <div class="tp-card" id="tp-card-funil-direct" data-template-id="funil-direct" onclick="selecionarModeloPicker('funil-direct')">
+            <div class="tp-card" id="tp-card-funil-direct" data-template-id="funil-direct" onclick="selecionarModeloPicker('funil-direct', event)">
               <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-direct', event)" title="Ampliar prévia da sequência">
                 <span class="tp-funnel-icon" aria-hidden="true">→</span>
                 <strong>Oferta direta</strong><span>Confira → Ative</span>
@@ -2403,7 +2411,7 @@
             </div>
 
             <!-- ── CARD 3: PÁGINA EM BRANCO ── -->
-            <div class="tp-card" id="tp-card-pagina-em-branco" data-template-id="pagina-em-branco" onclick="selecionarModeloPicker('pagina-em-branco')">
+            <div class="tp-card" id="tp-card-pagina-em-branco" data-template-id="pagina-em-branco" onclick="selecionarModeloPicker('pagina-em-branco', event)">
               <div class="tp-card-selected-badge">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
@@ -2463,7 +2471,7 @@
 
           <section id="tp-funnel-campaign-panel" hidden class="tp-campaign-panel">
             <label class="form-label" for="tp-funnel-campaign">Campanha deste funil</label>
-            <select id="tp-funnel-campaign" class="form-select" onchange="document.getElementById('tp-funnel-campaign-status').textContent = this.value ? 'Campanha selecionada. Clique em Usar este modelo.' : 'Selecione uma campanha para continuar.';"><option value="">Selecione uma campanha</option></select>
+            <select id="tp-funnel-campaign" class="form-select" onchange="selecionarCampanhaModeloFunil(this.value)"><option value="">Selecione uma campanha</option></select>
             <p id="tp-funnel-campaign-status" role="status">Escolha a campanha que fornece a oferta e o checkout.</p>
             <p>A nova página será criada como rascunho. A versão atual da campanha continua publicada até você publicar a nova página.</p>
             <button type="button" class="tp-btn-preview-link" onclick="voltarOrigemTemplatePicker(); navigate('campaigns');">Criar uma campanha</button>
@@ -3756,7 +3764,8 @@
   }
 
   /* ═══ NAVEGAÇÃO ENTRE TELAS ═══ */
-  function navigate(viewId) {
+  function navigate(viewId, options) {
+    options = options || {};
     document.body.classList.remove('in-template-picker');
     if (viewId !== 'sites') {
       document.body.classList.remove('in-editor');
@@ -3805,7 +3814,7 @@
     if (viewId === 'customers') renderizarClientesTabela();
     if (viewId === 'partners') carregarParceiro();
     if (viewId === 'pages') carregarGerenciadorPaginas();
-    if (viewId === 'sites') { carregarDominios(); carregarFunis(); }
+    if (viewId === 'sites') { carregarDominios(); if (!options.skipEditorLoad) carregarFunis(); }
     if (viewId === 'integrations') verificarIntegracoes();
   }
 
@@ -5433,7 +5442,8 @@
   }
 
   /* ═══ SUBABAS DE DOMÍNIOS E FUNIS ═══ */
-  function selecionarSubabaDominios(tabKey, btn) {
+  function selecionarSubabaDominios(tabKey, btn, options) {
+    options = options || {};
     var isFunis = (tabKey === 'funis');
     var paneDom = document.getElementById('sites-subtab-dominios');
     var paneFunis = document.getElementById('sites-subtab-funis');
@@ -5451,7 +5461,7 @@
 
     if (isFunis) {
       document.body.classList.add('in-editor');
-      if (window.initElementorBuilder) {
+      if (!options.skipEditorLoad && window.initElementorBuilder) {
         window.initElementorBuilder();
       }
     } else {
