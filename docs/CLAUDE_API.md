@@ -31,3 +31,5 @@ Esses limites reduzem o consumo, mas **não medem saldo em dólares nem garantem
 Testes automatizados cobrem contexto/resposta limitados, retorno inválido ou truncado, seleção dos campos permitidos, cotas persistentes e rollback quando o limite diário é excedido, autenticação e isolamento entre workspaces. O teste de navegador verifica configuração pendente, revisão antes de aplicar, preço preservado, salvamento explícito, falha do provedor e descarte de respostas após trocar de campanha.
 
 As respostas da Anthropic são simuladas nos testes, sem consumir créditos. A chamada real deve ser validada após configurar uma chave válida no servidor. Não há chave armazenada no código nem nos testes.
+
+No editor de páginas, abra a aba **IA**, descreva o pedido e clique em **Gerar novas copys**. Revise os seis textos e clique em **Aplicar à oferta**. A aplicação atualiza a prévia; use **Salvar rascunho** e publique quando estiver pronto. A aba **Aparência** permite editar a paleta das etapas, incluindo CTA, textos, cartões, bordas e gradiente da raspadinha.

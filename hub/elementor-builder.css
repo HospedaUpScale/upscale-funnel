@@ -2958,3 +2958,8 @@ body.tp-modal-open {
 
 .elementor-shell .elementor-sidebar { height:100%; min-height:0; }
 .editor-page-tools .elementor-sidebar-footer-pages { display:none; }
+
+#editor-ai-panel {display:flex;flex-direction:column;gap:12px;}
+#editor-ai-panel[hidden] {display:none;}
+#editor-ai-result dt {font-weight:700;margin-top:12px;}
+#editor-ai-result dd {margin:4px 0 10px;white-space:pre-wrap;overflow-wrap:anywhere;}

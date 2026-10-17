@@ -12,7 +12,7 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
-  <link rel="stylesheet" href="elementor-builder.css?v=3.8">
+  <link rel="stylesheet" href="elementor-builder.css?v=3.9">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -23,9 +23,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=3.8" defer></script>
+  <script src="elementor-builder.js?v=3.9" defer></script>
   <script src="pages-manager.js?v=3" defer></script>
-  <script src="editor-workspace.js?v=1" defer></script>
+  <script src="editor-workspace.js?v=2" defer></script>
 </head>
 <body>
 
@@ -1674,7 +1674,20 @@
                   <select id="inline-offer-checkout_mode" class="form-input" oninput="atualizarOfertaInline('checkout_mode')"><option value="pix_native">Pix integrado</option><option value="external_redirect">Link externo</option></select>
                   <label class="form-label" for="inline-offer-legacy_checkout_url" style="display:block;margin-top:12px;">Link do checkout externo</label>
                   <input type="url" id="inline-offer-legacy_checkout_url" class="form-input" oninput="atualizarOfertaInline('legacy_checkout_url')">
-                  <label class="form-label" for="inline-offer-page_bg" style="display:block;margin-top:12px;">Cor de fundo</label>
+                  <label class="form-label" for="inline-offer-card_bg">Fundo dos cartões</label><input type="text" id="inline-offer-card_bg" class="form-input" placeholder="#0c2247" oninput="atualizarOfertaInline('card_bg')">
+<label class="form-label" for="inline-offer-card_bg_alt">Fundo alternativo / roleta</label><input type="text" id="inline-offer-card_bg_alt" class="form-input" placeholder="#06152d" oninput="atualizarOfertaInline('card_bg_alt')">
+<label class="form-label" for="inline-offer-title_from">Título principal</label><input type="text" id="inline-offer-title_from" class="form-input" placeholder="#ffffff" oninput="atualizarOfertaInline('title_from')">
+<label class="form-label" for="inline-offer-title_to">Destaque do título</label><input type="text" id="inline-offer-title_to" class="form-input" placeholder="#1764ff" oninput="atualizarOfertaInline('title_to')">
+<label class="form-label" for="inline-offer-text_color">Texto principal</label><input type="text" id="inline-offer-text_color" class="form-input" placeholder="#ffffff" oninput="atualizarOfertaInline('text_color')">
+<label class="form-label" for="inline-offer-text_secondary">Texto secundário</label><input type="text" id="inline-offer-text_secondary" class="form-input" placeholder="#b7c5de" oninput="atualizarOfertaInline('text_secondary')">
+<label class="form-label" for="inline-offer-cta_bg">Fundo do botão</label><input type="text" id="inline-offer-cta_bg" class="form-input" placeholder="#1764ff" oninput="atualizarOfertaInline('cta_bg')">
+<label class="form-label" for="inline-offer-cta_text">Texto do botão</label><input type="text" id="inline-offer-cta_text" class="form-input" placeholder="#ffffff" oninput="atualizarOfertaInline('cta_text')">
+<label class="form-label" for="inline-offer-badge_bg">Fundo do selo</label><input type="text" id="inline-offer-badge_bg" class="form-input" placeholder="rgba(23,100,255,.15)" oninput="atualizarOfertaInline('badge_bg')">
+<label class="form-label" for="inline-offer-badge_text">Texto do selo</label><input type="text" id="inline-offer-badge_text" class="form-input" placeholder="#1764ff" oninput="atualizarOfertaInline('badge_text')">
+<label class="form-label" for="inline-offer-border_color">Bordas</label><input type="text" id="inline-offer-border_color" class="form-input" placeholder="rgba(23,100,255,.45)" oninput="atualizarOfertaInline('border_color')">
+<label class="form-label" for="inline-offer-foil_start">Raspadinha: início do gradiente</label><input type="text" id="inline-offer-foil_start" class="form-input" placeholder="#0c2247" oninput="atualizarOfertaInline('foil_start')">
+<label class="form-label" for="inline-offer-foil_end">Raspadinha: fim do gradiente</label><input type="text" id="inline-offer-foil_end" class="form-input" placeholder="#1764ff" oninput="atualizarOfertaInline('foil_end')">
+<label class="form-label" for="inline-offer-page_bg" style="display:block;margin-top:12px;">Cor de fundo</label>
                   <input type="color" id="inline-offer-page_bg" class="form-input" oninput="atualizarOfertaInline('page_bg')">
                   <label class="form-label" for="inline-offer-primary_color" style="display:block;margin-top:12px;">Cor principal</label>
                   <input type="color" id="inline-offer-primary_color" class="form-input" oninput="atualizarOfertaInline('primary_color')">

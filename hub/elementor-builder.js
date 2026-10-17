@@ -126,8 +126,8 @@
   }
 
   var inlineOfferTop = ['title','subtitle','price','quota_count','checkout_mode','legacy_checkout_url'];
-  var inlineOfferTheme = ['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label','offer_headline_start','offer_headline_highlight','cta_label','cta_subtext','timer_minutes','vturb_embed','video_src','page_bg','primary_color','accent_color'];
-  var inlineDefaults = {headline_start:'Raspe e descubra seu',headline_highlight:'Booster',subtitle_text:'Uma condição especial para esta campanha.',wheel_heading:'Gire e descubra',wheel_highlight:'seu Booster',wheel_subtitle:'Gire a roleta para liberar sua condição especial.',wheel_spin_label:'GIRAR A ROLETA',offer_headline_start:'Seu Booster está',offer_headline_highlight:'pronto para ativar.',cta_label:'ATIVAR MEU BOOSTER',cta_subtext:'Pagamento via Pix',timer_minutes:10,vturb_embed:'',video_src:'',page_bg:'#06152d',primary_color:'#1764ff',accent_color:'#9fe870'};
+  var inlineOfferTheme = ['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label','offer_headline_start','offer_headline_highlight','cta_label','cta_subtext','timer_minutes','vturb_embed','video_src','page_bg','primary_color','accent_color','card_bg','card_bg_alt','title_from','title_to','text_color','text_secondary','cta_bg','cta_text','badge_bg','badge_text','border_color','foil_start','foil_end'];
+  var inlineDefaults = {headline_start:'Raspe e descubra seu',headline_highlight:'Booster',subtitle_text:'Uma condição especial para esta campanha.',wheel_heading:'Gire e descubra',wheel_highlight:'seu Booster',wheel_subtitle:'Gire a roleta para liberar sua condição especial.',wheel_spin_label:'GIRAR A ROLETA',offer_headline_start:'Seu Booster está',offer_headline_highlight:'pronto para ativar.',cta_label:'ATIVAR MEU BOOSTER',cta_subtext:'Pagamento via Pix',timer_minutes:10,vturb_embed:'',video_src:'',page_bg:'#06152d',primary_color:'#1764ff',accent_color:'#9fe870',card_bg:'#0c2247',card_bg_alt:'#06152d',title_from:'#ffffff',title_to:'#1764ff',text_color:'#ffffff',text_secondary:'#b7c5de',cta_bg:'#1764ff',cta_text:'#ffffff',badge_bg:'rgba(23,100,255,.15)',badge_text:'#1764ff',border_color:'rgba(23,100,255,.45)',foil_start:'#0c2247',foil_end:'#1764ff'};
   function inlineField(key){return document.getElementById('inline-offer-'+key);}
   function preencherOfertaInline(){
     var offer=state.flowOffer;if(!offer)return;var theme=offer.theme||{};
@@ -163,7 +163,7 @@
     offer.theme=theme;state.flowOffer=offer;state.offerDirty=true;
     if(['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label'].includes(changed))state.inlinePreviewScreen=state.mechanic==='direct'?'offer':'scratch';
     else if(['checkout_mode','legacy_checkout_url'].includes(changed))state.inlinePreviewScreen='checkout';
-    else if(!['page_bg','primary_color','accent_color','sound_enabled','sound_volume'].includes(changed))state.inlinePreviewScreen='offer';
+    else if(!['page_bg','primary_color','accent_color','card_bg','card_bg_alt','title_from','title_to','text_color','text_secondary','cta_bg','cta_text','badge_bg','badge_text','border_color','foil_start','foil_end','sound_enabled','sound_volume'].includes(changed))state.inlinePreviewScreen='offer';
     if(state.previewTarget!=='experience'){state.previewTarget='experience';renderPreview(false);}
     atualizarNavegacaoEtapas();
     document.getElementById('builder-offer-status').textContent='Alterações da oferta ainda não salvas.';marcarModificado();enviarOfertaInline();
@@ -173,7 +173,7 @@
     ['page','scratch','offer','checkout'].forEach(function(name){var btn=document.getElementById('builder-stage-'+name);if(!btn)return;btn.disabled=name!=='page'&&(!ready||(name==='scratch'&&state.mechanic==='direct'));btn.setAttribute('aria-pressed',String(stage===name));});
     document.getElementById('builder-stage-scratch').textContent=state.mechanic==='wheel'?'1 · Roleta':'1 · Raspadinha';
     document.getElementById('builder-stage-status').textContent=ready?'Prévia interativa · sem cobranças':'Selecione uma campanha para editar as etapas.';
-    if(window.organizarPainelEditor)window.organizarPainelEditor({target:state.previewTarget,stage:state.inlinePreviewScreen,mechanic:state.mechanic});
+    if(window.organizarPainelEditor)window.organizarPainelEditor({target:state.previewTarget,stage:state.inlinePreviewScreen,mechanic:state.mechanic,pageId:state.funnelId});
   }
   function preverEtapaOferta(screen){
     if(!['page','scratch','offer','checkout'].includes(screen))return;
