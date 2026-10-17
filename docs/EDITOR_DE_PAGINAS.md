@@ -4,13 +4,13 @@ O editor ativo é o **clássico, estilo Elementor**, em `hub/index.html`. Grapes
 
 ## Campanhas e ofertas
 
-Abra **Campanhas → Página e funil**, selecione **Raspadinha**, **Roleta** ou **Direto para o upsell** e clique em **Criar / editar página e etapas**. O editor clássico abre a página da campanha. Os valores e estilos da oferta são configurados em **Editar oferta e checkout**.
+Abra **Campanhas → Página e funil → Nova página nesta campanha**. A galeria cria uma nova página vinculada à campanha, sem reutilizar a página anterior. Você pode ter várias páginas e escolher a principal do link da campanha.
 
 Dentro do editor clássico, a lateral esquerda contém **Campanha da experiência** e **Experiência do comprador**. Vincule uma campanha quando a página ainda não tiver uma. As opções são **Raspadinha**, **Roleta** e **Direto para o upsell**. Trocar a opção insere ou atualiza um único bloco nativo, mantendo o restante do HTML. O botão **Inserir experiência na página** permite inserir a opção já selecionada. A prévia mostra o rascunho da própria oferta, e **Publicar** aplica a escolha ao link público. A escolha também é salva no rascunho para reabertura.
 
 Raspadinha e roleta nativas continuam em `index.html`. A roleta possui giro, segmentos e revelação da oferta e não depende de nenhuma biblioteca de edição. Os modelos e o bloco HTML do editor clássico continuam disponíveis.
 
-Cada campanha mantém sua própria oferta e endereço `/o/{slug}`. Publicar uma página vinculada publica a própria oferta e a campanha, mantendo o mesmo link. Um iframe de oferta pode usar `{{campaign_offer_url}}&experience=campaign` para respeitar a mecânica configurada. Sem `experience=campaign`, a opção `native=1` entra direto na oferta. Isso evita recursão e mantém compatibilidade com páginas publicadas anteriormente.
+Cada página tem seu endereço próprio `/f/{slug}`. A campanha mantém sua oferta compartilhada e o link `/o/{slug}`, que abre a página marcada como principal. A primeira publicação torna-se principal automaticamente; publicar outras páginas não troca essa escolha. Use **Tornar principal** na lista para alterá-la. Se a principal for despublicada ou excluída, o link da campanha volta à oferta nativa. Um iframe de oferta pode usar `{{campaign_offer_url}}&experience=campaign` para respeitar a mecânica configurada. Sem `experience=campaign`, a opção `native=1` entra direto na oferta. Isso evita recursão e mantém compatibilidade com páginas publicadas anteriormente.
 
 Páginas existentes permanecem no banco e podem ser abertas pelo HTML salvo, sem carregar o antigo motor. Campos de projeto e a biblioteca de modelos do editor removido permanecem no banco para preservar dados históricos; a interface antiga da biblioteca foi removida junto com aquele editor. Não exclua nem reverta migrações já aplicadas.
 
@@ -50,6 +50,21 @@ A aba **Conteúdo** inclui um assistente para sugerir os seis textos principais 
 
 Em **Nova página**, os modelos **Funil com raspadinha**, **Funil com roleta** e **Oferta direta** ficam na mesma galeria de Pressel Premium, Booster Padrão e Página em Branco. Selecione o modelo, escolha a campanha e clique em **Usar este modelo**. A campanha é obrigatória nesses três modelos, pois fornece os dados da oferta e o checkout.
 
-A criação gera uma página independente em rascunho com a experiência escolhida e o vínculo da campanha. A página publicada continua ativa até publicar a nova. O editor mantém aberto o rascunho recém-criado, mesmo se foi aberto a partir do endereço de outra página. Na lateral, **Editar etapas e oferta** salva alterações da página antes de abrir o editor da oferta da campanha, onde se configuram textos, vídeo, preço, cores, mecânica, áudio e checkout.
+A criação gera uma página independente em rascunho com a experiência escolhida e o vínculo da campanha. A página publicada continua ativa até publicar a nova. O editor mantém aberto o rascunho recém-criado, mesmo se foi aberto a partir do endereço de outra página. Na lateral, **Editar etapas e oferta** abre **Conteúdo da oferta** no próprio editor da página, sem navegação para outra tela.
 
 A prévia ampliada desses três modelos mostra a sequência do funil, sem executar checkout ou tracking. A prévia do editor usa os dados reais da campanha. O teste de navegador verificou os três modelos, campanha obrigatória, salvamento do vínculo e mecânica, preservação da publicação anterior e acesso ao editor das etapas.
+
+
+## Gerenciar todas as páginas
+
+A opção **Páginas** do menu lista todas as páginas do workspace. Busque por nome/endereço e filtre por campanha ou status. A lista permite editar, duplicar como rascunho, copiar o link, definir como principal da campanha, despublicar e excluir. Exclusão e despublicação pedem confirmação na interface. A listagem usa respostas resumidas, sem carregar o HTML completo de cada página.
+
+Dentro da campanha, **Páginas desta campanha** mostra a mesma gestão com o vínculo já filtrado. **Nova página nesta campanha** mantém a campanha selecionada para qualquer modelo, inclusive Pressel e Página em Branco. Cada página conserva seu HTML e publicação independentes.
+
+## Oferta no próprio editor
+
+A lateral **Conteúdo da oferta** permite editar título, subtítulo, preço, cotas, título/destaque da tela final, CTA, legenda, cronômetro, embed VTurb ou vídeo MP4, cores, sons e checkout. Os botões **Ver revelação** e **Ver oferta** alternam a prévia. **Salvar rascunho** salva o conteúdo da página e a oferta; **Publicar** salva a oferta pendente antes de publicar.
+
+A oferta pertence à campanha e é compartilhada por suas páginas. Alterar o rascunho não troca o conteúdo nativo publicado; publicar a oferta atualiza os dados comuns usados por todas as páginas da campanha. O Pix usa o preço do snapshot publicado, preservando o valor enquanto se edita um novo rascunho. A página nativa envia o ID da sua própria oferta ao checkout.
+
+A migration `0023_campaign_primary_page` preserva como principal a página publicada mais recente de cada campanha existente. Validação: múltiplas páginas com URLs distintas, escolha explícita da principal e isolamento entre workspaces; gestão pela interface; criação dentro da campanha; edição no mesmo editor, persistência e publicação; VTurb com carregador simulado e Pix com gateway de teste, sem cobrança real.

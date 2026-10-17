@@ -29,8 +29,10 @@ if (!$offer || empty($offer['is_active'])) {
     JsonResponse::error('Nenhuma oferta ativa encontrada para este workspace', 404);
 }
 
-$price = (float)$offer['price'];
-$offerTitle = $offer['title'];
+// Saving an offer draft must not change the amount charged on published pages.
+$published = json_decode($offer['published_config'] ?? '', true) ?: [];
+$price = (float)($published['price'] ?? $offer['price']);
+$offerTitle = $published['title'] ?? $offer['title'];
 
 // 2. Resolve Customer
 $customerName = trim($input['name'] ?? $input['customer']['name'] ?? 'Cliente');

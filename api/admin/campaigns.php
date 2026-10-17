@@ -84,7 +84,7 @@ if ($request->method() === 'GET') {
             (SELECT COALESCE(SUM(ord.total_amount), 0) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_volume_paid
         FROM campaigns c
         LEFT JOIN upsell_offers o ON o.id = (SELECT MIN(oi.id) FROM upsell_offers oi WHERE oi.campaign_id = c.id AND oi.workspace_id = c.workspace_id)
-        LEFT JOIN funnels f ON f.id = (SELECT MAX(fi.id) FROM funnels fi WHERE fi.campaign_id = c.id AND fi.workspace_id = c.workspace_id)
+        LEFT JOIN funnels f ON f.id = c.primary_funnel_id AND f.workspace_id = c.workspace_id AND f.campaign_id = c.id
         WHERE c.workspace_id = ?
         ORDER BY 
             CASE 
@@ -106,6 +106,7 @@ if ($request->method() === 'GET') {
             'workspace_id'         => (int)$c['workspace_id'],
             'title'                => $c['title'],
             'ticket_price'         => (float)$c['ticket_price'],
+            'primary_funnel_id'     => $c['primary_funnel_id'] ? (int)$c['primary_funnel_id'] : null,
             'external_platform'    => $c['external_platform'],
             'external_campaign_id' => $c['external_campaign_id'],
             'status'               => $statusNormalized,

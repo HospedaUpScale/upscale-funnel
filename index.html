@@ -1398,7 +1398,7 @@
       phone: param(['telefone', 'phone', 'celular']),
       cpf: param(['cpf']),
       order_id: param(['order_id', 'pedido_id', 'id']),
-      offer_id: param(['offer_id']) || 1,
+      offer_id: (window.__INITIAL_OFFER_DATA__ && window.__INITIAL_OFFER_DATA__.id) || param(['offer_id']) || 1,
       workspace: param(['workspace_id', 'workspace']) || 1,
       offer_slug: offerSlug,
       token: token,

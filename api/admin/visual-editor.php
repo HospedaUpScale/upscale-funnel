@@ -387,6 +387,7 @@ if ($action === 'publish') {
             $project = json_decode($projectRaw, true) ?: [];
             $mechanic = $project['upscaleFlow']['campaignMechanic'] ?? null;
             $campaignOffer = CampaignPage::publishOffer($pdo, $campaign, $mechanic);
+            $pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ? AND workspace_id = ? AND primary_funnel_id IS NULL')->execute([$id, $campaign['id'], $targetWsId]);
             $pdo->prepare("UPDATE campaigns SET status = 'published', published_at = CURRENT_TIMESTAMP, ended_at = NULL WHERE id = ? AND workspace_id = ?")->execute([$campaign['id'], $targetWsId]);
         }
         $pdo->commit();

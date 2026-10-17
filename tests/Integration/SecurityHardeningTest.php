@@ -98,7 +98,8 @@ class SecurityHardeningTest extends TestCase
 
     private function http(string $method, string $path, ?array $json = null, array $headers = []): array
     {
-        $headerLines = array_merge(['Content-Type: application/json', 'Host: 127.0.0.1'], $headers);
+        $hasHost = (bool)array_filter($headers, fn($h) => str_starts_with(strtolower($h), 'host:'));
+        $headerLines = array_merge(['Content-Type: application/json'], $hasHost ? [] : ['Host: 127.0.0.1'], $headers);
         $ctx = stream_context_create(['http' => [
             'method'        => $method,
             'header'        => implode("\r\n", $headerLines),
@@ -145,6 +146,78 @@ class SecurityHardeningTest extends TestCase
         $stmt = self::$pdo->prepare('SELECT status FROM transactions WHERE id = ?');
         $stmt->execute([$txId]);
         return (string) $stmt->fetchColumn();
+    }
+
+    public function testPixUsesPublishedPriceInsteadOfOfferDraft(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        self::$pdo->prepare("INSERT INTO upsell_offers (workspace_id, title, price, quota_count, slug, is_active, is_published, published_config) VALUES (?, 'Preço em rascunho', 3.50, 1, ?, 1, 1, ?)")
+            ->execute([$wsId, 'published-price-' . bin2hex(random_bytes(4)), json_encode(['title' => 'Preço publicado', 'price' => 7])]);
+        $id = (int)self::$pdo->lastInsertId();
+        [$status, $data] = $this->http('POST', '/api/pix-upsell.php',
+            ['offer_id' => $id, 'name' => 'Teste de preço publicado'], ['Host: sec-a']);
+        $this->assertEquals(201, $status);
+        $this->assertEquals(7.0, (float)$data['pix']['amount']);
+        $q = self::$pdo->prepare('SELECT offer_id FROM orders WHERE id = ?');
+        $q->execute([$data['order_id']]);
+        $this->assertEquals($id, (int)$q->fetchColumn());
+    }
+
+    public function testCampaignSupportsMultipleIndependentPagesAndExplicitPrimary(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $headers = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        [, $created] = $this->http('POST', '/api/admin/campaigns.php?workspace_id=' . $wsId,
+            ['action' => 'create', 'title' => 'Múltiplas páginas', 'ticket_price' => 7, 'status' => 'draft'], $headers);
+        $campaignId = $created['campaign_id'];
+        $ids = [];
+        try {
+            foreach (['A', 'B'] as $marker) {
+                [$status, $page] = $this->http('POST', '/api/admin/funnels.php', [
+                    'workspace_id' => $wsId, 'campaign_id' => $campaignId, 'action' => 'publish',
+                    'name' => 'Página ' . $marker, 'slug' => 'many-' . $campaignId . '-' . strtolower($marker),
+                    'html_content' => '<h1>PÁGINA ' . $marker . '</h1><iframe src="{{campaign_offer_url}}&experience=direct"></iframe>',
+                    'settings_config' => ['experience' => ['mechanic' => 'direct']],
+                ], $headers);
+                $this->assertEquals(200, $status);
+                $ids[] = $page['funnel_id'];
+                [$code, , $html] = $this->http('GET', parse_url($page['public_url'], PHP_URL_PATH));
+                $this->assertEquals(200, $code);
+                $this->assertStringContains('PÁGINA ' . $marker, $html);
+            }
+            $campaignUrl = $page['campaign_url'];
+            [, , $main] = $this->http('GET', $campaignUrl);
+            $this->assertStringContains('PÁGINA A', $main, 'Publicar B não pode substituir a principal A.');
+            [, $list] = $this->http('GET', '/api/admin/funnels.php?summary=1&workspace_id=' . $wsId . '&campaign_id=' . $campaignId, null, $headers);
+            $this->assertEquals(2, count($list['funnels']));
+            $this->assertFalse(isset($list['funnels'][0]['html_content']));
+            $this->assertEquals('Múltiplas páginas', $list['funnels'][0]['campaign_name']);
+            [$foreign] = $this->http('POST', '/api/admin/funnels.php',
+                ['workspace_id' => self::$ws['sec-b']['id'], 'id' => $ids[1], 'action' => 'set_primary'],
+                ['Authorization: Bearer adm_' . self::$ws['sec-b']['api_token']]);
+            $this->assertEquals(422, $foreign);
+            [$primary] = $this->http('POST', '/api/admin/funnels.php', ['workspace_id' => $wsId, 'id' => $ids[1], 'action' => 'set_primary'], $headers);
+            $this->assertEquals(200, $primary);
+            [, , $mainB] = $this->http('GET', $campaignUrl);
+            $this->assertStringContains('PÁGINA B', $mainB);
+            [$unpublished] = $this->http('POST', '/api/admin/funnels.php', ['workspace_id' => $wsId, 'id' => $ids[1], 'action' => 'unpublish'], $headers);
+            $this->assertEquals(200, $unpublished);
+            [, , $fallback] = $this->http('GET', $campaignUrl);
+            $this->assertFalse(str_contains($fallback, '<h1>PÁGINA B</h1>'));
+            $this->assertStringContains('__INITIAL_OFFER_DATA__', $fallback);
+            [$gone] = $this->http('GET', parse_url($page['public_url'], PHP_URL_PATH));
+            $this->assertEquals(404, $gone);
+            [, $duplicate] = $this->http('POST', '/api/admin/funnels.php', ['workspace_id' => $wsId, 'id' => $ids[0], 'action' => 'duplicate'], $headers);
+            $this->assertEquals('success', $duplicate['status']);
+            $ids[] = $duplicate['funnel_id'];
+            $q = self::$pdo->prepare('SELECT campaign_id, status FROM funnels WHERE id = ?');$q->execute([$duplicate['funnel_id']]);$copy = $q->fetch();
+            $this->assertEquals($campaignId, (int)$copy['campaign_id']);
+            $this->assertEquals('draft', $copy['status']);
+        } finally {
+            foreach ($ids as $id) self::$pdo->prepare('DELETE FROM funnels WHERE id = ?')->execute([$id]);
+            self::$pdo->prepare('DELETE FROM upsell_offers WHERE campaign_id = ?')->execute([$campaignId]);
+            self::$pdo->prepare('DELETE FROM campaigns WHERE id = ?')->execute([$campaignId]);
+        }
     }
 
     public function testClaudeRequiresAuthenticationAndWorkspaceAccess(): void
@@ -503,11 +576,11 @@ class SecurityHardeningTest extends TestCase
                 $pageId = $page['funnel_id'];
                 [, $offer] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $campaignId, null, $headers);
                 $this->assertEquals($mechanic, $offer['offer']['published_config']['theme']['mechanic']);
-                [$publicStatus, , $html] = $this->http('GET', $page['public_url']);
+                [$publicStatus, , $html] = $this->http('GET', parse_url($page['public_url'], PHP_URL_PATH));
                 $this->assertEquals(200, $publicStatus);
                 $this->assertStringContains('CONTEUDO PERSONALIZADO MANTIDO', $html);
                 $this->assertStringContains('&experience=' . $mechanic, $html);
-                [, , $native] = $this->http('GET', $page['public_url'] . '?native=1&experience=' . $mechanic);
+                [, , $native] = $this->http('GET', $page['campaign_url'] . '?native=1&experience=' . $mechanic);
                 $this->assertStringContains('"mechanic":"' . $mechanic . '"', $native);
             }
             $payload['settings_config']['experience']['mechanic'] = 'invalid';

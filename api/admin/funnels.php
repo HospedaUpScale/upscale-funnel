@@ -140,12 +140,14 @@ if ($action === 'check_slug') {
 }
 
 if ($request->method() === 'GET') {
+    $summary = $request->get('summary') === '1';
+    $columns = $summary ? 'f.id, f.workspace_id, f.campaign_id, f.custom_domain_id, f.name, f.slug, f.template_slug, f.status, f.created_at, f.updated_at' : 'f.*';
     $campFilter = (int)($request->get('campaign_id') ?? 0);
     if ($campFilter > 0) {
-        $stmt = $pdo->prepare("SELECT f.*, d.domain FROM funnels f LEFT JOIN custom_domains d ON d.id = f.custom_domain_id WHERE f.workspace_id = ? AND f.campaign_id = ? ORDER BY f.id DESC");
+        $stmt = $pdo->prepare("SELECT $columns, d.domain, c.title AS campaign_name, CASE WHEN c.primary_funnel_id = f.id THEN 1 ELSE 0 END AS is_primary FROM funnels f LEFT JOIN custom_domains d ON d.id = f.custom_domain_id LEFT JOIN campaigns c ON c.id = f.campaign_id AND c.workspace_id = f.workspace_id WHERE f.workspace_id = ? AND f.campaign_id = ? ORDER BY f.id DESC");
         $stmt->execute([$targetWsId, $campFilter]);
     } else {
-        $stmt = $pdo->prepare("SELECT f.*, d.domain FROM funnels f LEFT JOIN custom_domains d ON d.id = f.custom_domain_id WHERE f.workspace_id = ? ORDER BY f.id DESC");
+        $stmt = $pdo->prepare("SELECT $columns, d.domain, c.title AS campaign_name, CASE WHEN c.primary_funnel_id = f.id THEN 1 ELSE 0 END AS is_primary FROM funnels f LEFT JOIN custom_domains d ON d.id = f.custom_domain_id LEFT JOIN campaigns c ON c.id = f.campaign_id AND c.workspace_id = f.workspace_id WHERE f.workspace_id = ? ORDER BY f.id DESC");
         $stmt->execute([$targetWsId]);
     }
     $funnels = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -157,8 +159,11 @@ if ($request->method() === 'GET') {
         $funnel['template_slug'] = $funnel['template_slug'] ?? 'default';
         $funnel['is_home'] = false; // A raspadinha tem prioridade absoluta na raiz
         $funnel['is_published'] = ($funnel['status'] === 'published');
-        $funnel['draft_content'] = $funnel['draft_content'] ?? $funnel['html_content'];
-        $funnel['published_content'] = $funnel['published_content'] ?? null;
+        $funnel['is_primary'] = (bool)$funnel['is_primary'];
+        if (!$summary) {
+            $funnel['draft_content'] = $funnel['draft_content'] ?? $funnel['html_content'];
+            $funnel['published_content'] = $funnel['published_content'] ?? null;
+        }
         $urls = buildFunnelUrls($funnel['slug'], $funnel['domain'] ?? null);
         $funnel['public_url'] = $urls['public_url'];
         $funnel['direct_url'] = $urls['direct_url'];
@@ -171,12 +176,23 @@ if ($request->method() === 'POST') {
     $id = (int)($input['id'] ?? ($input['funnel_id'] ?? 0));
     $postAction = $input['action'] ?? 'save';
 
+    if ($postAction === 'set_primary') {
+        $q = $pdo->prepare("SELECT campaign_id FROM funnels WHERE id = ? AND workspace_id = ? AND status = 'published'");
+        $q->execute([$id, $targetWsId]);
+        $campaignId = (int)$q->fetchColumn();
+        if (!$campaignId) JsonResponse::error('Escolha uma página publicada vinculada à campanha.', 422);
+        $pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ? AND workspace_id = ?')->execute([$id, $campaignId, $targetWsId]);
+        JsonResponse::success(['message' => 'Página principal atualizada.']);
+    }
+
     // Despublicar
     if ($postAction === 'unpublish') {
         if ($id <= 0) JsonResponse::error('ID do funil não especificado.', 422);
         $stmtUnpub = $pdo->prepare("UPDATE funnels SET status = 'draft', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?");
         $stmtUnpub->execute([$id, $targetWsId]);
-        JsonResponse::success(['message' => 'Página despublicada com sucesso. Ela não está mais acessível publicamente.', 'status' => 'draft']);
+        if (!$stmtUnpub->rowCount()) JsonResponse::error('Página não encontrada.', 404);
+        $pdo->prepare('UPDATE campaigns SET primary_funnel_id = NULL WHERE primary_funnel_id = ? AND workspace_id = ?')->execute([$id, $targetWsId]);
+        JsonResponse::success(['message' => 'Página despublicada com sucesso. Ela não está mais acessível publicamente.', 'status_value' => 'draft']);
     }
 
     // Duplicar Funil como cópia independente
@@ -231,7 +247,7 @@ if ($request->method() === 'POST') {
             'funnel_id' => $newFunnelId,
             'name' => $dupName,
             'slug' => $candidateSlug,
-            'status' => 'draft',
+            'status_value' => 'draft',
             'template_slug' => $orig['template_slug'] ?? 'default',
             'public_url' => $urls['public_url'],
             'direct_url' => $urls['direct_url'],
@@ -395,6 +411,7 @@ if ($request->method() === 'POST') {
         $pdo->prepare("UPDATE funnels SET is_home = 0 WHERE workspace_id = ?")->execute([$targetWsId]);
         if ($isPublishAction && $campaign) {
             $campaignOffer = CampaignPage::publishOffer($pdo, $campaign, $mechanic);
+            $pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ? AND workspace_id = ? AND primary_funnel_id IS NULL')->execute([$funnelId, $campaignId, $targetWsId]);
             $pdo->prepare("UPDATE campaigns SET status = 'published', published_at = CURRENT_TIMESTAMP, ended_at = NULL WHERE id = ? AND workspace_id = ?")->execute([$campaignId, $targetWsId]);
         }
         $pdo->commit();
@@ -404,12 +421,13 @@ if ($request->method() === 'POST') {
     }
 
     $urls = buildFunnelUrls($slug, $domainName);
-    if ($campaignOffer) $urls['public_url'] = $urls['direct_url'] = '/o/' . $campaignOffer['slug'];
+    $campaignUrl = $campaignOffer ? '/o/' . $campaignOffer['slug'] : null;
 
     JsonResponse::success([
         'message' => $isPublishAction ? 'Página publicada com sucesso! Link exclusivo disponível.' : 'Rascunho da página salvo com sucesso.',
         'funnel_id' => $funnelId,
         'status_value' => $status,
+        'campaign_url' => $campaignUrl,
         'is_published' => $isPublishAction,
         'name' => $name,
         'slug' => $slug,
@@ -427,6 +445,7 @@ if ($request->method() === 'DELETE') {
     $stmt = $pdo->prepare("DELETE FROM funnels WHERE id = ? AND workspace_id = ?");
     $stmt->execute([$id, $targetWsId]);
     if ($stmt->rowCount() === 0) JsonResponse::error('Funil não encontrado.', 404);
+    $pdo->prepare('UPDATE campaigns SET primary_funnel_id = NULL WHERE primary_funnel_id = ? AND workspace_id = ?')->execute([$id, $targetWsId]);
     JsonResponse::success(['message' => 'Página removida com sucesso.']);
 }
 
