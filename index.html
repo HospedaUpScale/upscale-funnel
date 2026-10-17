@@ -623,7 +623,7 @@
   <!-- ══ VISTA 1: RASPADINHA (ANTES DE REVELAR) ══ -->
   <div id="view-scratch" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
     <h1 class="main-title" id="main-title">
-      Raspe e descubra <br>
+      <span id="scratch-title-start">Raspe e descubra</span><br>
       <span class="highlight-booster" id="highlight-booster">seu Booster</span>
     </h1>
 
@@ -650,7 +650,7 @@
   <!-- ══ VISTA 1B: ROLETA PREMIADA (ALTERNATIVA À RASPADINHA) ══ -->
   <div id="view-wheel" class="view-wheel">
     <h1 class="main-title">
-      Gire e descubra <br>
+      <span id="wheel-title-start">Gire e descubra</span><br>
       <span class="highlight-booster" id="wheel-highlight">seu Booster</span>
     </h1>
     <p class="main-subtitle" id="wheel-subtitle">Gire a roleta para liberar sua condição especial.</p>
@@ -712,8 +712,8 @@
   <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(23, 100, 255, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: #60A5FA;">
     <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
   </div>
-  <h2 style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; margin-bottom: 6px;">Pague via Pix</h2>
-  <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Escaneie o QR Code ou copie a chave Pix abaixo</p>
+  <h2 id="pix-modal-title" style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; margin-bottom: 6px;">Pague via Pix</h2>
+  <p id="pix-modal-description" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Escaneie o QR Code ou copie a chave Pix abaixo</p>
 
   <img id="pix-qr-img" src="" alt="QR Code Pix" style="width: 180px; height: 180px; margin: 0 auto 12px; display: block; background: #fff; padding: 6px; border-radius: 8px;" />
 
@@ -760,6 +760,7 @@
     return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  var isEditorPreview = param(['preview']) === '1';
   var CONFIG = {
     title: 'Booster 200X Ouro',
     subtitle: 'Kit Bobzão Bitruck + Ford F250',
@@ -798,6 +799,7 @@
   var canvas = $('canvas');
   var ctx = canvas.getContext('2d', { willReadFrequently: true });
   var revelado = false;
+  var revealTransitionTimer = null;
   var raspando = false;
   var tocou = false;
   var raio = 26;
@@ -1010,7 +1012,7 @@
     if (CONFIG.mechanic !== 'direct') soltarConfete();
 
     // Transição suave para a tela de oferta (esconde qualquer mecânica ativa)
-    setTimeout(function () {
+    revealTransitionTimer = setTimeout(function () {
       apresentarOferta(true);
       $('view-scratch').style.display = 'none';
       var vw = $('view-wheel'); if (vw) vw.classList.remove('on');
@@ -1199,6 +1201,12 @@
     if (d.vturb_account_id !== undefined) CONFIG.vturbAccount = d.vturb_account_id || '';
 
     var theme = d.theme || {};
+    $('scratch-title-start').textContent=theme.headline_start||'Raspe e descubra seu';
+    $('highlight-booster').textContent=theme.headline_highlight||'Booster';
+    $('main-subtitle').textContent=theme.subtitle_text||'Uma condição especial para esta campanha.';
+    $('wheel-title-start').textContent=theme.wheel_heading||'Gire e descubra';
+    $('wheel-highlight').textContent=theme.wheel_highlight||'seu Booster';
+    $('wheel-subtitle').textContent=theme.wheel_subtitle||'Gire a roleta para liberar sua condição especial.';
     $('offer-headline-start').textContent = theme.offer_headline_start || 'Seu Booster está';
     $('offer-headline-highlight').textContent = theme.offer_headline_highlight || 'pronto para ativar.';
     if(window.upscaleSounds)upscaleSounds.configure({enabled:theme.sound_enabled!==false,volume:theme.sound_volume===undefined?.2:theme.sound_volume});
@@ -1270,13 +1278,15 @@
   // Ouvinte de mensagens da prévia do Hub
   window.addEventListener('message', function (ev) {
     var d = ev.data;
-    if (!d) return;
+    if (!d || !isEditorPreview || ev.origin !== window.location.origin) return;
     if (d.tipo === 'upscale:preview-config' && d.offer) {
       aplicarDados(d.offer);
     }
     if (d.tipo === 'upscale:preview-screen') {
+      clearTimeout(revealTransitionTimer);
       if(window.upscaleSounds)upscaleSounds.stop();
-      if (d.screen === 'offer') {
+      if($('pix-modal').open)$('pix-modal').close();
+      if (d.screen === 'offer' || d.screen === 'checkout') {
         revelado = true;
         apresentarOferta(true);
         iniciarTimerOferta();
@@ -1286,6 +1296,7 @@
         $('view-offer').classList.add('on');
         $('step-1').className = 'step-item inactive';
         $('step-2').className = 'step-item active';
+        if(d.screen === 'checkout')mostrarCheckoutPreview();
       } else {
         revelado = false;
         apresentarOferta(false);
@@ -1367,12 +1378,29 @@
     }
   }
 
+  function mostrarCheckoutPreview(){
+    if(!isEditorPreview)return;
+    $('step-2').className='step-item inactive';$('step-3').className='step-item active';
+    var external=CONFIG.checkoutMode==='external_redirect';
+    $('pix-modal-title').textContent=external?'Prévia do checkout externo':'Prévia do pagamento via Pix';
+    $('pix-modal-description').textContent='Demonstração no editor. Nenhuma cobrança foi gerada.';
+    $('pix-qr-img').style.display='none';$('pix-btn-copy').disabled=true;
+    $('pix-code-input').value=external?(CONFIG.legacyUrl||'Configure o endereço do checkout'):'QR Code e código Pix aparecem após a ativação na página publicada.';
+    $('pix-status-info').textContent='Valor da oferta: '+moeda(CONFIG.price)+' · Apenas demonstração';
+    $('pix-modal').showModal();
+  }
+  if(isEditorPreview){
+    var editFields={'scratch-title-start':'headline_start','highlight-booster':'headline_highlight','main-subtitle':'subtitle_text','wheel-title-start':'wheel_heading','wheel-highlight':'wheel_highlight','wheel-subtitle':'wheel_subtitle','offer-title':'title','offer-subtitle':'subtitle','offer-price':'price','offer-headline-start':'offer_headline_start','offer-headline-highlight':'offer_headline_highlight','cta-subtext':'cta_subtext'};
+    Object.keys(editFields).forEach(function(id){var el=$(id);if(!el)return;el.style.cursor='text';el.title='Clique para editar este conteúdo';el.addEventListener('click',function(){var target=window.parent.parent;target.postMessage({type:'upscale:edit-offer-field',field:editFields[id]},window.location.origin);});});
+  }
+
   /* ══ CHECKOUT PIX NATIVO 1-CLIQUE ══ */
   var pollingTimer = null;
   var currentTxId = null;
 
   $('btn-cta').addEventListener('click', function (e) {
     e.preventDefault();
+    if(isEditorPreview){mostrarCheckoutPreview();return;}
 
     if (CONFIG.checkoutMode === 'external_redirect' && CONFIG.legacyUrl) {
       window.top.location.href = CONFIG.legacyUrl;

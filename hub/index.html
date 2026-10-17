@@ -12,7 +12,7 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
-  <link rel="stylesheet" href="elementor-builder.css?v=3.6">
+  <link rel="stylesheet" href="elementor-builder.css?v=3.7">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -23,8 +23,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
-  <script src="elementor-builder.js?v=3.6" defer></script>
-  <script src="pages-manager.js?v=2" defer></script>
+  <script src="elementor-builder.js?v=3.7" defer></script>
+  <script src="pages-manager.js?v=3" defer></script>
 </head>
 <body>
 
@@ -730,6 +730,7 @@
         <section class="card" id="campaign-page-settings" style="margin:20px 0;">
           <div class="page-header-row"><div><h3 class="card-title-clean">Páginas desta campanha</h3><p class="card-subtitle-clean">Crie várias páginas com endereços próprios e escolha a principal do link da campanha.</p></div><button type="button" class="btn-primary" onclick="criarPaginaDaCampanha(selectedCampaignId)">+ Nova página nesta campanha</button></div>
           <a id="campaign-offer-link" class="btn-secondary" target="_blank" rel="noopener" hidden>Abrir link principal da campanha ↗</a>
+          <div class="campaign-experience-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;"><button type="button" class="btn-secondary" onclick="editarExperienciaCampanha(selectedCampaignId,'scratch')">Editar raspadinha real</button><button type="button" class="btn-secondary" onclick="editarExperienciaCampanha(selectedCampaignId,'wheel')">Editar roleta real</button><button type="button" class="btn-secondary" onclick="editarExperienciaCampanha(selectedCampaignId,'direct')">Editar oferta real</button></div>
           <div id="campaign-pages-list" style="overflow-x:auto;margin-top:16px;"></div>
           <select id="campaign-flow-type" hidden><option value="scratch">Raspadinha</option><option value="wheel">Roleta</option><option value="direct">Direto</option></select>
         </section>
@@ -1468,7 +1469,7 @@
           <label class="form-label">Buscar<input id="pages-search" class="form-input" type="search" placeholder="Nome ou endereço" oninput="filtrarPaginasGerenciador()"></label>
           <label class="form-label">Campanha<select id="pages-campaign-filter" class="form-select" onchange="filtrarPaginasGerenciador()"><option value="">Todas as campanhas</option></select></label>
           <label class="form-label">Status<select id="pages-status-filter" class="form-select" onchange="filtrarPaginasGerenciador()"><option value="">Todos</option><option value="draft">Rascunho</option><option value="published">Publicada</option></select></label>
-        </div><p id="pages-manager-status" role="status"></p><div id="pages-manager-list" style="overflow-x:auto;"></div></section>
+        </div><p id="pages-manager-status" role="status"></p><div id="pages-manager-list" style="overflow-x:auto;"></div><h2 style="font-size:18px;margin:24px 0 12px;">Telas reais das campanhas</h2><div id="pages-native-experiences"></div></section>
       </div>
 
       <div id="view-sites" class="view-pane">
@@ -1613,6 +1614,13 @@
               </div>
             </header>
 
+            <nav id="builder-funnel-stages" class="builder-funnel-stages" aria-label="Etapas do funil">
+              <button type="button" id="builder-stage-page" onclick="preverEtapaOferta('page')" aria-pressed="true">Página completa</button>
+              <button type="button" id="builder-stage-scratch" onclick="preverEtapaOferta('scratch')" aria-pressed="false" disabled>1 · Revelação</button>
+              <button type="button" id="builder-stage-offer" onclick="preverEtapaOferta('offer')" aria-pressed="false" disabled>2 · Oferta</button>
+              <button type="button" id="builder-stage-checkout" onclick="preverEtapaOferta('checkout')" aria-pressed="false" disabled>3 · Checkout</button>
+              <span id="builder-stage-status" role="status">Selecione uma campanha para editar as etapas.</span>
+            </nav>
             <!-- 2. CORPO PRINCIPAL (3 COLUNAS: 280px | 1fr | 320px) -->
             <div class="elementor-body">
               
@@ -1632,6 +1640,13 @@
                   <p style="font-size:12px;line-height:1.5;margin:12px 0;">Oferta compartilhada pelas páginas desta campanha. Salve o rascunho e publique quando estiver pronto.</p>
                   <p id="builder-offer-status" role="status" style="font-size:12px;">Selecione a campanha para editar sua oferta.</p>
                   <fieldset id="builder-offer-fields" disabled style="border:0;padding:0;margin:0;min-width:0;">
+                  <label class="form-label" for="inline-offer-headline_start" style="display:block;margin-top:12px;">Título da raspadinha</label><input type="text" id="inline-offer-headline_start" class="form-input" oninput="atualizarOfertaInline('headline_start')">
+                  <label class="form-label" for="inline-offer-headline_highlight" style="display:block;margin-top:12px;">Destaque da raspadinha</label><input type="text" id="inline-offer-headline_highlight" class="form-input" oninput="atualizarOfertaInline('headline_highlight')">
+                  <label class="form-label" for="inline-offer-subtitle_text" style="display:block;margin-top:12px;">Descrição da raspadinha</label><input type="text" id="inline-offer-subtitle_text" class="form-input" oninput="atualizarOfertaInline('subtitle_text')">
+                  <label class="form-label" for="inline-offer-wheel_heading" style="display:block;margin-top:12px;">Título da roleta</label><input type="text" id="inline-offer-wheel_heading" class="form-input" oninput="atualizarOfertaInline('wheel_heading')">
+                  <label class="form-label" for="inline-offer-wheel_highlight" style="display:block;margin-top:12px;">Destaque da roleta</label><input type="text" id="inline-offer-wheel_highlight" class="form-input" oninput="atualizarOfertaInline('wheel_highlight')">
+                  <label class="form-label" for="inline-offer-wheel_subtitle" style="display:block;margin-top:12px;">Descrição da roleta</label><input type="text" id="inline-offer-wheel_subtitle" class="form-input" oninput="atualizarOfertaInline('wheel_subtitle')">
+                  <label class="form-label" for="inline-offer-wheel_spin_label" style="display:block;margin-top:12px;">Texto do botão da roleta</label><input type="text" id="inline-offer-wheel_spin_label" class="form-input" oninput="atualizarOfertaInline('wheel_spin_label')">
                   <label class="form-label" for="inline-offer-title" style="display:block;margin-top:12px;">Título do Booster</label>
                   <input type="text" id="inline-offer-title" class="form-input" oninput="atualizarOfertaInline('title')">
                   <label class="form-label" for="inline-offer-subtitle" style="display:block;margin-top:12px;">Subtítulo da campanha</label>
@@ -2178,14 +2193,15 @@
             </div>
           </div>
 
-          <section class="tp-existing-section" aria-labelledby="tp-existing-title">
-            <h2 id="tp-existing-title">Páginas e funis já criados</h2>
-            <p>Abra uma página existente diretamente no editor, com o conteúdo salvo.</p>
-            <label for="tp-existing-search">Buscar página ou funil</label>
-            <input id="tp-existing-search" class="form-input" type="search" placeholder="Nome da página ou campanha" oninput="filtrarFunisCriados()">
-            <p id="tp-existing-status" role="status"></p><div id="tp-existing-list" class="tp-existing-list"></div>
+          <section id="tp-funnel-campaign-panel" hidden class="tp-campaign-panel">
+            <label class="form-label" for="tp-funnel-campaign">Campanha deste funil</label>
+            <select id="tp-funnel-campaign" class="form-select" onchange="selecionarCampanhaModeloFunil(this.value)"><option value="">Selecione uma campanha</option></select>
+            <p id="tp-funnel-campaign-status" role="status">Escolha a campanha que fornece a oferta e o checkout.</p>
+            <p>A nova página será criada como rascunho. A versão atual da campanha continua publicada até você publicar a nova página.</p>
+            <button type="button" class="tp-btn-preview-link" onclick="voltarOrigemTemplatePicker(); navigate('campaigns');">Criar uma campanha</button>
           </section>
-          <h2 style="margin:24px 0 16px;">Começar com um modelo</h2>
+          <div class="tp-gallery-shortcuts" style="display:flex;gap:10px;flex-wrap:wrap;margin:18px 0;"><button class="tp-btn-select" type="button" onclick="document.getElementById('tp-models-section').scrollIntoView({block:'start'});">Modelos prontos</button><button class="tp-btn-select" type="button" onclick="document.getElementById('tp-existing-section').scrollIntoView({block:'start'});">Páginas já criadas</button><button class="tp-btn-select" type="button" onclick="document.getElementById('tp-native-section').scrollIntoView({block:'start'});">Telas reais da campanha</button></div>
+          <h2 id="tp-models-section" style="margin:24px 0 16px;scroll-margin-top:80px;">Começar com um modelo</h2>
           <!-- Modelos disponíveis -->
           <div class="tp-cards-grid">
             
@@ -2200,11 +2216,11 @@
               </div>
 
               <!-- Miniatura Visual Fiel do Brayam Braz / Ranger V6 -->
-              <div class="tp-card-preview-box" onclick="ampliarPreviaModal('pressel-premium-campanhas', event)" title="Clique para ampliar a prévia deste modelo">
+              <div class="tp-card-preview-box" onclick="selecionarModeloPicker('pressel-premium-campanhas', event)" title="Selecionar e abrir este modelo no editor">
                 <div class="tp-preview-hover-hint">
                   <span class="tp-preview-hint-btn">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
-                    Ampliar prévia
+                    Selecionar modelo
                   </span>
                 </div>
                 <div class="tp-mini-pressel">
@@ -2295,57 +2311,25 @@
               </div>
 
               <!-- Miniatura Visual Fiel da Oferta Booster -->
-              <div class="tp-card-preview-box" onclick="ampliarPreviaModal('booster-padrao', event)" title="Clique para ampliar a prévia deste modelo">
+              <div class="tp-card-preview-box" onclick="selecionarModeloPicker('booster-padrao', event)" title="Selecionar e abrir este modelo no editor">
                 <div class="tp-preview-hover-hint">
                   <span class="tp-preview-hint-btn">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
-                    Ampliar prévia
+                    Selecionar modelo
                   </span>
                 </div>
-                <div class="tp-mini-booster">
-                  <span class="tp-mini-booster-badge">OFERTA ESPECIAL</span>
-                  <span class="tp-mini-booster-title">Aproveite sua oferta</span>
-                  <span class="tp-mini-booster-sub">Escolha o seu pacote e garanta a sua chance agora mesmo.</span>
-
-                  <div class="tp-mini-timer-box">
-                    <div class="tp-mini-timer-block">00<span class="tp-mini-timer-lbl">Horas</span></div>
-                    <span style="font-weight:800; color:#0F172A;">:</span>
-                    <div class="tp-mini-timer-block">14<span class="tp-mini-timer-lbl">Minutos</span></div>
-                    <span style="font-weight:800; color:#0F172A;">:</span>
-                    <div class="tp-mini-timer-block">59<span class="tp-mini-timer-lbl">Segundos</span></div>
-                  </div>
-
-                  <div class="tp-mini-packages-row">
-                    <div class="tp-mini-package-card">
-                      <span class="tp-mini-package-name">Pacote Essencial</span>
-                      <span style="font-size:7px; color:#64748B;">Sua primeira chance</span>
-                      <div class="tp-mini-package-btn">Quero este</div>
-                    </div>
-                    <div class="tp-mini-package-card highlight">
-                      <span class="tp-mini-package-chip">Mais escolhido</span>
-                      <span class="tp-mini-package-name">Pacote Plus</span>
-                      <span style="font-size:7px; color:#175CFF;">Mais chances</span>
-                      <div class="tp-mini-package-btn" style="background:#175CFF;">Quero este</div>
-                    </div>
-                    <div class="tp-mini-package-card">
-                      <span class="tp-mini-package-name">Pacote Premium</span>
-                      <span style="font-size:7px; color:#64748B;">Máxima performance</span>
-                      <div class="tp-mini-package-btn">Quero este</div>
-                    </div>
-                  </div>
-
-                  <div class="tp-mini-trust-row">
-                    <span>🚚 Entrega em todo o Brasil</span>
-                    <span>🔒 100% seguro</span>
-                    <span>💳 Diversas formas</span>
-                  </div>
+                <div class="tp-funnel-preview" style="height:100%;border-radius:10px;padding:20px;">
+                  <span style="color:#9fe870;font-size:10px;letter-spacing:2px;">OFERTA DESBLOQUEADA</span>
+                  <strong>Seu Booster está<br><span style="color:#4486ff;">pronto para ativar.</span></strong>
+                  <span>Vídeo · preço da campanha · ativação</span>
+                  <span style="background:#1764ff;color:#fff;border-radius:8px;padding:10px;">ATIVAR MEU BOOSTER →</span>
                 </div>
               </div>
 
               <!-- Informações do Card -->
               <div class="tp-card-body">
-                <h3 class="tp-card-title">Página Booster Padrão</h3>
-                <p class="tp-card-desc">Uma estrutura direta para apresentar seus pacotes de cotas.</p>
+                <h3 class="tp-card-title">Oferta Booster — tela real</h3>
+                <p class="tp-card-desc">A mesma tela final publicada, com vídeo, preço e checkout da campanha.</p>
                 
                 <ul class="tp-features-list">
                   <li class="tp-feature-item">
@@ -2377,7 +2361,7 @@
             </div>
 
             <div class="tp-card" id="tp-card-funil-scratch" data-template-id="funil-scratch" onclick="selecionarModeloPicker('funil-scratch', event)">
-              <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-scratch', event)" title="Ampliar prévia da sequência">
+              <div class="tp-card-preview-box tp-funnel-preview" onclick="selecionarModeloPicker('funil-scratch', event)" title="Selecionar e abrir este funil no editor">
                 <span class="tp-funnel-icon" aria-hidden="true">✦</span>
                 <strong>Funil com raspadinha</strong><span>Revele → Confira → Ative</span>
               </div>
@@ -2388,7 +2372,7 @@
               </div>
             </div>
             <div class="tp-card" id="tp-card-funil-wheel" data-template-id="funil-wheel" onclick="selecionarModeloPicker('funil-wheel', event)">
-              <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-wheel', event)" title="Ampliar prévia da sequência">
+              <div class="tp-card-preview-box tp-funnel-preview" onclick="selecionarModeloPicker('funil-wheel', event)" title="Selecionar e abrir este funil no editor">
                 <span class="tp-funnel-icon" aria-hidden="true">◉</span>
                 <strong>Funil com roleta</strong><span>Revele → Confira → Ative</span>
               </div>
@@ -2399,7 +2383,7 @@
               </div>
             </div>
             <div class="tp-card" id="tp-card-funil-direct" data-template-id="funil-direct" onclick="selecionarModeloPicker('funil-direct', event)">
-              <div class="tp-card-preview-box tp-funnel-preview" onclick="ampliarPreviaModal('funil-direct', event)" title="Ampliar prévia da sequência">
+              <div class="tp-card-preview-box tp-funnel-preview" onclick="selecionarModeloPicker('funil-direct', event)" title="Selecionar e abrir este funil no editor">
                 <span class="tp-funnel-icon" aria-hidden="true">→</span>
                 <strong>Oferta direta</strong><span>Confira → Ative</span>
               </div>
@@ -2417,11 +2401,11 @@
               </div>
 
               <!-- Miniatura Visual Fiel da Página em Branco -->
-              <div class="tp-card-preview-box" onclick="ampliarPreviaModal('pagina-em-branco', event)" title="Clique para ampliar a prévia deste modelo">
+              <div class="tp-card-preview-box" onclick="selecionarModeloPicker('pagina-em-branco', event)" title="Selecionar e abrir este modelo no editor">
                 <div class="tp-preview-hover-hint">
                   <span class="tp-preview-hint-btn">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
-                    Ampliar prévia
+                    Selecionar modelo
                   </span>
                 </div>
                 <div class="tp-mini-blank">
@@ -2469,13 +2453,16 @@
 
           </div>
 
-          <section id="tp-funnel-campaign-panel" hidden class="tp-campaign-panel">
-            <label class="form-label" for="tp-funnel-campaign">Campanha deste funil</label>
-            <select id="tp-funnel-campaign" class="form-select" onchange="selecionarCampanhaModeloFunil(this.value)"><option value="">Selecione uma campanha</option></select>
-            <p id="tp-funnel-campaign-status" role="status">Escolha a campanha que fornece a oferta e o checkout.</p>
-            <p>A nova página será criada como rascunho. A versão atual da campanha continua publicada até você publicar a nova página.</p>
-            <button type="button" class="tp-btn-preview-link" onclick="voltarOrigemTemplatePicker(); navigate('campaigns');">Criar uma campanha</button>
+
+
+          <section id="tp-existing-section" class="tp-existing-section" aria-labelledby="tp-existing-title">
+            <h2 id="tp-existing-title">Páginas e funis já criados</h2>
+            <p>Abra uma página existente diretamente no editor, com o conteúdo salvo.</p>
+            <label for="tp-existing-search">Buscar página ou funil</label>
+            <input id="tp-existing-search" class="form-input" type="search" placeholder="Nome da página ou campanha" oninput="filtrarFunisCriados()">
+            <p id="tp-existing-status" role="status"></p><div id="tp-existing-list" class="tp-existing-list"></div>
           </section>
+          <section id="tp-native-section" class="tp-existing-section"><h2>Telas reais das campanhas</h2><p>Acesse a raspadinha, roleta e oferta usadas pelos visitantes, com os dados da sua campanha.</p><div id="tp-native-experiences"></div></section>
 
           <!-- Nota Auxiliar Centralizada -->
           <div class="tp-bottom-note">

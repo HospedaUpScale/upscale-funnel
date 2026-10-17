@@ -48,11 +48,11 @@ A aba **Conteúdo** inclui um assistente para sugerir os seis textos principais 
 
 ## Criar funis pela galeria de novas páginas
 
-Em **Nova página**, os modelos **Funil com raspadinha**, **Funil com roleta** e **Oferta direta** ficam na mesma galeria de Pressel Premium, Booster Padrão e Página em Branco. Clique em **Selecionar** para abrir o modelo no editor como novo rascunho. Nos funis nativos sem campanha selecionada, escolha a campanha solicitada; o editor abre automaticamente em seguida. A campanha é obrigatória nesses três modelos, pois fornece os dados da oferta e o checkout.
+Em **Nova página**, os modelos **Funil com raspadinha**, **Funil com roleta** e **Oferta direta** ficam na mesma galeria de Pressel Premium, Oferta Booster e Página em Branco. Clique em **Selecionar** para abrir o modelo no editor como novo rascunho. Nos funis nativos sem campanha selecionada, escolha a campanha solicitada; o editor abre automaticamente em seguida. A campanha é obrigatória nesses três modelos, pois fornece os dados da oferta e o checkout.
 
 A criação gera uma página independente em rascunho com a experiência escolhida e o vínculo da campanha. A página publicada continua ativa até publicar a nova. O editor mantém aberto o rascunho recém-criado, mesmo se foi aberto a partir do endereço de outra página. Na lateral, **Editar etapas e oferta** abre **Conteúdo da oferta** no próprio editor da página, sem navegação para outra tela.
 
-A prévia ampliada desses três modelos mostra a sequência do funil, sem executar checkout ou tracking. A prévia do editor usa os dados reais da campanha. O teste de navegador verificou os três modelos, campanha obrigatória, salvamento do vínculo e mecânica, preservação da publicação anterior e acesso ao editor das etapas.
+A prévia ampliada e o editor carregam as telas nativas reais com os dados da campanha. O checkout da prévia é demonstrativo e não cria transações. O teste de navegador verificou os três modelos, campanha obrigatória, salvamento do vínculo e mecânica, preservação da publicação anterior e acesso ao editor das etapas.
 
 
 ## Gerenciar todas as páginas
@@ -77,3 +77,16 @@ A galeria inclui **Páginas e funis já criados**, com busca e botão **Abrir no
 Nos modelos iniciais, **Selecionar** abre o novo rascunho diretamente, sem precisar de um segundo clique em **Usar este modelo**. Quando o modelo exige campanha, a abertura acontece após essa escolha. **Ampliar prévia** continua sendo apenas visualização.
 
 O carregamento do editor é inicializado uma única vez; respostas atrasadas de seleções anteriores são descartadas e o histórico é reiniciado ao trocar de página. Falhas ao carregar uma página informada explicitamente não abrem um modelo diferente silenciosamente. O teste de navegador verificou os seis modelos, abertura de funis salvos nas três entradas e respostas que chegam fora da ordem das seleções (CodeMirror simulado para contar inicializações, sem dependência do CDN).
+
+
+## Telas reais e etapas do funil
+
+A miniatura agora seleciona o modelo; o comando **Ampliar prévia** permanece separado. Quando uma campanha é necessária, sua seleção aparece antes da lista de modelos. **Oferta Booster** utiliza a tela final nativa definida no projeto, com vídeo e ativação, em vez do antigo modelo demonstrativo de pacotes.
+
+A área Páginas, a galeria e os detalhes da campanha oferecem acesso a **Editar raspadinha**, **Editar roleta** e **Editar oferta**. Essas ações abrem uma página nativa existente da mesma campanha/mecânica ou criam seu primeiro rascunho vinculado; não substituem o HTML personalizado nem publicam automaticamente. O conteúdo usa o mesmo `index.html` que renderiza a oferta publicada.
+
+Acima da prévia, **Página completa**, **Revelação** (raspadinha/roleta), **Oferta** e **Checkout** permitem alternar as telas. Na oferta direta, a revelação fica desativada. Em páginas com HTML personalizado, examinar as etapas nativas não altera o HTML salvo. O checkout usa o próprio modal de pagamento com indicação explícita de demonstração, sem QR pagável, criação de cobrança, polling ou redirecionamento externo.
+
+Clique nos títulos, descrições e preço da prévia nativa para focar o campo correspondente na lateral. Os textos da raspadinha e da roleta, antes fixos no renderizador, também são configuráveis e persistem no tema. Os comandos de prévia são aceitos somente em `?preview=1` e da mesma origem; páginas públicas mantêm o fluxo real de pagamento.
+
+Validação em navegador: seleção pela miniatura; dados e identidade das telas reais; navegação entre etapas; edição por clique e persistência; publicação no mesmo renderizador; reabertura por campanha; HTML personalizado preservado; prévia ampliada com dados reais; checkout do editor sem chamadas de pagamento e checkout publicado com API simulada. Nenhuma cobrança real foi gerada.

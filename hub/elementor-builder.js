@@ -36,6 +36,7 @@
     flowOffer: null,
     offerDirty: false,
     inlinePreviewScreen: 'scratch',
+    previewTarget: 'page',
     flowControlsGeneration: 0,
     codeMirror: null,
     debounceTimer: null
@@ -62,7 +63,7 @@
   }
   function alterarExperienciaFunil(mechanic) {
     if(validMechanics.indexOf(mechanic)===-1)return;
-    state.mechanic=mechanic;applyExperience(true);
+    state.mechanic=mechanic;state.inlinePreviewScreen=mechanic==='direct'?'offer':'scratch';atualizarNavegacaoEtapas();applyExperience(true);
   }
   function inserirExperienciaFunil(){applyExperience(true);}
   async function editarEtapasOferta() {
@@ -85,6 +86,7 @@
       state.flowOffer=Object.assign({},data.offer,data.offer.draft_config||{});
       state.offerDirty=false;
       preencherOfertaInline();
+      atualizarNavegacaoEtapas();
       document.getElementById('builder-flow-type').disabled=false;
       document.getElementById('builder-insert-experience').disabled=false;
       flowMessage('Oferta vinculada. Escolha a experiência e insira o bloco na página.');
@@ -100,6 +102,7 @@
     if(validMechanics.indexOf(state.mechanic)===-1)state.mechanic='scratch';
     state.flowOffer=null;
     state.offerDirty=false;
+    atualizarNavegacaoEtapas();
     document.getElementById('builder-offer-fields').disabled=true;
     document.getElementById('builder-offer-status').textContent=campaignId?'Carregando oferta da campanha…':'Selecione a campanha para editar sua oferta.';
     document.getElementById('builder-flow-type').value=state.mechanic;
@@ -116,14 +119,15 @@
         if (generation!==state.flowControlsGeneration) return;
         if(!requested&&!(config.experience&&config.experience.mechanic))state.mechanic=state.flowOffer&&state.flowOffer.theme&&state.flowOffer.theme.mechanic||'scratch';
         document.getElementById('builder-flow-type').value=state.mechanic;
+        atualizarNavegacaoEtapas();
         if(requested){window.requestedCampaignMechanic=null;applyExperience(false);}else renderPreview(false);
       }
     }catch(e){flowMessage('Não foi possível carregar as campanhas: '+e.message);}
   }
 
   var inlineOfferTop = ['title','subtitle','price','quota_count','checkout_mode','legacy_checkout_url'];
-  var inlineOfferTheme = ['offer_headline_start','offer_headline_highlight','cta_label','cta_subtext','timer_minutes','vturb_embed','video_src','page_bg','primary_color','accent_color'];
-  var inlineDefaults = {offer_headline_start:'Seu Booster está',offer_headline_highlight:'pronto para ativar.',cta_label:'ATIVAR MEU BOOSTER',cta_subtext:'Pagamento via Pix',timer_minutes:10,vturb_embed:'',video_src:'',page_bg:'#06152d',primary_color:'#1764ff',accent_color:'#9fe870'};
+  var inlineOfferTheme = ['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label','offer_headline_start','offer_headline_highlight','cta_label','cta_subtext','timer_minutes','vturb_embed','video_src','page_bg','primary_color','accent_color'];
+  var inlineDefaults = {headline_start:'Raspe e descubra seu',headline_highlight:'Booster',subtitle_text:'Uma condição especial para esta campanha.',wheel_heading:'Gire e descubra',wheel_highlight:'seu Booster',wheel_subtitle:'Gire a roleta para liberar sua condição especial.',wheel_spin_label:'GIRAR A ROLETA',offer_headline_start:'Seu Booster está',offer_headline_highlight:'pronto para ativar.',cta_label:'ATIVAR MEU BOOSTER',cta_subtext:'Pagamento via Pix',timer_minutes:10,vturb_embed:'',video_src:'',page_bg:'#06152d',primary_color:'#1764ff',accent_color:'#9fe870'};
   function inlineField(key){return document.getElementById('inline-offer-'+key);}
   function preencherOfertaInline(){
     var offer=state.flowOffer;if(!offer)return;var theme=offer.theme||{};
@@ -156,10 +160,26 @@
       if(match){offer.vturb_account_id=match[1];offer.vturb_player_id=match[2];theme.vturb_script_url=match[0];}
       else if(!theme.vturb_embed.trim()){offer.vturb_account_id='';offer.vturb_player_id='';theme.vturb_script_url='';}
     }
-    offer.theme=theme;state.flowOffer=offer;state.offerDirty=true;state.inlinePreviewScreen='offer';
+    offer.theme=theme;state.flowOffer=offer;state.offerDirty=true;
+    if(!['headline_start','headline_highlight','subtitle_text','wheel_heading','wheel_highlight','wheel_subtitle','wheel_spin_label'].includes(changed))state.inlinePreviewScreen='offer';
+    else state.inlinePreviewScreen=state.mechanic==='direct'?'offer':'scratch';
+    if(state.previewTarget!=='experience'){state.previewTarget='experience';renderPreview(false);}
+    atualizarNavegacaoEtapas();
     document.getElementById('builder-offer-status').textContent='Alterações da oferta ainda não salvas.';marcarModificado();enviarOfertaInline();
   }
-  function preverEtapaOferta(screen){state.inlinePreviewScreen=screen;enviarOfertaInline();}
+  function atualizarNavegacaoEtapas(){
+    var ready=!!state.flowOffer,stage=state.previewTarget==='page'?'page':state.inlinePreviewScreen;
+    ['page','scratch','offer','checkout'].forEach(function(name){var btn=document.getElementById('builder-stage-'+name);if(!btn)return;btn.disabled=name!=='page'&&(!ready||(name==='scratch'&&state.mechanic==='direct'));btn.setAttribute('aria-pressed',String(stage===name));});
+    document.getElementById('builder-stage-scratch').textContent=state.mechanic==='wheel'?'1 · Roleta':'1 · Raspadinha';
+    document.getElementById('builder-stage-status').textContent=ready?'Edite as telas reais da campanha. O checkout é demonstrativo na prévia.':'Selecione uma campanha para editar as etapas.';
+  }
+  function preverEtapaOferta(screen){
+    if(!['page','scratch','offer','checkout'].includes(screen))return;
+    if(screen!=='page'&&!state.flowOffer){flowMessage('Aguarde o carregamento da oferta da campanha.');return;}
+    state.previewTarget=screen==='page'?'page':'experience';
+    state.inlinePreviewScreen=screen==='scratch'&&state.mechanic==='direct'?'offer':screen==='page'?'scratch':screen;
+    atualizarNavegacaoEtapas();renderPreview(false);
+  }
   async function salvarOfertaInline(){
     if(!state.offerDirty)return true;
     var campaignId=window.selectedCampaignId,offer=state.flowOffer;
@@ -928,7 +948,7 @@
 
     // Garante que o script do Elementor Runtime seja injetado no final do body
     var helperScript = getIframeHelperScript();
-    var htmlToInject = state.currentHtml;
+    var htmlToInject = state.previewTarget==='experience'?getNativeFunnelTemplate(state.mechanic,false):state.currentHtml;
 
     if (htmlToInject.indexOf('</body>') !== -1) {
       htmlToInject = htmlToInject.replace('</body>', helperScript + '</body>');
@@ -2048,7 +2068,7 @@
   function aplicarPaginaSelecionada(f) {
     clearTimeout(state.debounceTimer);
     ++state.flowControlsGeneration;
-    state.flowOffer=null;state.offerDirty=false;state.inlinePreviewScreen='scratch';
+    state.flowOffer=null;state.offerDirty=false;state.inlinePreviewScreen='scratch';state.previewTarget='page';
     state.historyStack=[];state.historyIndex=-1;state.selectedBlockId=null;state.lastHtmlEditedId=null;
     window.selectedCampaignId=f.campaign_id||null;window.requestedCampaignMechanic=null;
     state.funnelId=f.id;state.name=f.name||'Página';state.slug=f.slug||'pagina';
@@ -2059,6 +2079,8 @@
     state.metaPixelId=config.tracking&&config.tracking.meta_pixel_id||'';
     state.ctaTrackEvent=config.tracking&&config.tracking.cta_track_event||'InitiateCheckout';
     state.mechanic=config.experience&&config.experience.mechanic||'scratch';
+    if(/^funil-(scratch|wheel|direct)$/.test(state.templateSlug)){state.previewTarget='experience';state.inlinePreviewScreen=state.mechanic==='direct'?'offer':'scratch';document.getElementById('builder-inline-offer').open=true;}
+    atualizarNavegacaoEtapas();
     [['funnel-name',state.name],['funnel-slug',state.slug],['builder-funnel-domain-select',state.customDomainId||''],['builder-pixel-id-input',state.metaPixelId],['builder-pixel-event-select',state.ctaTrackEvent]].forEach(function(pair){var el=document.getElementById(pair[0]);if(el)el.value=pair[1];});
     if(state.codeMirror)state.codeMirror.setValue(state.currentHtml);
     renderPreview(true);marcarSalvo(f.status==='published'?'Página no ar':'Rascunho salvo');atualizarDisplayLinkPublico();
@@ -2529,8 +2551,9 @@
     },
     'booster-padrao': {
       id: 'booster-padrao',
-      name: 'Página Booster Padrão',
-      templateSlug: 'default',
+      name: 'Oferta Booster',
+      mechanic: 'direct',
+      templateSlug: 'funil-direct',
       defaultSlugPrefix: 'booster',
       cardId: 'tp-card-booster-padrao'
     },
@@ -2547,6 +2570,7 @@
   };
 
   var currentPreviewModelId = null;
+  var previewRequestGeneration=0;
   var lastFocusedElement = null;
 
   function abrirTelaSelecaoModelos(origem, campaignId) {
@@ -2556,6 +2580,7 @@
     selecionarModeloPicker('pressel-premium-campanhas');
     carregarCampanhasModeloFunil();
     carregarFunisCriados();
+    carregarExperienciasReaisPicker();
 
     // Fechar prévia caso estivesse aberta
     fecharPreviaModal();
@@ -2665,6 +2690,29 @@
     if(value&&pendingPickerSelection&&!templatePickerBusy)confirmarUsoModelo();
   }
 
+  async function editarExperienciaCampanha(campaignId,mechanic){
+    campaignId=parseInt(campaignId,10);if(!campaignId||!validMechanics.includes(mechanic))return;
+    var wsId=window.currentWsId||2,generation=++state.pageLoadGeneration;
+    try{
+      var data=await window.apiFetch('../api/admin/funnels.php?workspace_id='+wsId+'&campaign_id='+campaignId);
+      if(generation!==state.pageLoadGeneration||wsId!==(window.currentWsId||2))return;
+      if(data.status!=='success')throw new Error(data.message||'Não foi possível carregar as páginas.');
+      var page=(data.funnels||[]).find(function(p){var cfg={};try{cfg=typeof p.settings_config==='string'?JSON.parse(p.settings_config):p.settings_config||{};}catch(e){}return p.template_slug==='funil-'+mechanic&&cfg.experience&&cfg.experience.mechanic===mechanic&&(p.draft_content||p.html_content||'').includes('data-campaign-offer');});
+      if(!page){
+        var html=getNativeFunnelTemplate(mechanic,false),name={scratch:'Raspadinha',wheel:'Roleta',direct:'Oferta'}[mechanic]+' da campanha';
+        var created=await window.apiFetch('../api/admin/funnels.php',{method:'POST',body:JSON.stringify({action:'save',workspace_id:wsId,campaign_id:campaignId,name:name,slug:'campanha-'+campaignId+'-'+mechanic,template_slug:'funil-'+mechanic,settings_config:{experience:{mechanic:mechanic}},html_content:html,draft_content:html})});
+        if(created.status!=='success')throw new Error(created.message||'Não foi possível abrir a experiência.');
+        page={id:created.funnel_id,campaign_id:campaignId,name:name,slug:created.slug,template_slug:'funil-'+mechanic,draft_content:html,status:'draft',settings_config:{experience:{mechanic:mechanic}}};
+      }
+      if(generation!==state.pageLoadGeneration||wsId!==(window.currentWsId||2))return;
+      mostrarEditorSelecionado();aplicarPaginaSelecionada(page);
+    }catch(e){if(generation===state.pageLoadGeneration)window.showToast(e.message,'error');}
+  }
+  async function carregarExperienciasReaisPicker(){
+    var wsId=window.currentWsId||2,campaignId=templatePickerCampaignId,container=document.getElementById('tp-native-experiences');container.textContent='Carregando campanhas…';
+    try{var data=await window.apiFetch('../api/admin/campaigns.php?workspace_id='+wsId);if(wsId!==(window.currentWsId||2)||campaignId!==templatePickerCampaignId)return;if(data.status!=='success')throw new Error(data.message);window.renderizarExperienciasCampanhas(container,(data.campaigns||[]).filter(function(c){return !campaignId||c.id===campaignId;}));}catch(e){container.textContent=e.message;}
+  }
+
   var existingPickerPages=[],existingPickerGeneration=0;
   function filtrarFunisCriados(){
     var list=document.getElementById('tp-existing-list'),query=document.getElementById('tp-existing-search').value.trim().toLowerCase();
@@ -2712,9 +2760,6 @@
 
   function getNativeFunnelTemplate(mechanic, preview) {
     var labels = {scratch:'Raspadinha', wheel:'Roleta', direct:'Oferta direta'};
-    if (preview) {
-      return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#06152d;color:white;font-family:system-ui;padding:40px 20px;text-align:center}main{max-width:640px;margin:auto}small{color:#a6f568;letter-spacing:3px}h1{font-size:38px}section{background:#0c2247;border:1px solid #1764ff;border-radius:16px;padding:30px;margin:18px 0}strong{color:#a6f568}p{color:#b0c4df;line-height:1.6}</style></head><body><main><small>PRÉVIA DA SEQUÊNCIA</small><h1>' + labels[mechanic] + '</h1>' + (mechanic === 'direct' ? '' : '<section><strong>1 · REVELE</strong><p>' + (mechanic === 'wheel' ? 'Gire a roleta para revelar sua oferta.' : 'Raspe para revelar sua oferta.') + '</p></section>') + '<section><strong>2 · CONFIRA</strong><p>Tela final com vídeo, detalhes e preço da campanha.</p></section><section><strong>3 · ATIVE</strong><p>Botão de ativação e checkout configurado na campanha.</p></section><p>As informações reais aparecem após vincular a campanha. Todas as etapas são configuradas no editor da oferta.</p></main></body></html>';
-    }
     return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + labels[mechanic] + '</title><style>html,body{margin:0;background:#06152d}iframe{display:block;width:100%;height:1800px;min-height:100vh;border:0}</style></head><body><section data-block-id="campaign-experience" data-block-type="html"><iframe data-campaign-offer="true" src="' + flowFrameSource(mechanic) + '" title="Experiência e oferta da campanha"></iframe></section><script>document.querySelector("iframe").addEventListener("load",function(){var frame=this;try{var root=frame.contentDocument.getElementById("rp");if(!root)return;var resize=function(){frame.style.height=Math.max(640,Math.ceil(root.getBoundingClientRect().height)+100)+"px";};new ResizeObserver(resize).observe(root);resize();}catch(e){}});<\/script></body></html>';
   }
 
@@ -2809,7 +2854,8 @@
     return html;
   }
 
-  function ampliarPreviaModal(modelId, event) {
+  async function ampliarPreviaModal(modelId, event) {
+    var requestGeneration=++previewRequestGeneration;
     if (event && event.stopPropagation) event.stopPropagation();
 
     // Guardar elemento acionador para restaurar foco ao fechar
@@ -2817,6 +2863,8 @@
     currentPreviewModelId = modelId;
 
     var def = TEMPLATE_PICKER_DEFS[modelId] || TEMPLATE_PICKER_DEFS['pressel-premium-campanhas'];
+    var campaignId=templatePickerCampaignId||parseInt(document.getElementById('tp-funnel-campaign').value,10)||0;
+    if(def.mechanic&&!campaignId){selecionarModeloPicker(modelId);pendingPickerSelection=false;document.getElementById('tp-funnel-campaign-status').textContent='Escolha a campanha para visualizar suas telas reais.';document.getElementById('tp-funnel-campaign-panel').scrollIntoView({block:'center'});return;}
     var titleEl = document.getElementById('tp-modal-preview-name');
     if (titleEl) {
       titleEl.textContent = 'Prévia — ' + def.name;
@@ -2840,13 +2888,18 @@
     setPreviaModalDevice('desktop');
 
     try {
+      var offer=null;
+      if(def.mechanic){var data=await window.apiFetch('../api/admin/offer.php?workspace_id='+(window.currentWsId||2)+'&campaign_id='+campaignId);if(requestGeneration!==previewRequestGeneration)return;if(data.status!=='success')throw new Error(data.message);offer=Object.assign({},data.offer,data.offer.draft_config||{});offer.theme=Object.assign({},offer.theme||{},{mechanic:def.mechanic});}
       var html = getTemplateHtmlForModel(modelId, true);
+      if(offer)html=html.split('{{campaign_offer_url}}').join('/index.html?preview=1&native=1');
       if (!html || html.length < 30) {
         throw new Error('Conteúdo do template não encontrado ou vazio');
       }
 
       if (iframe) {
         iframe.onload = function() {
+          if(requestGeneration!==previewRequestGeneration)return;
+          if(offer){iframe.contentDocument.querySelectorAll('iframe[data-campaign-offer]').forEach(function(frame){function apply(){frame.contentWindow.postMessage({tipo:'upscale:preview-config',offer:offer},window.location.origin);frame.contentWindow.postMessage({tipo:'upscale:preview-screen',screen:def.mechanic==='direct'?'offer':'scratch'},window.location.origin);}frame.addEventListener('load',apply);if(frame.contentDocument&&frame.contentDocument.readyState==='complete')apply();});}
           if (loadingEl) loadingEl.style.display = 'none';
         };
         iframe.srcdoc = html;
@@ -2867,6 +2920,7 @@
   }
 
   function fecharPreviaModal() {
+    ++previewRequestGeneration;
     var modal = document.getElementById('modal-template-preview-large');
     if (modal) {
       modal.classList.remove('open');
@@ -2877,6 +2931,7 @@
 
     var iframe = document.getElementById('tp-modal-preview-iframe');
     if (iframe) {
+      iframe.onload=null;
       iframe.srcdoc = 'about:blank';
     }
 
@@ -2999,6 +3054,11 @@
     window.addEventListener('message', function(event) {
       if (!event.data || !event.data.type) return;
 
+      if(event.data.type==='upscale:edit-offer-field'&&event.origin===window.location.origin){
+        var trusted=['builder-iframe','builder-iframe-mobile'].some(function(id){var outer=document.getElementById(id);return outer&&outer.contentDocument&&Array.from(outer.contentDocument.querySelectorAll('iframe[data-campaign-offer]')).some(function(frame){return frame.contentWindow===event.source;});});
+        var field=typeof event.data.field==='string'?inlineField(event.data.field):null;
+        if(trusted&&field){document.getElementById('builder-inline-offer').open=true;field.focus();field.scrollIntoView({block:'nearest'});}
+      }
       if (event.data.type === 'elementor:select') {
         selecionarElementoPeloId(event.data);
         // Bloco HTML: ao SELECIONAR, abre o editor imediatamente. Guard para nao
@@ -3119,6 +3179,7 @@
   window.editarEtapasOferta = editarEtapasOferta;
   window.atualizarOfertaInline = atualizarOfertaInline;
   window.preverEtapaOferta = preverEtapaOferta;
+  window.editarExperienciaCampanha = editarExperienciaCampanha;
   window.vincularCampanhaExperiencia = vincularCampanhaExperiencia;
   window.inserirBloco = inserirBloco;
   window.desmarcarElemento = desmarcarElemento;

@@ -1,6 +1,6 @@
 (function(window,document){
   'use strict';
-  var pages=[], generation=0;
+  var pages=[], campaigns=[], generation=0;
   function ws(){return window.currentWsId||1;}
   function node(tag,text){var el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;}
   function button(text,fn){var b=node('button',text);b.type='button';b.className='btn-secondary';b.style.cssText='font-size:12px;padding:6px 10px;min-height:30px;';b.onclick=fn;return b;}
@@ -36,17 +36,23 @@
     try{var results=await Promise.all([window.apiFetch('../api/admin/funnels.php?summary=1&workspace_id='+workspace),window.apiFetch('../api/admin/campaigns.php?workspace_id='+workspace)]);
       if(current!==generation||workspace!==ws())return;
       if(results.some(function(r){return r.status!=='success';}))throw new Error('Não foi possível carregar as páginas.');
+      campaigns=results[1].campaigns||[];
       pages=results[0].funnels||[];var select=document.getElementById('pages-campaign-filter'),previous=select.value;select.replaceChildren(new Option('Todas as campanhas',''),new Option('Sem campanha','none'));
       (results[1].campaigns||[]).forEach(function(c){select.add(new Option(c.title,String(c.id)));});select.value=previous;filtrarPaginasGerenciador();
     }catch(e){if(current===generation){status.textContent=e.message;document.getElementById('pages-manager-list').replaceChildren();}}
   }
   function filtrarPaginasGerenciador(){var query=document.getElementById('pages-search').value.toLowerCase(),campaign=document.getElementById('pages-campaign-filter').value,status=document.getElementById('pages-status-filter').value;
     var filtered=pages.filter(function(p){return (!query||(p.name+' '+p.slug).toLowerCase().includes(query))&&(!status||p.status===status)&&(!campaign||(campaign==='none'?!p.campaign_id:String(p.campaign_id)===campaign));});
-    document.getElementById('pages-manager-status').textContent=filtered.length+' página(s) encontrada(s)';render(document.getElementById('pages-manager-list'),filtered);
+    document.getElementById('pages-manager-status').textContent=filtered.length+' página(s) encontrada(s)';render(document.getElementById('pages-manager-list'),filtered);renderizarExperienciasCampanhas(document.getElementById('pages-native-experiences'),campaigns.filter(function(c){return campaign!=='none'&&(!campaign||String(c.id)===campaign);}));
   }
   async function carregarPaginasCampanha(id){var workspace=ws(),container=document.getElementById('campaign-pages-list');container.textContent='Carregando páginas…';
     try{var data=await window.apiFetch('../api/admin/funnels.php?summary=1&workspace_id='+workspace+'&campaign_id='+id);if(window.selectedCampaignId!==id||ws()!==workspace)return;if(data.status!=='success')throw new Error(data.message);render(container,data.funnels||[]);}catch(e){if(window.selectedCampaignId===id)container.textContent=e.message;}
   }
+  function renderizarExperienciasCampanhas(container,items){
+    container.replaceChildren();if(!items.length){container.append(node('p','Nenhuma campanha disponível.'));return;}
+    items.forEach(function(c){var row=node('div'),label=node('strong',c.title),actions=node('div');row.className='native-campaign-entry';actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';['scratch','wheel','direct'].forEach(function(mechanic){actions.append(button({scratch:'Editar raspadinha',wheel:'Editar roleta',direct:'Editar oferta'}[mechanic],function(){window.editarExperienciaCampanha(c.id,mechanic);}));});row.append(label,actions);container.append(row);});
+  }
+  window.renderizarExperienciasCampanhas=renderizarExperienciasCampanhas;
   function criarPaginaDaCampanha(id){if(!id)return;window.abrirTelaSelecaoModelos('campaign',id);}
   window.carregarGerenciadorPaginas=carregarGerenciadorPaginas;window.filtrarPaginasGerenciador=filtrarPaginasGerenciador;window.carregarPaginasCampanha=carregarPaginasCampanha;window.criarPaginaDaCampanha=criarPaginaDaCampanha;
 })(window,document);

@@ -2904,3 +2904,16 @@ body.tp-modal-open {
 .tp-existing-item small { color:#64748b; margin-top:6px; }
 .tp-existing-item button { flex-shrink:0; }
 @media(max-width:600px){.tp-existing-section{padding:16px}.tp-existing-item{align-items:flex-start;flex-direction:column}}
+
+.builder-funnel-stages { display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid #e2e8f0; }
+.builder-funnel-stages button { border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:9px 12px;color:#334155;cursor:pointer;font:600 12px Inter,sans-serif; }
+.builder-funnel-stages button[aria-pressed="true"] { color:#fff;background:#1764ff;border-color:#1764ff; }
+.builder-funnel-stages button:disabled { opacity:.45;cursor:default; }
+.builder-funnel-stages span { font-size:12px;color:#64748b; }
+.native-campaign-entry { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid #e2e8f0; }
+.native-campaign-entry strong { font-size:14px;overflow-wrap:anywhere; }
+
+.elementor-shell > .elementor-body { flex:1; min-height:0; height:auto; }
+.builder-funnel-stages { flex-shrink:0; }
+
+#tp-existing-section,#tp-native-section { scroll-margin-top:80px; }

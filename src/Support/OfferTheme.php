@@ -74,6 +74,9 @@ class OfferTheme
             'sound_volume'          => 0.2,
 
             // Roleta Premiada (usada quando mechanic = 'wheel')
+            'wheel_heading' => 'Gire e descubra',
+            'wheel_highlight' => 'seu Booster',
+            'wheel_subtitle' => 'Gire a roleta para liberar sua condição especial.',
             'wheel_spin_label'      => 'GIRAR A ROLETA',
             'wheel_result_label'    => 'VOCÊ GANHOU!',
             // Rótulos das fatias. A fatia vencedora é marcada por "is_win": true e
