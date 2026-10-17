@@ -1185,6 +1185,12 @@
                           </select>
                           <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Escolha como o comprador revela a oferta. A roleta sempre cai na oferta.</div>
                         </div>
+                        <div>
+                          <label style="display:flex;gap:8px;align-items:center;"><input id="campaign-sound-enabled" type="checkbox" checked onchange="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();"> Ativar efeitos sonoros</label>
+                          <label class="form-label" for="campaign-sound-volume">Volume dos efeitos</label>
+                          <input id="campaign-sound-volume" type="range" min="0" max="100" value="20" aria-label="Volume dos efeitos sonoros" oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();" style="width:100%;">
+                          <p style="font-size:12px;color:var(--text-muted);">Sons de giro, raspagem e revelação. O visitante pode silenciar.</p>
+                        </div>
                         <div id="scratch-texture-row">
                           <label class="form-label">Textura da Cobertura</label>
                           <select class="form-select" id="scratch-texture-type" onchange="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
@@ -3999,6 +4005,8 @@
       title_size: parseInt(document.getElementById('typo-title-size').value) || 32,
       body_size: parseInt(document.getElementById('typo-body-size').value) || 16,
       mechanic: (document.getElementById('mechanic-type') || {}).value || 'scratch',
+      sound_enabled: document.getElementById('campaign-sound-enabled').checked,
+      sound_volume: Number(document.getElementById('campaign-sound-volume').value)/100,
       scratch_texture: document.getElementById('scratch-texture-type').value,
       scratch_threshold: parseInt(document.getElementById('scratch-threshold').value) || 22,
       timer_minutes: timerMin,
@@ -4149,6 +4157,8 @@
         document.getElementById('camp-vturb-embed').value = t.vturb_embed || '';
         document.getElementById('camp-video-url').value = t.video_src || '';
         atualizarEmbedVturb(true);
+        document.getElementById('campaign-sound-enabled').checked = t.sound_enabled !== false;
+        document.getElementById('campaign-sound-volume').value = Math.round((t.sound_volume === undefined ? .2 : Number(t.sound_volume))*100);
         if (t.mechanic && document.getElementById('mechanic-type')) {
           document.getElementById('mechanic-type').value = t.mechanic;
           alternarMecanica();

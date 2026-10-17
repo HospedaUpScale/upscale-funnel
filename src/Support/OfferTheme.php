@@ -70,6 +70,8 @@ class OfferTheme
 
             // Mecânica de Revelação ('scratch' = raspadinha | 'wheel' = roleta premiada)
             'mechanic'              => 'scratch',
+            'sound_enabled'         => true,
+            'sound_volume'          => 0.2,
 
             // Roleta Premiada (usada quando mechanic = 'wheel')
             'wheel_spin_label'      => 'GIRAR A ROLETA',
@@ -206,6 +208,7 @@ class OfferTheme
             $out['headline_highlight'] = $title;
         }
 
+        $out['sound_volume'] = max(0.0, min(1.0, (float)$out['sound_volume']));
         return self::sanitizeColors($out);
     }
 

@@ -22,6 +22,12 @@ O código colado fica salvo no tema/rascunho da oferta. A aplicação reconstró
 
 Os testes verificaram extração do embed, persistência, publicação, estrutura do smartplayer e troca para MP4. No teste de navegador, o carregador externo foi simulado: o acesso direto ao servidor VTurb retornou 403 neste ambiente, portanto a reprodução real deve ser conferida no site publicado.
 
+## Efeitos sonoros
+
+A roleta possui cliques durante o giro, que desaceleram até a revelação. A raspadinha possui som de raspagem enquanto o visitante movimenta o dedo ou mouse e um toque musical ao revelar a oferta. O áudio é sintetizado com Web Audio; não depende de arquivos ou serviços externos e só é iniciado após interação do visitante.
+
+Em **Editar oferta e checkout → Aparência → Área de raspagem**, configure **Ativar efeitos sonoros** e **Volume dos efeitos**. O padrão é ativado, com volume de 20%. O visitante pode usar **Som ativado / Som desativado** na própria experiência; a preferência de silêncio fica salva no navegador. A opção de upsell direto não toca a revelação. Em navegadores sem Web Audio, os jogos continuam funcionando sem efeitos. Os cliques do giro são interrompidos quando a página é ocultada ou o som é silenciado.
+
 ## Ambiente e testes
 
 Ative o PHP, execute `php scripts/migrate.php` e inicie `php -S 127.0.0.1:8000 router.php`. Não é mais necessário baixar dependências de um editor visual externo. Execute `php scripts/test.php`.

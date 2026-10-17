@@ -697,6 +697,7 @@
   <button type="button" class="btn-cta" id="pix-paid-close" style="min-height: 48px; font-size: 15px;">Concluir e Ver Meus Números</button>
 </dialog>
 
+<script src="/assets/experience-sounds.js?v=1"></script>
 <script>
 (function () {
   'use strict';
@@ -911,6 +912,7 @@
 
   function onPointerDown(e) {
     if (revelado) return;
+    if(window.upscaleSounds){upscaleSounds.activate();upscaleSounds.scratch();}
     raspando = true;
     ultimo = null;
     tocou = true;
@@ -922,6 +924,7 @@
   function onPointerMove(e) {
     if (!raspando || revelado) return;
     riscar(pos(e));
+    if(window.upscaleSounds)upscaleSounds.scratch();
     e.preventDefault();
   }
 
@@ -941,6 +944,7 @@
 
   // Botão acessível "Revelar sem raspar"
   $('btn-reveal-all').addEventListener('click', function () {
+    if(window.upscaleSounds)upscaleSounds.activate();
     revelarOferta();
   });
 
@@ -948,6 +952,7 @@
   function revelarOferta() {
     if (revelado) return;
     revelado = true;
+    if(window.upscaleSounds && CONFIG.mechanic!=='direct')upscaleSounds.reveal();
 
     canvas.classList.add('gone');
     $('btn-reveal-all').classList.add('off');
@@ -1083,6 +1088,7 @@
     var destino = voltas * 360 - centro;
 
     var reduzir = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(window.upscaleSounds)upscaleSounds.spin(reduzir?650:4500);
     if (svg) {
       requestAnimationFrame(function () { svg.style.transform = 'rotate(' + destino + 'deg)'; });
     }
@@ -1147,6 +1153,7 @@
     if (d.vturb_account_id !== undefined) CONFIG.vturbAccount = d.vturb_account_id || '';
 
     var theme = d.theme || {};
+    if(window.upscaleSounds)upscaleSounds.configure({enabled:theme.sound_enabled!==false,volume:theme.sound_volume===undefined?.2:theme.sound_volume});
     CONFIG.vturbScriptUrl = theme.vturb_script_url || '';
     CONFIG.vturbAspectRatio = Number(theme.vturb_aspect_ratio) || 56.25;
     CONFIG.videoSrc = theme.video_src || d.video_src || '';
@@ -1220,6 +1227,7 @@
       aplicarDados(d.offer);
     }
     if (d.tipo === 'upscale:preview-screen') {
+      if(window.upscaleSounds)upscaleSounds.stop();
       if (d.screen === 'offer') {
         revelado = true;
         iniciarMedia();
