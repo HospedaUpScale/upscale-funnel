@@ -86,6 +86,7 @@ class SecurityHardeningTest extends TestCase
         $env = getenv();
         unset($env['APP_ENV']); // valida o padrão seguro (produção)
         return array_merge($env, [
+            'ANTHROPIC_API_KEY' => '', // Nenhum teste deve usar credenciais reais.
             'DB_DRIVER'        => 'sqlite',
             'DB_SQLITE_PATH'   => self::$dbPath,
             'SUPER_ADMIN_TOKEN'=> self::SUPER_TOKEN,
@@ -144,6 +145,27 @@ class SecurityHardeningTest extends TestCase
         $stmt = self::$pdo->prepare('SELECT status FROM transactions WHERE id = ?');
         $stmt->execute([$txId]);
         return (string) $stmt->fetchColumn();
+    }
+
+    public function testClaudeRequiresAuthenticationAndWorkspaceAccess(): void
+    {
+        $path = '/api/admin/ai-copy.php?workspace_id=' . self::$ws['sec-a']['id'];
+        [$anonymous] = $this->http('POST', $path, ['brief' => 'Melhorar', 'context' => []]);
+        $this->assertEquals(401, $anonymous);
+        [$foreign] = $this->http('POST', $path, ['brief' => 'Melhorar', 'context' => []],
+            ['Authorization: Bearer adm_' . self::$ws['sec-b']['api_token']]);
+        $this->assertEquals(403, $foreign);
+        [$status, $data, $raw] = $this->http('GET', $path,
+            null, ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']]);
+        $this->assertEquals(200, $status);
+        $this->assertArrayHasKey('configured', $data);
+        $this->assertFalse($data['configured']);
+        [$notConfigured] = $this->http('POST', $path, ['brief' => 'Melhorar', 'context' => []],
+            ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']]);
+        $this->assertEquals(503, $notConfigured);
+        $this->assertArrayHasKey('quota', $data);
+        $this->assertFalse(str_contains($raw, 'api_key'));
+        $this->assertEquals(0, (int)self::$pdo->query("SELECT attempts FROM ai_generation_quota WHERE bucket = 'total'")->fetchColumn());
     }
 
     public function testPaymentWebhookRejectsRequestsWithoutToken(): void

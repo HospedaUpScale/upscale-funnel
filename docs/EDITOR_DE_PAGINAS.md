@@ -41,3 +41,7 @@ Após revelar a raspadinha ou roleta, a oferta usa apresentação ampla e respon
 Em **Editar oferta e checkout → Conteúdo**, os campos **Título da tela final** e **Destaque da tela final** alteram a chamada principal. São salvos no rascunho e publicados junto ao tema. Sem vídeo configurado, o player e a frase que convida a assistir ficam ocultos. A prévia permite voltar à roleta/raspadinha e restaura a apresentação inicial.
 
 Validação: layout sem rolagem horizontal em 320, 390, 941 e 1440 px; preço configurado, cronômetro, retorno da prévia e Pix simulado. Salvamento/reabertura/publicação dos textos e integração VTurb v4/MP4 verificados com carregador externo simulado.
+
+## Assistente de textos com Claude
+
+A aba **Conteúdo** inclui um assistente para sugerir os seis textos principais da oferta. A sugestão é revisada antes de ser aplicada e segue o fluxo normal de salvar/publicar. Veja [configuração da API Claude no EasyPanel e limites de consumo](CLAUDE_API.md).
