@@ -1186,14 +1186,16 @@
       if (match) {
         $('under-prize').textContent = match[1].toUpperCase();
         var parts = d.title.split(match[1]);
-        if (parts[0] && parts[0].trim()) $('under-tag').textContent = parts[0].trim();
-        if (parts[1] && parts[1].trim()) $('under-sub').textContent = parts[1].trim();
+        $('under-tag').textContent = parts[0].trim() || 'Booster';
+        $('under-sub').textContent = parts[1].trim() || 'Condição especial';
       } else {
         $('under-prize').textContent = d.title;
-        $('under-tag').textContent = 'Booster';
-        $('under-sub').textContent = 'Exclusivo';
+        $('under-tag').textContent = d.title;
+        $('under-sub').textContent = 'Condição especial';
       }
     }
+
+    if (d.quota_count !== undefined) {CONFIG.quotaCount=Number(d.quota_count)||1;$('under-prize').textContent=CONFIG.quotaCount+'X';}
 
     if (d.subtitle) {
       CONFIG.subtitle = d.subtitle;

@@ -83,7 +83,7 @@ if ($request->method() === 'GET') {
             (SELECT COUNT(*) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_orders_paid,
             (SELECT COALESCE(SUM(ord.total_amount), 0) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_volume_paid
         FROM campaigns c
-        LEFT JOIN upsell_offers o ON o.id = (SELECT MIN(oi.id) FROM upsell_offers oi WHERE oi.campaign_id = c.id AND oi.workspace_id = c.workspace_id)
+        LEFT JOIN upsell_offers o ON o.id = (SELECT MIN(oi.id) FROM upsell_offers oi WHERE oi.campaign_id = c.id AND oi.workspace_id = c.workspace_id AND oi.offer_role = 'upsell')
         LEFT JOIN funnels f ON f.id = c.primary_funnel_id AND f.workspace_id = c.workspace_id AND f.campaign_id = c.id
         WHERE c.workspace_id = ?
         ORDER BY 
@@ -117,9 +117,9 @@ if ($request->method() === 'GET') {
             'created_at'           => $c['created_at'],
             'offer'                => $c['offer_id'] ? [
                 'id'            => (int)$c['offer_id'],
-                'title'         => $c['offer_title'],
-                'price'         => (float)$c['offer_price'],
-                'quota_count'   => (int)$c['offer_quotas'],
+                'title'         => $offerDraft['title'] ?? $c['offer_title'],
+                'price'         => (float)($offerDraft['price'] ?? $c['offer_price']),
+                'quota_count'   => (int)($offerDraft['quota_count'] ?? $c['offer_quotas']),
                 'is_active'     => (bool)$c['offer_is_active'],
                 'checkout_mode' => $c['checkout_mode'],
                 'public_url' => !empty($c['offer_slug']) ? $baseUrl . '/o/' . $c['offer_slug'] : null,
@@ -231,12 +231,16 @@ if ($request->method() === 'POST') {
 
     // 3.3 CRIAR OU EDITAR AÇÃO
     if ($action === 'save' || $action === 'create') {
+        try { $booster = CampaignPage::boosterInput($input); }
+        catch (\InvalidArgumentException $e) { JsonResponse::error($e->getMessage(), 422); }
+        if ($campaignId && !CampaignPage::campaign($pdo, $targetWsId, $campaignId)) JsonResponse::error('Campanha não encontrada neste workspace.', 404);
         $title = trim($input['title'] ?? 'Nova Ação de Rifa');
         $ticketPrice = (float)($input['ticket_price'] ?? 10.00);
         $extPlatform = trim($input['external_platform'] ?? 'sorteamos');
         $extCampId = trim($input['external_campaign_id'] ?? ('camp_' . uniqid()));
         $status = in_array($input['status'] ?? '', ['published', 'active', 'ended', 'draft']) ? $input['status'] : 'published';
 
+        $pdo->beginTransaction();
         if ($campaignId) {
             $stmtUp = $pdo->prepare("
                 UPDATE campaigns SET
@@ -260,6 +264,8 @@ if ($request->method() === 'POST') {
         $savedCampaign = CampaignPage::campaign($pdo, $targetWsId, $campaignId);
         if (!$savedCampaign) JsonResponse::error('Campanha não encontrada.', 404);
         CampaignPage::offer($pdo, $savedCampaign);
+        if ($booster !== null) CampaignPage::saveBoosterDraft($pdo, $savedCampaign, $booster);
+        $pdo->commit();
 
         JsonResponse::send([
             'status'       => 'success',

@@ -703,9 +703,11 @@
               <span id="detail-camp-status-badge" class="badge badge-success"><span class="badge-dot-indicator"></span> No Ar</span>
             </div>
             <p id="detail-camp-meta" style="color:var(--text-muted);">Plataforma: <strong id="detail-camp-platform" style="color:var(--text-main);">SorteiMe</strong> &bull; ID #<span id="detail-camp-id">--</span></p>
+            <p id="detail-booster-summary" style="font-size:13px;color:var(--text-muted);margin-top:8px;"></p>
           </div>
 
           <div class="page-header-actions">
+            <button type="button" class="btn-secondary" onclick="abrirModalEditarCampanha(selectedCampaignId)">Editar campanha e Booster</button>
             <button type="button" class="btn-primary" onclick="abrirEscolhaFunil(selectedCampaignId)">Página e funil</button>
             <button type="button" class="btn-primary" onclick="abrirEditorOferta(selectedCampaignId)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
@@ -2993,7 +2995,7 @@
 <!-- MODAL 5: NOVA AÇÃO -->
 <dialog class="win-clean" id="modal-nova-acao">
   <div class="modal-header-clean">
-    <h3 class="modal-title-clean">Criar Nova Campanha de Rifa</h3>
+    <h3 class="modal-title-clean" id="campaign-form-heading">Criar Nova Campanha de Rifa</h3>
     <button type="button" class="modal-close-icon" onclick="fecharModalNovaAcao()">&times;</button>
   </div>
   <form id="form-nova-acao" onsubmit="salvarNovaAcao(event)">
@@ -3013,19 +3015,31 @@
       </div>
       <div>
         <label class="form-label" for="new-action-price">Preço da Cota Base (R$)</label>
-        <input type="number" step="0.01" class="form-input" id="new-action-price" value="0.50" required>
+        <input type="number" min="0.01" step="0.01" class="form-input" id="new-action-price" value="0.50" required>
       </div>
+      <fieldset style="border:1px solid var(--border-light);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;">
+        <legend style="font-weight:700;padding:0 6px;">Oferta Booster das páginas</legend>
+        <label class="form-label" for="new-action-booster-name">Nome do Booster</label>
+        <input type="text" class="form-input" id="new-action-booster-name" value="Booster" maxlength="150" placeholder="Ex.: Booster Ouro" required oninput="atualizarResumoBooster()">
+        <label class="form-label" for="new-action-booster-multiplier">Quantas vezes (X)</label>
+        <input type="number" class="form-input" id="new-action-booster-multiplier" value="200" min="1" max="1000000" step="1" required oninput="atualizarResumoBooster()">
+        <label class="form-label" for="new-action-booster-price">Valor do Booster (R$)</label>
+        <input type="number" class="form-input" id="new-action-booster-price" value="9.90" min="0.01" max="99999999.99" step="0.01" required oninput="atualizarResumoBooster()">
+        <p id="campaign-booster-summary" role="status" style="font-size:13px;margin:0;"></p>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Esses dados preenchem a oferta, a raspadinha e a roleta desta campanha. Alterações ficam em rascunho até publicar a oferta ou uma página. O downsell tem configuração própria.</p>
+      </fieldset>
       <div>
-        <label class="form-label" for="new-action-status">Status Inicial</label>
+        <label class="form-label" for="new-action-status">Status da campanha</label>
         <select class="form-select" id="new-action-status">
           <option value="published">Publicar Imediatamente (No Ar)</option>
           <option value="draft">Salvar como Rascunho</option>
+          <option value="ended" id="campaign-ended-option" hidden disabled>Encerrada</option>
         </select>
       </div>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:8px;">
       <button type="button" class="btn-secondary" onclick="fecharModalNovaAcao()">Cancelar</button>
-      <button type="submit" class="btn-primary">Criar Campanha</button>
+      <button type="submit" class="btn-primary" id="campaign-form-submit">Criar Campanha</button>
     </div>
   </form>
 </dialog>
@@ -3742,6 +3756,7 @@
     var camp = allCampaignsData.find(function(c) { return c.id === campId; });
     if (!camp) return;
 
+    document.getElementById('detail-booster-summary').textContent=camp.offer?'Booster: '+camp.offer.title+' · '+Number(camp.offer.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Configure o Booster em Editar campanha e Booster.';
     document.getElementById('detail-camp-title').textContent = camp.title;
     document.getElementById('detail-camp-id').textContent = camp.id;
     document.getElementById('detail-camp-platform').textContent = (camp.external_platform || 'sorteime').toUpperCase();
@@ -4477,31 +4492,68 @@
     });
   }
 
+  var editingCampaignId = null;
+  function atualizarResumoBooster() {
+    var name=document.getElementById('new-action-booster-name').value.trim().replace(/\b\d+\s*x\b/gi,'').trim();
+    var times=document.getElementById('new-action-booster-multiplier').value;
+    var price=Number(document.getElementById('new-action-booster-price').value);
+    document.getElementById('campaign-booster-summary').textContent=(name||'Booster')+' '+times+'X · '+price.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  }
+  async function abrirModalEditarCampanha(id) {
+    var camp=allCampaignsData.find(function(c){return c.id===id;});if(!camp)return;
+    var workspace=currentWsId;
+    try {
+      var data=await apiFetch('../api/admin/offer.php?workspace_id='+workspace+'&campaign_id='+id);
+      if(workspace!==currentWsId)return;
+      if(data.status!=='success')throw new Error(data.message||'Não foi possível carregar o Booster.');
+      var offer=Object.assign({},data.offer,data.offer.draft_config||{});
+      abrirModalNovaAcao();editingCampaignId=id;
+      document.getElementById('campaign-form-heading').textContent='Editar campanha e Booster';
+      document.getElementById('campaign-form-submit').textContent='Salvar alterações';
+      document.getElementById('new-action-title').value=camp.title;
+      var platforms=document.getElementById('new-action-platform');if(!Array.from(platforms.options).some(function(o){return o.value===camp.external_platform;}))platforms.add(new Option(camp.external_platform,camp.external_platform));platforms.value=camp.external_platform;
+      document.getElementById('new-action-price').value=camp.ticket_price;
+      var ended=document.getElementById('campaign-ended-option');ended.hidden=ended.disabled=camp.status!=='ended';
+      document.getElementById('new-action-status').value=camp.status;
+      document.getElementById('new-action-booster-name').value=offer.title.replace(/\b\d+\s*x\b/gi,'').trim();
+      document.getElementById('new-action-booster-multiplier').value=offer.quota_count;
+      document.getElementById('new-action-booster-price').value=offer.price;
+      atualizarResumoBooster();
+    } catch(e){showToast(e.message,'error');}
+  }
   function abrirModalNovaAcao() {
+    editingCampaignId=null;
+    document.getElementById('campaign-ended-option').hidden=true;document.getElementById('campaign-ended-option').disabled=true;
+    document.getElementById('campaign-form-heading').textContent='Criar Nova Campanha de Rifa';
+    document.getElementById('campaign-form-submit').textContent='Criar Campanha';
     document.getElementById('form-nova-acao').reset();
+    atualizarResumoBooster();
     document.getElementById('modal-nova-acao').showModal();
   }
   function fecharModalNovaAcao() {
     document.getElementById('modal-nova-acao').close();
   }
-  function salvarNovaAcao(ev) {
+  async function salvarNovaAcao(ev) {
     ev.preventDefault();
-    var title = document.getElementById('new-action-title').value.trim();
-    var platform = document.getElementById('new-action-platform').value;
-    var price = parseFloat(document.getElementById('new-action-price').value) || 0.50;
-    var status = document.getElementById('new-action-status').value;
-
-    apiFetch('../api/admin/campaigns.php?workspace_id=' + (currentWsId || 2), {
-      method: 'POST',
-      body: JSON.stringify({ action: 'create', title: title, external_platform: platform, ticket_price: price, status: status })
-    })
-    .then(function(data) {
-      fecharModalNovaAcao();
-      if (data.status === 'success') {
-        showToast('Campanha criada com sucesso!', 'success');
-        carregarCampanhas().then(function(){ abrirDetalhesCampanha(data.campaign_id); });
-      } else showToast(data.message || 'Erro ao criar.', 'error');
-    });
+    var button=document.getElementById('campaign-form-submit');if(button.disabled)return;
+    var campaignId=editingCampaignId,workspace=currentWsId;
+    var payload={action:campaignId?'save':'create',campaign_id:campaignId,
+      title:document.getElementById('new-action-title').value.trim(),
+      external_platform:document.getElementById('new-action-platform').value,
+      ticket_price:Number(document.getElementById('new-action-price').value),
+      status:document.getElementById('new-action-status').value,
+      booster_name:document.getElementById('new-action-booster-name').value.trim(),
+      booster_multiplier:Number(document.getElementById('new-action-booster-multiplier').value),
+      booster_price:Number(document.getElementById('new-action-booster-price').value)};
+    button.disabled=true;
+    try {
+      var data=await apiFetch('../api/admin/campaigns.php?workspace_id='+workspace,{method:'POST',body:JSON.stringify(payload)});
+      if(data.status!=='success')throw new Error(data.message||'Não foi possível salvar a campanha.');
+      if(workspace!==currentWsId)return;
+      fecharModalNovaAcao();showToast(campaignId?'Campanha e Booster atualizados no rascunho.':'Campanha criada com o Booster configurado!','success');
+      await carregarCampanhas();abrirDetalhesCampanha(data.campaign_id);
+    } catch(e){if(workspace===currentWsId)showToast(e.message,'error');}
+    finally{button.disabled=false;}
   }
 
   /* ═══ CLIENTES / WORKSPACES & USUÁRIOS GLOBAIS ═══ */
