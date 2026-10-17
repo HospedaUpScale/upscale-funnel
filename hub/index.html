@@ -14,7 +14,7 @@
   
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
-  <link rel="stylesheet" href="elementor-builder.css?v=4.2">
+  <link rel="stylesheet" href="elementor-builder.css?v=4.3">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -26,10 +26,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
   <script src="landing-enxuta-template.js?v=1" defer></script>
-  <script src="elementor-builder.js?v=4.2" defer></script>
+  <script src="elementor-builder.js?v=4.3" defer></script>
   <script src="list-pagination.js?v=1" defer></script>
-<script src="pages-manager.js?v=5" defer></script>
-  <script src="editor-workspace.js?v=5" defer></script>
+<script src="pages-manager.js?v=6" defer></script>
+  <script src="editor-workspace.js?v=6" defer></script>
 </head>
 <body>
 
@@ -737,10 +737,13 @@
         </div>
 
         <section class="card" id="campaign-page-settings" style="margin:20px 0;">
-          <div class="page-header-row"><div><h3 class="card-title-clean">Páginas desta campanha</h3><p class="card-subtitle-clean">Crie várias páginas com endereços próprios e escolha a principal do link da campanha.</p></div><button type="button" class="btn-primary" onclick="criarPaginaDaCampanha(selectedCampaignId)">+ Nova página nesta campanha</button></div>
+          <div class="page-header-row"><div><h3 class="card-title-clean">Páginas desta campanha</h3><p class="card-subtitle-clean">A pressel apresenta a campanha e leva ao checkout da rifa. As páginas de upsell formam o link da campanha; a principal é escolhida só entre elas.</p></div><button type="button" class="btn-primary" onclick="criarPaginaDaCampanha(selectedCampaignId)">+ Nova página nesta campanha</button></div>
           <a id="campaign-offer-link" class="btn-secondary" target="_blank" rel="noopener" hidden>Abrir link principal da campanha ↗</a>
           <div class="campaign-experience-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;"><button type="button" class="btn-secondary" onclick="editarExperienciaCampanha(selectedCampaignId,'scratch')">Editar raspadinha real</button><button type="button" class="btn-secondary" onclick="editarExperienciaCampanha(selectedCampaignId,'wheel')">Editar roleta real</button><button type="button" class="btn-secondary" onclick="editarExperienciaCampanha(selectedCampaignId,'direct')">Editar oferta real</button></div>
-          <div id="campaign-pages-list" style="overflow-x:auto;margin-top:16px;"></div>
+          <h4 class="campaign-pages-group-title">Pressel</h4>
+          <div id="campaign-pressels-list" style="overflow-x:auto;"></div>
+          <h4 class="campaign-pages-group-title">Páginas de upsell</h4>
+          <div id="campaign-pages-list" style="overflow-x:auto;"></div>
           <select id="campaign-flow-type" hidden><option value="scratch">Raspadinha</option><option value="wheel">Roleta</option><option value="direct">Direto</option></select>
         </section>
 
@@ -2221,6 +2224,7 @@
           <!-- Modelos disponíveis -->
           <div class="tp-cards-grid">
             
+            <h2 class="tp-grid-heading">Pressel <span>Página de apresentação da campanha. Leva ao checkout da rifa e não entra no link do upsell.</span></h2>
             <!-- ── CARD 1: PRESSEL PREMIUM — CAMPANHAS (SELECIONADO POR PADRÃO) ── -->
             <div class="tp-card selected" id="tp-card-pressel-premium-campanhas" data-template-id="pressel-premium-campanhas" onclick="selecionarModeloPicker('pressel-premium-campanhas', event)">
               <span class="tp-badge-rec">
@@ -2580,6 +2584,7 @@
               </div>
             </div>
 
+            <h2 class="tp-grid-heading">Upsell <span>Funis que aparecem depois da compra: raspadinha, roleta, oferta direta e downsell.</span></h2>
             <!-- ── CARD 2: PÁGINA BOOSTER PADRÃO ── -->
             <div class="tp-card" id="tp-card-booster-padrao" data-template-id="booster-padrao" onclick="selecionarModeloPicker('booster-padrao', event)">
               <div class="tp-card-selected-badge">
@@ -2681,6 +2686,7 @@
               </div>
             </div>
 
+            <h2 class="tp-grid-heading">Página livre <span>HTML do zero, para qualquer uso.</span></h2>
             <!-- ── CARD 3: PÁGINA EM BRANCO ── -->
             <div class="tp-card" id="tp-card-pagina-em-branco" data-template-id="pagina-em-branco" onclick="selecionarModeloPicker('pagina-em-branco', event)">
               <div class="tp-card-selected-badge">

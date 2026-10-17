@@ -5,6 +5,8 @@
   function node(tag,text){var el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;}
   function button(text,fn){var b=node('button',text);b.type='button';b.className='btn-secondary';b.style.cssText='font-size:12px;padding:6px 10px;min-height:30px;';b.onclick=fn;return b;}
   function openPage(page){window.abrirPaginaElementor(page.id);}
+  // Pressel (Pressel Premium, Landing Enxuta): fica na campanha, mas fora do link do upsell.
+  function isPressel(page){var slug=String(page&&page.template_slug||'');return slug==='pressel-premium'||slug.indexOf('landing-enxuta')===0;}
   async function action(page,kind){
     if(kind==='delete'&&!window.confirm('Excluir a página “'+page.name+'”? Esta ação não pode ser desfeita.'))return;
     if(kind==='unpublish'&&!window.confirm('Retirar esta página do ar? O link próprio ficará indisponível.'))return;
@@ -24,11 +26,12 @@
     var table=node('table');table.className='pages-management-table';
     var head=node('tr');['Página','Campanha','Status','Endereço próprio','Ações'].forEach(function(t){head.append(node('th',t));});var thead=node('thead');thead.append(head);table.append(thead);var body=node('tbody');
     rows.forEach(function(p){var row=node('tr'),name=node('td',p.name),campaign=node('td',p.campaign_name||'Sem campanha'),status=node('td',p.is_published?'Publicada':'Rascunho');
+      if(isPressel(p)){var kind=node('small',' · Pressel');kind.style.color='#b45309';name.append(kind);}
       if(p.is_primary){var badge=node('small',' · Principal');badge.style.color='#1764ff';name.append(badge);}
       var address=node('td'),actions=node('td'),group=node('div');group.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
       if(p.is_published){var link=node('a','/f/'+p.slug+' ↗');link.href=p.public_url;link.target='_blank';link.rel='noopener';address.append(link);}else address.textContent='/f/'+p.slug;
       group.append(button('Editar',function(){openPage(p);}),button('Duplicar',function(){action(p,'duplicate');}));
-      if(p.is_published){group.append(button('Copiar link',function(){window.copiarValor(p.public_url);}));if(p.campaign_id&&!p.is_primary&&p.template_slug!=='funil-downsell')group.append(button('Tornar principal',function(){action(p,'set_primary');}));group.append(button('Despublicar',function(){action(p,'unpublish');}));}
+      if(p.is_published){group.append(button('Copiar link',function(){window.copiarValor(p.public_url);}));if(p.campaign_id&&!p.is_primary&&p.template_slug!=='funil-downsell'&&!isPressel(p))group.append(button('Tornar principal',function(){action(p,'set_primary');}));group.append(button('Despublicar',function(){action(p,'unpublish');}));}
       group.append(button('Excluir',function(){action(p,'delete');}));actions.append(group);row.append(name,campaign,status,address,actions);body.append(row);
     });table.append(body);container.append(table);
   }
@@ -47,8 +50,12 @@
     var filtered=pages.filter(function(p){return (!window.funnelListOnly||/^funil-/.test(p.template_slug||''))&&(!query||(p.name+' '+p.slug).toLowerCase().includes(query))&&(!status||p.status===status)&&(!campaign||(campaign==='none'?!p.campaign_id:String(p.campaign_id)===campaign));});
     document.getElementById('pages-manager-status').textContent=filtered.length+' página(s) encontrada(s)';render(document.getElementById('pages-manager-list'),filtered);renderizarExperienciasCampanhas(document.getElementById('pages-native-experiences'),campaigns.filter(function(c){return campaign!=='none'&&(!campaign||String(c.id)===campaign);}));
   }
-  async function carregarPaginasCampanha(id){var workspace=ws(),container=document.getElementById('campaign-pages-list');container.textContent='Carregando páginas…';
-    try{var data=await window.apiFetch('../api/admin/funnels.php?summary=1&workspace_id='+workspace+'&campaign_id='+id);if(window.selectedCampaignId!==id||ws()!==workspace)return;if(data.status!=='success')throw new Error(data.message);render(container,data.funnels||[]);}catch(e){if(window.selectedCampaignId===id)container.textContent=e.message;}
+  async function carregarPaginasCampanha(id){var workspace=ws(),container=document.getElementById('campaign-pages-list'),presselBox=document.getElementById('campaign-pressels-list');container.textContent='Carregando páginas…';if(presselBox)presselBox.textContent='Carregando pressels…';
+    try{var data=await window.apiFetch('../api/admin/funnels.php?summary=1&workspace_id='+workspace+'&campaign_id='+id);if(window.selectedCampaignId!==id||ws()!==workspace)return;if(data.status!=='success')throw new Error(data.message);
+      var all=data.funnels||[];
+      // Pressels e páginas de upsell em listas separadas: a pressel não entra no link do upsell.
+      if(presselBox){render(presselBox,all.filter(isPressel));render(container,all.filter(function(p){return !isPressel(p);}));}else render(container,all);
+    }catch(e){if(window.selectedCampaignId===id){container.textContent=e.message;if(presselBox)presselBox.textContent='';}}
   }
   function renderizarExperienciasCampanhas(container,items){
     var allItems=items;items=window.paginarLista(items,window.paginadorDepois(container),function(){renderizarExperienciasCampanhas(container,allItems);});

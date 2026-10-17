@@ -44,9 +44,22 @@
   };
 
   var validMechanics = ['scratch', 'wheel', 'direct'];
+  // Pressel = página de apresentação da campanha (Pressel Premium e Landing Enxuta).
+  // Pertence à campanha, mas não recebe a experiência de upsell nem vira o link do upsell.
+  function ehPaginaPressel(slug){slug=String(slug||'');return slug==='pressel-premium'||slug.indexOf('landing-enxuta')===0;}
+  window.ehPaginaPressel=ehPaginaPressel;
+  // Remove blocos de upsell que tenham sido inseridos numa pressel antes desta separação.
+  function removerUpsellDaPressel(){
+    if(!state.currentHtml||state.currentHtml.indexOf('data-campaign-offer')===-1)return 0;
+    var doc=new DOMParser().parseFromString(state.currentHtml,'text/html'),frames=doc.querySelectorAll('iframe[data-campaign-offer]');
+    frames.forEach(function(frame){var block=frame.closest('[data-block-id]');(block||frame).remove();});
+    if(frames.length)state.currentHtml='<!doctype html>\n'+doc.documentElement.outerHTML;
+    return frames.length;
+  }
   function flowMessage(text) { var el=document.getElementById('builder-flow-hint'); if(el)el.textContent=text; }
   function flowFrameSource(mechanic) { return '{{campaign_offer_url}}&experience='+mechanic; }
   function applyExperience(insertIfMissing) {
+    if (ehPaginaPressel(state.templateSlug)) { flowMessage('A pressel não recebe a experiência de upsell. Ela leva ao checkout da rifa; o upsell fica nas páginas de funil da campanha.'); return; }
     if (!window.selectedCampaignId) { flowMessage('Selecione a campanha para usar sua oferta.'); return; }
     // O bloco é adicionado ou atualizado; o HTML do cliente não é substituído.
     var doc=new DOMParser().parseFromString(state.currentHtml, 'text/html');
@@ -175,10 +188,13 @@
     ['page','scratch','offer','checkout'].forEach(function(name){var btn=document.getElementById('builder-stage-'+name);if(!btn)return;btn.disabled=name!=='page'&&(!ready||(name==='scratch'&&state.mechanic==='direct'));btn.setAttribute('aria-pressed',String(stage===name));});
     document.getElementById('builder-stage-scratch').textContent=state.mechanic==='wheel'?'1 · Roleta':'1 · Raspadinha';
     document.getElementById('builder-stage-status').textContent=ready?'Prévia interativa · sem cobranças':'Selecione uma campanha para editar as etapas.';
-    if(window.organizarPainelEditor)window.organizarPainelEditor({target:state.previewTarget,stage:state.inlinePreviewScreen,mechanic:state.mechanic,pageId:state.funnelId,offerRole:state.offerRole});
+    // Na pressel não há etapas de upsell (raspadinha, oferta, checkout, downsell).
+    var pressel=ehPaginaPressel(state.templateSlug),stages=document.getElementById('builder-funnel-stages');if(stages)stages.hidden=pressel;
+    if(window.organizarPainelEditor)window.organizarPainelEditor({target:state.previewTarget,stage:state.inlinePreviewScreen,mechanic:state.mechanic,pageId:state.funnelId,offerRole:state.offerRole,pressel:pressel});
   }
   function preverEtapaOferta(screen){
     if(!['page','scratch','offer','checkout'].includes(screen))return;
+    if(screen!=='page'&&ehPaginaPressel(state.templateSlug))return;
     if(screen!=='page'&&!state.flowOffer){flowMessage('Aguarde o carregamento da oferta da campanha.');return;}
     state.previewTarget=screen==='page'?'page':'experience';
     state.inlinePreviewScreen=screen==='scratch'&&state.mechanic==='direct'?'offer':screen==='page'?'scratch':screen;
@@ -2281,11 +2297,13 @@
     state.metaPixelId=config.tracking&&config.tracking.meta_pixel_id||'';
     state.ctaTrackEvent=config.tracking&&config.tracking.cta_track_event||'InitiateCheckout';
     state.mechanic=config.experience&&config.experience.mechanic||'scratch';
+    var upsellRemovido=ehPaginaPressel(state.templateSlug)?removerUpsellDaPressel():0;
     if(/^funil-(scratch|wheel|direct|downsell)$/.test(state.templateSlug)){state.previewTarget='experience';state.inlinePreviewScreen=state.mechanic==='direct'?'offer':'scratch';document.getElementById('builder-inline-offer').open=true;}
     atualizarNavegacaoEtapas();
     [['funnel-name',state.name],['funnel-slug',state.slug],['builder-funnel-domain-select',state.customDomainId||''],['builder-pixel-id-input',state.metaPixelId],['builder-pixel-event-select',state.ctaTrackEvent]].forEach(function(pair){var el=document.getElementById(pair[0]);if(el)el.value=pair[1];});
     if(state.codeMirror)state.codeMirror.setValue(state.currentHtml);
     renderPreview(true);marcarSalvo(f.status==='published'?'Página no ar':'Rascunho salvo');atualizarDisplayLinkPublico();
+    if(upsellRemovido){marcarModificado();window.showToast&&window.showToast('Tiramos o bloco de upsell desta pressel. Salve e publique para atualizar a página no ar.','success');}
     refreshExperienceControls(f);
   }
   async function abrirPaginaElementor(id) {

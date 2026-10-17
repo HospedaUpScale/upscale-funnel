@@ -3002,3 +3002,8 @@ body.tp-modal-open {
 .elementor-prop-input:focus,
 .elementor-prop-select:focus,
 .elementor-prop-textarea:focus { outline: none; border-color: #205BFF; box-shadow: 0 0 0 3px rgba(32, 91, 255, .15); }
+.builder-funnel-stages[hidden] { display:none; }
+/* Galeria de modelos agrupada: Pressel, Upsell, Página livre */
+.tp-grid-heading { grid-column: 1 / -1; margin: 12px 0 -4px; font-size: 15px; font-weight: 800; color: #0F172A; }
+.tp-grid-heading span { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: #64748B; }
+.campaign-pages-group-title { margin: 18px 0 8px; font-size: 14px; font-weight: 700; color: #0F172A; }

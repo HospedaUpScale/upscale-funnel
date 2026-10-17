@@ -6,6 +6,19 @@ use PDO;
 
 final class CampaignPage
 {
+    /**
+     * Pressel = página de apresentação da campanha (Pressel Premium e Landing Enxuta).
+     * Fica vinculada à campanha, mas não publica nem altera a oferta de upsell
+     * e nunca é a página principal do link da campanha (/o/{slug}).
+     */
+    public const PRESSEL_SQL = "(template_slug = 'pressel-premium' OR template_slug LIKE 'landing-enxuta%')";
+
+    public static function isPressel(?string $templateSlug): bool
+    {
+        $slug = (string)$templateSlug;
+        return $slug === 'pressel-premium' || str_starts_with($slug, 'landing-enxuta');
+    }
+
     public static function campaign(PDO $pdo, int $workspaceId, int $campaignId): ?array
     {
         $stmt = $pdo->prepare('SELECT * FROM campaigns WHERE id = ? AND workspace_id = ?');

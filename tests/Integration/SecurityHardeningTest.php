@@ -220,6 +220,61 @@ class SecurityHardeningTest extends TestCase
         }
     }
 
+    public function testPresselStaysInCampaignWithoutJoiningUpsell(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $headers = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        [, $created] = $this->http('POST', '/api/admin/campaigns.php?workspace_id=' . $wsId,
+            ['action' => 'create', 'title' => 'Pressel separada', 'ticket_price' => 7, 'status' => 'draft'], $headers);
+        $campaignId = $created['campaign_id'];
+        $ids = [];
+        $offerState = function () use ($campaignId) {
+            $q = self::$pdo->prepare("SELECT is_published, theme_config, published_config FROM upsell_offers WHERE campaign_id = ? AND offer_role = 'upsell'");
+            $q->execute([$campaignId]);
+            return $q->fetchAll()[0] ?? [];
+        };
+        try {
+            $before = $offerState();
+            [$status, $pressel] = $this->http('POST', '/api/admin/funnels.php', [
+                'workspace_id' => $wsId, 'campaign_id' => $campaignId, 'action' => 'publish',
+                'name' => 'Pressel', 'slug' => 'pressel-' . $campaignId, 'template_slug' => 'landing-enxuta-moderna',
+                'html_content' => '<h1>PRESSEL DA CAMPANHA</h1>',
+                'settings_config' => ['experience' => ['mechanic' => 'wheel']],
+            ], $headers);
+            $this->assertEquals(200, $status);
+            $ids[] = $pressel['funnel_id'];
+            $this->assertTrue($pressel['campaign_url'] === null, 'Publicar a pressel não pode publicar o link do upsell.');
+            $this->assertEquals($before, $offerState(), 'Publicar a pressel não pode alterar a oferta de upsell.');
+            $q = self::$pdo->prepare('SELECT f.campaign_id, c.primary_funnel_id FROM funnels f JOIN campaigns c ON c.id = f.campaign_id WHERE f.id = ?');
+            $q->execute([$pressel['funnel_id']]);
+            $row = $q->fetchAll()[0] ?? [];
+            $this->assertEquals($campaignId, (int)$row['campaign_id'], 'A pressel continua na campanha.');
+            $this->assertTrue($row['primary_funnel_id'] === null, 'A pressel não vira a principal do link.');
+
+            [$refused] = $this->http('POST', '/api/admin/funnels.php', ['workspace_id' => $wsId, 'id' => $pressel['funnel_id'], 'action' => 'set_primary'], $headers);
+            $this->assertEquals(422, $refused);
+
+            [, $upsell] = $this->http('POST', '/api/admin/funnels.php', [
+                'workspace_id' => $wsId, 'campaign_id' => $campaignId, 'action' => 'publish',
+                'name' => 'Upsell', 'slug' => 'upsell-' . $campaignId, 'template_slug' => 'funil-direct',
+                'html_content' => '<h1>PÁGINA DE UPSELL</h1>',
+                'settings_config' => ['experience' => ['mechanic' => 'direct']],
+            ], $headers);
+            $ids[] = $upsell['funnel_id'];
+            [, , $link] = $this->http('GET', $upsell['campaign_url']);
+            $this->assertStringContains('PÁGINA DE UPSELL', $link);
+
+            // Mesmo marcada como principal por dados antigos, a pressel não responde pelo link do upsell.
+            self::$pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ?')->execute([$pressel['funnel_id'], $campaignId]);
+            [, , $legacy] = $this->http('GET', $upsell['campaign_url']);
+            $this->assertFalse(str_contains($legacy, 'PRESSEL DA CAMPANHA'));
+        } finally {
+            foreach ($ids as $id) self::$pdo->prepare('DELETE FROM funnels WHERE id = ?')->execute([$id]);
+            self::$pdo->prepare('DELETE FROM upsell_offers WHERE campaign_id = ?')->execute([$campaignId]);
+            self::$pdo->prepare('DELETE FROM campaigns WHERE id = ?')->execute([$campaignId]);
+        }
+    }
+
     public function testClaudeRequiresAuthenticationAndWorkspaceAccess(): void
     {
         $path = '/api/admin/ai-copy.php?workspace_id=' . self::$ws['sec-a']['id'];

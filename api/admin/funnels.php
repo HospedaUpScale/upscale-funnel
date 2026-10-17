@@ -182,9 +182,11 @@ if ($request->method() === 'POST') {
     $postAction = $input['action'] ?? 'save';
 
     if ($postAction === 'set_primary') {
-        $q = $pdo->prepare("SELECT campaign_id FROM funnels WHERE id = ? AND workspace_id = ? AND status = 'published' AND template_slug != 'funil-downsell'");
+        $q = $pdo->prepare("SELECT campaign_id, template_slug FROM funnels WHERE id = ? AND workspace_id = ? AND status = 'published' AND template_slug != 'funil-downsell'");
         $q->execute([$id, $targetWsId]);
-        $campaignId = (int)$q->fetchColumn();
+        $target = $q->fetch(PDO::FETCH_ASSOC) ?: [];
+        if (CampaignPage::isPressel($target['template_slug'] ?? '')) JsonResponse::error('A pressel não pode ser a página principal do link do upsell. Escolha uma página de upsell.', 422);
+        $campaignId = (int)($target['campaign_id'] ?? 0);
         if (!$campaignId) JsonResponse::error('Escolha uma página publicada vinculada à campanha.', 422);
         $pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ? AND workspace_id = ?')->execute([$id, $campaignId, $targetWsId]);
         JsonResponse::success(['message' => 'Página principal atualizada.']);
@@ -418,7 +420,9 @@ if ($request->method() === 'POST') {
         }
 
         $pdo->prepare("UPDATE funnels SET is_home = 0 WHERE workspace_id = ?")->execute([$targetWsId]);
-        if ($isPublishAction && $campaign) {
+        // A pressel pertence à campanha, mas publicá-la não publica nem altera a oferta de upsell
+        // e não a torna a página do link da campanha.
+        if ($isPublishAction && $campaign && !CampaignPage::isPressel($templateSlug)) {
             $campaignOffer = CampaignPage::publishOffer($pdo, $campaign, $mechanic, $offerRole);
             if ($offerRole !== 'downsell') $pdo->prepare('UPDATE campaigns SET primary_funnel_id = ? WHERE id = ? AND workspace_id = ? AND primary_funnel_id IS NULL')->execute([$funnelId, $campaignId, $targetWsId]);
             $pdo->prepare("UPDATE campaigns SET status = 'published', published_at = CURRENT_TIMESTAMP, ended_at = NULL WHERE id = ? AND workspace_id = ?")->execute([$campaignId, $targetWsId]);

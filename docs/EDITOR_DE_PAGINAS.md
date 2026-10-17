@@ -106,3 +106,12 @@ A galeria tem quatro modelos de página curta para campanhas, com a mesma estrut
 Cada peça visível tem `data-block-id`/`data-block-type`, então textos, botões, links e a foto são editados pela aba **Conteúdo** do inspetor, sem abrir o código. Blocos `link` (grupo, regulamento, menu) não disparam `InitiateCheckout`; blocos `button` disparam. A foto do topo é um bloco `image`: o painel envia o arquivo por `api/admin/upload.php` ou aceita um link colado.
 
 Na lateral, em **Blocos da página**, a seção **Aparência da página** troca o estilo das fontes, a cor de destaque (o texto dos botões passa a claro ou escuro conforme o contraste) e o escurecimento da foto. Esses valores ficam em `<style id="lx-theme">` e `<link id="lx-fonts">` da própria página; a seção só aparece em páginas com esse bloco.
+
+## Pressel separada do upsell
+
+Pressel é a página de apresentação da campanha: **Pressel Premium** e os modelos **Landing Enxuta** (`template_slug` `pressel-premium` ou começando por `landing-enxuta`). Ela fica vinculada à campanha, mas não se junta ao upsell:
+
+- Publicar uma pressel não publica nem altera a oferta de upsell da campanha (mecânica, textos, preço) e não muda o status da campanha.
+- A pressel nunca é a página principal do link da campanha (`/o/{slug}`): a publicação não a marca como principal, **Tornar principal** não aparece para ela e a API recusa a ação. O `offer-public.php` também ignora uma pressel marcada como principal por dados antigos. A migration `0025_pressel_not_campaign_primary` troca essas principais pela página de upsell publicada mais recente da campanha, ou por nenhuma (o link volta à oferta nativa).
+- No editor, a pressel mostra só **Blocos da página**: sem as etapas Raspadinha/Oferta/Checkout/Downsell, sem as abas da oferta e sem **Inserir experiência na página**. Ao abrir uma pressel que já tinha recebido o bloco de upsell, o editor tira o bloco do rascunho e avisa; é preciso salvar e publicar para atualizar a página no ar.
+- Nos detalhes da campanha, as pressels ficam numa lista própria, separada das **Páginas de upsell**. A galeria de modelos agrupa **Pressel**, **Upsell** e **Página livre**.

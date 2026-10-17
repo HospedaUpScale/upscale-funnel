@@ -134,7 +134,8 @@ if (!$offer) {
 // O mesmo link da oferta passa a servir a página publicada da campanha.
 // native=1 é usado somente no bloco de checkout, evitando recursão do funil.
 if (($offer['offer_role'] ?? 'upsell') !== 'downsell' && !empty($offer['campaign_id']) && ($request->get('native') !== '1')) {
-    $pageStmt = $pdo->prepare("SELECT f.* FROM funnels f JOIN campaigns c ON c.primary_funnel_id = f.id AND c.id = f.campaign_id AND c.workspace_id = f.workspace_id WHERE f.workspace_id = ? AND f.campaign_id = ? AND f.status = 'published' LIMIT 1");
+    // Pressel nunca responde pelo link do upsell, mesmo se tiver ficado marcada como principal.
+    $pageStmt = $pdo->prepare("SELECT f.* FROM funnels f JOIN campaigns c ON c.primary_funnel_id = f.id AND c.id = f.campaign_id AND c.workspace_id = f.workspace_id WHERE f.workspace_id = ? AND f.campaign_id = ? AND f.status = 'published' AND f.template_slug <> 'pressel-premium' AND f.template_slug NOT LIKE 'landing-enxuta%' LIMIT 1");
     $pageStmt->execute([(int)$offer['workspace_id'], (int)$offer['campaign_id']]);
     if ($campaignPageOverride = $pageStmt->fetch(PDO::FETCH_ASSOC)) {
         $_GET['slug'] = $campaignPageOverride['slug'];

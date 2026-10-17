@@ -39,6 +39,9 @@
     if(!ready)return;
     var native=last.target==='experience',shell=document.querySelector('.elementor-shell');if(shell)shell.classList.toggle('editor-native-mode',native);
     if(native&&activeTab==='page')activeTab='content';
+    // Pressel: só os blocos da própria página; a oferta de upsell não é editada aqui.
+    var pressel=!!last.pressel;if(pressel)activeTab='page';
+    ['content','media','appearance','payment'].forEach(function(key){document.getElementById('editor-panel-tab-'+key).hidden=pressel;});
     document.getElementById('editor-panel-tab-page').hidden=native;
     var page=activeTab==='page';document.getElementById('editor-page-tools').hidden=!page;document.getElementById('editor-form-scroll').hidden=page;
     var screen=last.stage==='scratch'?last.mechanic:'offer';
