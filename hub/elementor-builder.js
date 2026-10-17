@@ -529,11 +529,15 @@
   }
 
   // ══ SCRIPT INJETADO NO IFRAME PARA O MODO "EDITAR" E POSTMESSAGE ══
-  function getIframeHelperScript() {
+  // autoSelecionar: só na primeira carga. Quando a prévia recarrega depois de uma edição,
+  // o painel já tem um bloco selecionado e o iframe não deve pular para o botão principal
+  // (senão o painel troca de bloco no meio da digitação).
+  function getIframeHelperScript(autoSelecionar) {
     return `<script id="__elementor_inspector_script__">
     (function() {
       var currentSelected = null;
       var activeMode = 'edit';
+      var autoSelecionarBotao = ${autoSelecionar === false ? 'false' : 'true'};
 
       var styleTag = document.createElement('style');
       styleTag.id = '__elementor_styles__';
@@ -686,19 +690,32 @@
 
         var blockId = block.getAttribute('data-block-id');
         var blockType = block.getAttribute('data-block-type');
-        var textContent = block.innerText || '';
         var tag = block.tagName.toLowerCase();
         var comp = window.getComputedStyle(block);
+
+        // Blocos de texto editáveis no painel: texto completo como está no HTML
+        // (textContent ignora o text-transform do CSS e não corta em 80 caracteres,
+        // senão o painel salvaria o texto truncado ou em maiúsculas).
+        var isTextual = ['heading', 'text', 'button', 'link'].indexOf(blockType) !== -1;
+        var textContent = isTextual
+          ? (block.textContent || '').replace(/\\s+/g, ' ').trim()
+          : (block.innerText || '').trim().substring(0, 80);
+
+        // Bloco de imagem: a própria <img> ou a primeira <img> dentro dele (ex.: foto de fundo do topo)
+        var imgEl = blockType === 'image' ? (tag === 'img' ? block : block.querySelector('img')) : null;
 
         window.parent.postMessage({
           type: 'elementor:select',
           blockId: blockId,
           blockType: blockType,
           tag: tag,
-          text: textContent.trim().substring(0, 80),
+          text: textContent,
           destType: block.getAttribute('data-dest-type') || '',
           offerId: block.getAttribute('data-offer-id') || '',
           href: block.getAttribute('href') || '',
+          target: block.getAttribute('target') || '',
+          imageSrc: imgEl ? (imgEl.getAttribute('src') || '') : '',
+          imageAlt: imgEl ? (imgEl.getAttribute('alt') || '') : '',
           // Conteudo HTML interno do bloco — enviado so para blocos tipo 'html',
           // para o pai poder abrir o editor automaticamente ao selecionar.
           innerHtml: blockType === 'html' ? block.innerHTML : '',
@@ -760,6 +777,7 @@
 
       // Auto-selecionar o botão principal (ou primeiro elemento) para corresponder à referência visual
       window.addEventListener('DOMContentLoaded', function() {
+        if (!autoSelecionarBotao) return;
         setTimeout(function() {
           var defaultBtn = document.querySelector('[data-block-id="blk_btn_1"]') || document.querySelector('[data-block-type="button"]');
           if (defaultBtn && activeMode === 'edit') {
@@ -790,6 +808,10 @@
           if (b) {
             selectElement(b);
             b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else if (!autoSelecionarBotao && activeMode === 'edit') {
+            // O bloco lembrado não existe nesta página (excluído ou outra página): volta ao botão principal.
+            var fallbackBtn = document.querySelector('[data-block-id="blk_btn_1"]') || document.querySelector('[data-block-type="button"]');
+            if (fallbackBtn) selectElement(fallbackBtn);
           }
         }
 
@@ -951,7 +973,7 @@
     }
 
     // Garante que o script do Elementor Runtime seja injetado no final do body
-    var helperScript = getIframeHelperScript();
+    var helperScript = getIframeHelperScript(!state.selectedBlockId);
     var htmlToInject = state.previewTarget==='experience'?getNativeFunnelTemplate(state.mechanic,false):state.currentHtml;
 
     if (htmlToInject.indexOf('</body>') !== -1) {
@@ -965,6 +987,7 @@
     else if (previewCampaign && previewCampaign.offer && previewCampaign.offer.public_url) htmlToInject = htmlToInject.split('{{campaign_offer_url}}').join(previewCampaign.offer.public_url + '?native=1');
     // Atualiza o display da URL pública no footer da barra lateral
     atualizarDisplayLinkPublico();
+    atualizarPainelTemaPagina();
 
     // Notifica modo atual para o iframe logo que carregar
     iframe.onload = function () {
@@ -1275,7 +1298,8 @@
       html: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
       timer: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M10 2h4"/></svg>',
       offer: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
-      spacer: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>'
+      spacer: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>',
+      link: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
     };
     return map[type] || map.button;
   }
@@ -1291,13 +1315,17 @@
       html: 'HTML',
       timer: 'Temporizador',
       offer: 'Oferta',
-      spacer: 'Espaçador'
+      spacer: 'Espaçador',
+      link: 'Link'
     };
     return map[type] || 'Elemento';
   }
 
   // ══ SELEÇÃO E INSPEÇÃO DE ELEMENTO NO PAINEL LATERAL ══
   function selecionarElementoPeloId(data) {
+    // A prévia recarrega a cada alteração e re-seleciona o mesmo bloco; se o usuário
+    // ainda está digitando num campo do painel, não recriamos os campos (perderia o foco).
+    var reselecaoDoMesmoBloco = state.selectedBlockId === data.blockId;
     state.selectedBlockId = data.blockId;
     state.selectedBlockType = data.blockType || '';
     state.selectedBlockHtml = data.innerHtml || '';
@@ -1398,7 +1426,8 @@
 
     // Preenche campos dinâmicos na aba Conteúdo
     var fieldsBox = document.getElementById('inspector-fields-container');
-    if (fieldsBox) {
+    var digitandoNoPainel = reselecaoDoMesmoBloco && fieldsBox && fieldsBox.contains(document.activeElement);
+    if (fieldsBox && !digitandoNoPainel) {
       var fieldsHtml = '';
       if (type === 'button') {
         var offersOptions = state.availableOffers.map(function(o) {
@@ -1459,6 +1488,43 @@
             <input type="text" class="elementor-prop-input" id="prop-offer-price" value="R$ 120,00" oninput="atualizarPropriedadeBloco('offer', 'price', this.value)">
           </div>
         `;
+      } else if (type === 'image') {
+        fieldsHtml = `
+          <div class="elementor-prop-row">
+            <span class="elementor-prop-label">Imagem atual</span>
+            <img id="prop-img-preview" src="${escapeHtml(data.imageSrc || '')}" alt="" style="display:${data.imageSrc ? 'block' : 'none'}; width:100%; max-height:150px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0; background:#f1f5f9;">
+          </div>
+          <div class="elementor-prop-row">
+            <button type="button" class="btn-primary" id="prop-img-upload-btn" style="width:100%; min-height:40px; font-size:13px;" onclick="document.getElementById('prop-img-file').click()">Enviar nova imagem</button>
+            <input type="file" id="prop-img-file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onchange="enviarImagemDoBloco(this)">
+            <p id="prop-img-status" role="status" style="margin:0; font-size:12px; color:#64748b;">JPG, PNG, WEBP ou GIF até 15 MB.</p>
+          </div>
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label" for="prop-img-src">Ou cole o link da imagem</label>
+            <input type="text" class="elementor-prop-input" id="prop-img-src" value="${escapeHtml(data.imageSrc || '')}" placeholder="https://" onchange="atualizarPropriedadeBloco('image', 'src', this.value)">
+          </div>
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label" for="prop-img-alt">Descrição da imagem</label>
+            <input type="text" class="elementor-prop-input" id="prop-img-alt" value="${escapeHtml(data.imageAlt || '')}" placeholder="Ex.: Ford Ranger preta, prêmio da campanha" oninput="atualizarPropriedadeBloco('image', 'alt', this.value)">
+          </div>
+        `;
+      } else if (type === 'link') {
+        fieldsHtml = `
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label" for="prop-link-text">Texto do link</label>
+            <input type="text" class="elementor-prop-input" id="prop-link-text" value="${escapeHtml(data.text || '')}" oninput="atualizarPropriedadeBloco('link', 'text', this.value)">
+          </div>
+          <div class="elementor-prop-row">
+            <label class="elementor-prop-label" for="prop-link-href">Endereço</label>
+            <input type="text" class="elementor-prop-input" id="prop-link-href" value="${escapeHtml(data.href || '')}" placeholder="https://, link do grupo ou #secao" oninput="atualizarPropriedadeBloco('link', 'href', this.value)">
+          </div>
+          <div class="elementor-prop-row">
+            <label style="display:flex; gap:8px; align-items:center; font-size:13px; color:#334155;">
+              <input type="checkbox" id="prop-link-blank" ${data.target === '_blank' ? 'checked' : ''} onchange="atualizarPropriedadeBloco('link', 'target', this.checked)">
+              Abrir em nova aba
+            </label>
+          </div>
+        `;
       } else {
         fieldsHtml = `
           <p style="font-size:12px; color:#64748b;">Ajuste as propriedades finas nas abas Estilo e Avançado.</p>
@@ -1490,6 +1556,110 @@
     atualizarPropriedadeBloco('button', 'dest_type', val);
   }
 
+  // ══ APARÊNCIA DA PÁGINA (modelos Landing Enxuta: fontes, cor de destaque, foto) ══
+  // A seção #builder-page-theme só aparece quando a página tem <style id="lx-theme">.
+  function atualizarPainelTemaPagina() {
+    var box = document.getElementById('builder-page-theme');
+    if (!box) return;
+    var theme = (window.LandingEnxuta && state.previewTarget !== 'experience')
+      ? window.LandingEnxuta.readTheme(state.currentHtml)
+      : null;
+    box.hidden = !theme;
+    if (!theme) return;
+
+    var fontSel = document.getElementById('page-theme-font');
+    if (fontSel && !fontSel.options.length) {
+      Object.keys(window.LandingEnxuta.VARIANTS).forEach(function (id) {
+        fontSel.add(new Option(window.LandingEnxuta.VARIANTS[id].label, id));
+      });
+    }
+    function setValor(id, valor) {
+      var el = document.getElementById(id);
+      if (el && el !== document.activeElement) el.value = valor;
+    }
+    setValor('page-theme-font', theme.font);
+    setValor('page-theme-accent', theme.accent.toLowerCase());
+    setValor('page-theme-accent-hex', theme.accent);
+    setValor('page-theme-shade', theme.shade);
+    var out = document.getElementById('page-theme-shade-out');
+    if (out) out.textContent = theme.shade + '%';
+  }
+
+  function aplicarTemaDaPagina(campo, valor) {
+    if (!window.LandingEnxuta) return;
+    var novo = window.LandingEnxuta.applyTheme(state.currentHtml, campo, valor);
+    if (!novo) return;
+    state.currentHtml = novo;
+    if (state.codeMirror) state.codeMirror.setValue(state.currentHtml);
+    renderPreview(true);
+    marcarModificado();
+  }
+
+  // ══ ENVIAR IMAGEM PARA O BLOCO SELECIONADO (api/admin/upload.php) ══
+  function enviarImagemDoBloco(input) {
+    var file = input && input.files && input.files[0];
+    if (!file) return;
+
+    var status = document.getElementById('prop-img-status');
+    var btn = document.getElementById('prop-img-upload-btn');
+    var blockId = state.selectedBlockId;
+    function setStatus(msg, isError) {
+      if (!status) return;
+      status.textContent = msg;
+      status.style.color = isError ? '#b91c1c' : '#64748b';
+    }
+
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+      setStatus('Formato não aceito. Use JPG, PNG, WEBP ou GIF.', true);
+      input.value = '';
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      setStatus('A imagem passa de 15 MB. Envie uma versão menor.', true);
+      input.value = '';
+      return;
+    }
+
+    var form = new FormData();
+    form.append('file', file);
+    form.append('workspace_id', String(window.currentWsId || 2));
+
+    setStatus('Enviando imagem…');
+    if (btn) btn.disabled = true;
+
+    window.apiFetch('../api/admin/upload.php', { method: 'POST', body: form })
+      .then(function (data) {
+        if (data.status !== 'success' || !data.url) {
+          throw new Error(data.message || 'Não foi possível enviar a imagem.');
+        }
+        // Se o usuário trocou de bloco durante o envio, aplica no bloco de origem.
+        var atual = state.selectedBlockId;
+        state.selectedBlockId = blockId;
+        atualizarPropriedadeBloco('image', 'src', data.url);
+        state.selectedBlockId = atual;
+
+        var preview = document.getElementById('prop-img-preview');
+        if (preview && atual === blockId) {
+          preview.src = data.url;
+          preview.style.display = 'block';
+        }
+        var srcInput = document.getElementById('prop-img-src');
+        if (srcInput && atual === blockId) srcInput.value = data.url;
+        setStatus('Imagem trocada. Lembre de salvar a página.');
+      })
+      .catch(function (err) {
+        if (err && err.httpStatus === 413) {
+          setStatus('O servidor recusou o arquivo por tamanho. Envie uma imagem menor.', true);
+        } else {
+          setStatus((err && err.message) || 'Não foi possível enviar a imagem.', true);
+        }
+      })
+      .then(function () {
+        if (btn) btn.disabled = false;
+        input.value = '';
+      });
+  }
+
   // ══ ATUALIZAR PROPRIEDADE DO BLOCO NO HTML ══
   function atualizarPropriedadeBloco(type, prop, value) {
     if (!state.selectedBlockId) return;
@@ -1510,6 +1680,29 @@
       if (prop === 'target') el.setAttribute('target', value ? '_blank' : '_self');
     } else if (type === 'heading' || type === 'text') {
       if (prop === 'text') el.textContent = value;
+    } else if (type === 'link') {
+      if (prop === 'text') el.textContent = value;
+      if (prop === 'href') el.setAttribute('href', value);
+      if (prop === 'target') {
+        if (value) {
+          el.setAttribute('target', '_blank');
+          el.setAttribute('rel', 'noopener noreferrer');
+        } else {
+          el.removeAttribute('target');
+          el.removeAttribute('rel');
+        }
+      }
+    } else if (type === 'image') {
+      // O bloco pode ser a própria <img> ou um container cuja primeira <img> é a foto (ex.: fundo do topo)
+      var img = el.tagName === 'IMG' ? el : el.querySelector('img');
+      if (!img) return;
+      if (prop === 'src') {
+        var src = String(value || '').trim();
+        if (!/^(https?:\/\/|\/)/i.test(src)) return; // aceita só http(s) ou caminho do próprio site (/uploads/...)
+        img.setAttribute('src', src);
+        img.removeAttribute('srcset');
+      }
+      if (prop === 'alt') img.setAttribute('alt', value);
     } else if (type === 'timer') {
       if (prop === 'timer_type') el.setAttribute('data-timer-type', value);
       if (prop === 'duration') el.setAttribute('data-timer-duration', value);
@@ -1576,6 +1769,11 @@
     var clone = el.cloneNode(true);
     var newId = 'blk_' + Date.now().toString(36);
     clone.setAttribute('data-block-id', newId);
+    // Blocos internos também ganham ids novos; senão editar a cópia altera o original
+    // (ex.: duplicar um cartão de pergunta e trocar o texto da pergunta copiada).
+    clone.querySelectorAll('[data-block-id]').forEach(function (child, i) {
+      child.setAttribute('data-block-id', newId + '_' + i);
+    });
     el.parentNode.insertBefore(clone, el.nextSibling);
 
     state.currentHtml = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
@@ -2553,6 +2751,11 @@
       defaultSlugPrefix: 'ranger-v6',
       cardId: 'tp-card-pressel-premium-campanhas'
     },
+    // Landing Enxuta: mesma página em 4 estilos de fonte (hub/landing-enxuta-template.js)
+    'landing-enxuta': {id:'landing-enxuta', name:'Landing Enxuta — Impacto', templateSlug:'landing-enxuta', defaultSlugPrefix:'campanha', cardId:'tp-card-landing-enxuta', landingVariant:'impacto'},
+    'landing-enxuta-velocidade': {id:'landing-enxuta-velocidade', name:'Landing Enxuta — Velocidade', templateSlug:'landing-enxuta-velocidade', defaultSlugPrefix:'campanha', cardId:'tp-card-landing-enxuta-velocidade', landingVariant:'velocidade'},
+    'landing-enxuta-elegante': {id:'landing-enxuta-elegante', name:'Landing Enxuta — Elegante', templateSlug:'landing-enxuta-elegante', defaultSlugPrefix:'campanha', cardId:'tp-card-landing-enxuta-elegante', landingVariant:'elegante'},
+    'landing-enxuta-moderna': {id:'landing-enxuta-moderna', name:'Landing Enxuta — Moderna', templateSlug:'landing-enxuta-moderna', defaultSlugPrefix:'campanha', cardId:'tp-card-landing-enxuta-moderna', landingVariant:'moderna'},
     'booster-padrao': {
       id: 'booster-padrao',
       name: 'Oferta Booster',
@@ -2791,6 +2994,11 @@
       } else {
         html = getDefaultTemplate();
       }
+    } else if (TEMPLATE_PICKER_DEFS[modelId] && TEMPLATE_PICKER_DEFS[modelId].landingVariant) {
+      // Landing curta com cada peça marcada para o painel (ver landing-enxuta-template.js)
+      html = window.LandingEnxuta
+        ? window.LandingEnxuta.getHtml({ variant: TEMPLATE_PICKER_DEFS[modelId].landingVariant })
+        : getDefaultTemplate();
     } else if (modelId === 'pagina-em-branco' || modelId === 'blank') {
       html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -3192,6 +3400,8 @@
   window.duplicarElementoSelecionado = duplicarElementoSelecionado;
   window.excluirElementoSelecionado = excluirElementoSelecionado;
   window.atualizarPropriedadeBloco = atualizarPropriedadeBloco;
+  window.enviarImagemDoBloco = enviarImagemDoBloco;
+  window.aplicarTemaDaPagina = aplicarTemaDaPagina;
   window.atualizarDestinoBotao = atualizarDestinoBotao;
   window.aplicarEstiloRapido = aplicarEstiloRapido;
   window.vincularOfertaAoBloco = vincularOfertaAoBloco;

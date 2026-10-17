@@ -98,3 +98,11 @@ A lateral separa **Conteúdo**, **Mídia**, **Aparência** e **Pagamento**. Cont
 Nas telas nativas, o painel de propriedades de blocos fica oculto para ampliar a prévia. **Página completa** mantém as ferramentas de elementos, camadas e propriedades para HTML personalizado. O rodapé da lateral mantém **Salvar rascunho** e **Páginas** acessíveis, sem depender da posição de rolagem do formulário. Clicar em conteúdo da prévia abre a aba do campo correspondente.
 
 A reorganização reutiliza os mesmos campos e identificadores do editor; não altera páginas publicadas, modelos ou dados salvos. Validação em navegador: visibilidade por etapa, edição e persistência em todas as abas, foco pela prévia, ferramentas de página personalizada e acesso ao painel de propriedades em 1024 px.
+
+## Modelos Landing Enxuta
+
+A galeria tem quatro modelos de página curta para campanhas, com a mesma estrutura (topo com foto de fundo, três passos, grupo VIP, dúvidas e chamada final) e fontes diferentes: **Impacto** (Anton e Outfit), **Velocidade** (Exo 2 itálico), **Elegante** (DM Serif Display e DM Sans) e **Moderna** (Unbounded e Manrope). O HTML vem de `hub/landing-enxuta-template.js`.
+
+Cada peça visível tem `data-block-id`/`data-block-type`, então textos, botões, links e a foto são editados pela aba **Conteúdo** do inspetor, sem abrir o código. Blocos `link` (grupo, regulamento, menu) não disparam `InitiateCheckout`; blocos `button` disparam. A foto do topo é um bloco `image`: o painel envia o arquivo por `api/admin/upload.php` ou aceita um link colado.
+
+Na lateral, em **Blocos da página**, a seção **Aparência da página** troca o estilo das fontes, a cor de destaque (o texto dos botões passa a claro ou escuro conforme o contraste) e o escurecimento da foto. Esses valores ficam em `<style id="lx-theme">` e `<link id="lx-fonts">` da própria página; a seção só aparece em páginas com esse bloco.

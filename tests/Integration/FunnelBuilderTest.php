@@ -182,6 +182,55 @@ class FunnelBuilderTest extends TestCase
         $this->assertTrue(str_contains($js, 'confirmarUsoModelo'), "JS must expose confirmarUsoModelo.");
     }
 
+    public function testLandingEnxutaTemplateIsRegisteredAndEditableByPanel(): void
+    {
+        $html = file_get_contents(__DIR__ . '/../../hub/index.html');
+        $js = file_get_contents(__DIR__ . '/../../hub/elementor-builder.js');
+        $source = file_get_contents(__DIR__ . '/../../hub/landing-enxuta-template.js');
+        $this->assertTrue(str_contains($html, 'landing-enxuta-template.js'), "Landing Enxuta template script must be loaded.");
+        $this->assertTrue(str_contains($html, 'id="builder-page-theme"'), "Page appearance panel must exist.");
+        $this->assertTrue(str_contains($js, 'function enviarImagemDoBloco'), "Panel must offer image upload.");
+        $this->assertTrue(str_contains($js, 'function aplicarTemaDaPagina'), "Panel must change fonts and accent color.");
+
+        foreach (['landing-enxuta' => 'impacto', 'landing-enxuta-velocidade' => 'velocidade', 'landing-enxuta-elegante' => 'elegante', 'landing-enxuta-moderna' => 'moderna'] as $model => $variant) {
+            $this->assertTrue(str_contains($html, 'id="tp-card-' . $model . '"'), "Card for {$model} must exist.");
+            $this->assertTrue(str_contains($js, "landingVariant:'{$variant}'"), "Picker must map {$model} to the {$variant} fonts.");
+            $this->assertTrue(str_contains($source, "    {$variant}: {"), "Template must define the {$variant} fonts.");
+        }
+
+        $start = strpos($source, '<!DOCTYPE html>');
+        $end = strpos($source, '</html>');
+        $this->assertTrue($start !== false && $end !== false, "Template must contain a full HTML document.");
+        // Interpolações do template literal (título, fontes, tema) viram texto simples para o parser.
+        $page = preg_replace('/\$\{[^}]*\}/', 'x', substr($source, $start, $end - $start + 7));
+
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="utf-8" ?>' . $page);
+        libxml_clear_errors();
+        $xpath = new \DOMXPath($dom);
+
+        $ids = [];
+        foreach ($xpath->query('//*[@data-block-id]') as $node) {
+            $id = $node->getAttribute('data-block-id');
+            $this->assertTrue(!isset($ids[$id]), "Block id '{$id}' must be unique.");
+            $ids[$id] = true;
+
+            $type = $node->getAttribute('data-block-type');
+            if (in_array($type, ['heading', 'text', 'button', 'link'], true)) {
+                // O painel troca o texto inteiro desses blocos; tags internas seriam apagadas.
+                $this->assertTrue($xpath->query('./*', $node)->length === 0, "Text block '{$id}' must contain only text.");
+            }
+            if ($type === 'button') {
+                $this->assertTrue($node->getAttribute('data-dest-type') !== '', "Button '{$id}' must declare data-dest-type.");
+            }
+        }
+
+        $images = $xpath->query('//*[@data-block-type="image"]');
+        $this->assertTrue($images->length >= 1, "Template must have an editable image block.");
+        $this->assertTrue($xpath->query('.//img', $images->item(0))->length >= 1, "Image block must contain an <img>.");
+    }
+
     public function testIndependentDraftCreationFromTemplatePicker(): void
     {
         $templates = [
