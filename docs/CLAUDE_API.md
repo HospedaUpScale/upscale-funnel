@@ -32,4 +32,4 @@ Testes automatizados cobrem contexto/resposta limitados, retorno inválido ou tr
 
 As respostas da Anthropic são simuladas nos testes, sem consumir créditos. A chamada real deve ser validada após configurar uma chave válida no servidor. Não há chave armazenada no código nem nos testes.
 
-No editor de páginas, abra a aba **IA**, descreva o pedido e clique em **Gerar novas copys**. Revise os seis textos e clique em **Aplicar à oferta**. A aplicação atualiza a prévia; use **Salvar rascunho** e publique quando estiver pronto. A aba **Aparência** permite editar a paleta das etapas, incluindo CTA, textos, cartões, bordas e gradiente da raspadinha.
+O assistente de IA foi removido da interface dos editores. A integração de backend permanece disponível para manutenção, sem chamadas automáticas pelo editor.
