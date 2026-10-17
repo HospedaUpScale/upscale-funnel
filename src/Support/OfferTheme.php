@@ -119,6 +119,9 @@ class OfferTheme
             'timer_minutes'         => 10,
             'pitch_delay'           => 0,
             'video_src'             => '',
+            'vturb_embed'           => '',
+            'vturb_script_url'      => '',
+            'vturb_aspect_ratio'    => 56.25,
 
             // Animações
             'reveal_animation'      => 'confetti_glow', // confetti_glow | zoom | fade

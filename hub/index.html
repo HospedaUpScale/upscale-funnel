@@ -1263,12 +1263,17 @@
                 <p class="card-subtitle-clean" style="margin-bottom:16px;">Adicione um vídeo explicativo do Booster para turbinar a conversão.</p>
                 <div style="display:flex; flex-direction:column; gap:14px;">
                   <div>
+                    <label class="form-label" for="camp-vturb-embed">Código de incorporação VTurb</label>
+                    <textarea id="camp-vturb-embed" class="form-input" rows="7" maxlength="32768" spellcheck="false" placeholder="Cole aqui o código completo com vturb-smartplayer e o script player.js" oninput="atualizarEmbedVturb()" style="font-family:monospace;font-size:12px;resize:vertical;"></textarea>
+                    <p id="camp-vturb-feedback" role="status" style="font-size:12px;line-height:1.5;margin-top:6px;color:var(--text-muted);">Cole o embed completo do VTurb. Conta, player e versão são identificados automaticamente.</p>
+                  </div>
+                  <div>
                     <label class="form-label" for="camp-vturb-player">ID do Player Vturb</label>
-                    <input type="text" class="form-input" id="camp-vturb-player" placeholder="ex: 66a2f1b4c9e8..." oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
+                    <input type="text" class="form-input" id="camp-vturb-player" placeholder="Preenchido automaticamente, ou informe manualmente" oninput="editarVturbManual();">
                   </div>
                   <div>
                     <label class="form-label" for="camp-vturb-account">ID da Conta Vturb (se aplicável)</label>
-                    <input type="text" class="form-input" id="camp-vturb-account" placeholder="ex: 38241" oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
+                    <input type="text" class="form-input" id="camp-vturb-account" placeholder="Preenchido automaticamente, ou informe manualmente" oninput="editarVturbManual();">
                   </div>
                   <div>
                     <label class="form-label" for="camp-video-url">Ou URL de Vídeo MP4 Direto</label>
@@ -3936,6 +3941,34 @@
       });
   }
 
+  function lerEmbedVturb(code) {
+    var source=code.split(String.fromCharCode(92)+'/').join('/').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+    var urls=source.match(/https:\/\/scripts\.converteai\.net\/([a-zA-Z0-9_-]+)\/players\/([a-zA-Z0-9_-]+)\/(?:v[0-9]+\/)?player\.js(?=[\s"'<>?,;)]|$)/g)||[];
+    if(new Set(urls).size!==1)throw new Error('Cole o embed completo de um único player VTurb ou sua URL HTTPS player.js.');
+    var parts=new URL(urls[0]).pathname.split('/');
+    var doc=new DOMParser().parseFromString(code,'text/html');var tag=doc.querySelector('vturb-smartplayer[id]');
+    if(tag&&tag.id!=='vid-'+parts[3])throw new Error('O ID do smartplayer não corresponde ao player.js.');
+    var match=source.match(/padding(?:-top)?\s*:\s*([0-9]+(?:\.[0-9]+)?)%/i);var ratio=match?Number(match[1]):56.25;
+    return {account:parts[1],player:parts[3],url:urls[0],ratio:ratio>=1&&ratio<=400?ratio:56.25};
+  }
+  function atualizarEmbedVturb(silent) {
+    var input=document.getElementById('camp-vturb-embed'),feedback=document.getElementById('camp-vturb-feedback');
+    input.setCustomValidity('');input.dataset.scriptUrl='';
+    if(!input.value.trim()) {
+      if(!silent){document.getElementById('camp-vturb-player').value='';document.getElementById('camp-vturb-account').value='';}
+      feedback.textContent='Cole o embed completo do VTurb ou use os identificadores manuais abaixo.';
+    } else {
+      try {var config=lerEmbedVturb(input.value);input.dataset.scriptUrl=config.url;input.dataset.aspectRatio=String(config.ratio);document.getElementById('camp-vturb-player').value=config.player;document.getElementById('camp-vturb-account').value=config.account;feedback.textContent='✓ Player identificado: '+config.player+' · conta '+config.account;}
+      catch(e){input.setCustomValidity(e.message);feedback.textContent=e.message;if(!silent)marcarEditorAlterado();return false;}
+    }
+    if(!silent){marcarEditorAlterado();sincronizarPreviewEmTempoReal();}return true;
+  }
+  function editarVturbManual() {
+    var input=document.getElementById('camp-vturb-embed');input.value='';input.dataset.scriptUrl='';input.setCustomValidity('');
+    document.getElementById('camp-vturb-feedback').textContent='Identificadores manuais. Cole o embed completo acima para usar o Smartplayer v4.';
+    marcarEditorAlterado();sincronizarPreviewEmTempoReal();
+  }
+
   function coletarDadosCompletosOferta() {
     var title = document.getElementById('camp-title').value.trim() || 'Booster 200X Ouro';
     var subtitle = document.getElementById('camp-subtitle').value.trim() || 'Kit Bobzão Bitruck + Ford F250';
@@ -3949,6 +3982,10 @@
     var timerMin = parseFloat(document.getElementById('camp-timer-minutes').value) || 3;
 
     var theme = {
+      vturb_embed: document.getElementById('camp-vturb-embed').value.trim(),
+      vturb_script_url: document.getElementById('camp-vturb-embed').dataset.scriptUrl || '',
+      vturb_aspect_ratio: Number(document.getElementById('camp-vturb-embed').dataset.aspectRatio) || 56.25,
+      video_src: document.getElementById('camp-video-url').value.trim(),
       page_bg: document.getElementById('hex-page-bg').value,
       card_bg: document.getElementById('hex-card-bg').value,
       primary_color: document.getElementById('hex-primary-color').value,
@@ -4000,6 +4037,7 @@
   }
 
   function salvarRascunhoOferta() {
+    if(!atualizarEmbedVturb(true)){document.getElementById('camp-vturb-embed').reportValidity();return;}
     var payload = coletarDadosCompletosOferta();
     var btn = document.getElementById('btn-save-draft');
     if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
@@ -4025,6 +4063,7 @@
   }
 
   function publicarOfertaProducao() {
+    if(!atualizarEmbedVturb(true)){document.getElementById('camp-vturb-embed').reportValidity();return;}
     var payload = coletarDadosCompletosOferta();
     var btn = document.getElementById('btn-publish-offer');
     if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
@@ -4097,8 +4136,8 @@
           document.getElementById('publication-status-desc').textContent = 'A oferta é um rascunho e não está acessível publicamente.';
         }
 
-        if (o.vturb_player_id) document.getElementById('camp-vturb-player').value = o.vturb_player_id;
-        if (o.vturb_account_id) document.getElementById('camp-vturb-account').value = o.vturb_account_id;
+        document.getElementById('camp-vturb-player').value = o.vturb_player_id || '';
+        document.getElementById('camp-vturb-account').value = o.vturb_account_id || '';
         if (o.legacy_checkout_url) document.getElementById('camp-legacy-url').value = o.legacy_checkout_url;
         if (o.checkout_mode) {
           document.getElementById('camp-checkout-mode').value = o.checkout_mode;
@@ -4106,7 +4145,10 @@
         }
 
         // Tema e Cores
-        var t = o.theme || {};
+        var t = o.draft_config && o.draft_config.theme || o.theme || {};
+        document.getElementById('camp-vturb-embed').value = t.vturb_embed || '';
+        document.getElementById('camp-video-url').value = t.video_src || '';
+        atualizarEmbedVturb(true);
         if (t.mechanic && document.getElementById('mechanic-type')) {
           document.getElementById('mechanic-type').value = t.mechanic;
           alternarMecanica();

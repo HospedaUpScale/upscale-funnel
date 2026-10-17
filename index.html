@@ -732,6 +732,8 @@
     legacyUrl: '',
     vturbPlayer: '',
     vturbAccount: '',
+    vturbScriptUrl: '',
+    vturbAspectRatio: 56.25,
     videoSrc: '',
     logoUrl: '',
     showLogo: false,
@@ -1141,10 +1143,13 @@
 
     if (d.legacy_checkout_url) CONFIG.legacyUrl = d.legacy_checkout_url;
     if (d.checkout_mode) CONFIG.checkoutMode = d.checkout_mode;
-    if (d.vturb_player_id) CONFIG.vturbPlayer = d.vturb_player_id;
-    if (d.vturb_account_id) CONFIG.vturbAccount = d.vturb_account_id;
+    if (d.vturb_player_id !== undefined) CONFIG.vturbPlayer = String(d.vturb_player_id || '').replace(/^vid-/, '');
+    if (d.vturb_account_id !== undefined) CONFIG.vturbAccount = d.vturb_account_id || '';
 
     var theme = d.theme || {};
+    CONFIG.vturbScriptUrl = theme.vturb_script_url || '';
+    CONFIG.vturbAspectRatio = Number(theme.vturb_aspect_ratio) || 56.25;
+    CONFIG.videoSrc = theme.video_src || d.video_src || '';
     if (theme.cta_label) {
       CONFIG.ctaLabel = theme.cta_label;
       $('cta-label').textContent = theme.cta_label;
@@ -1199,6 +1204,7 @@
     }
 
     ativarMecanica();
+    if (revelado) iniciarMedia();
   }
 
   // Se houver dados pré-injetados pelo offer-public.php
@@ -1215,6 +1221,8 @@
     }
     if (d.tipo === 'upscale:preview-screen') {
       if (d.screen === 'offer') {
+        revelado = true;
+        iniciarMedia();
         $('view-scratch').style.display = 'none';
         var vw1 = $('view-wheel'); if (vw1) vw1.classList.remove('on');
         $('view-offer').classList.add('on');
@@ -1259,22 +1267,40 @@
   /* ══ PLAYER DE VÍDEO / VTURB ══ */
   function iniciarMedia() {
     var mediaBox = $('media-box');
-    if (CONFIG.vturbPlayer) {
-      mediaBox.classList.remove('hidden');
-      mediaBox.innerHTML = '';
-      var vid = document.createElement('div');
-      vid.id = 'vid-' + CONFIG.vturbPlayer;
-      vid.style.cssText = 'width:100%;height:100%;';
+    var player=String(CONFIG.vturbPlayer||'');
+    var scriptUrl=CONFIG.vturbScriptUrl;
+    if(!/^https:\/\/scripts\.converteai\.net\/[a-zA-Z0-9_-]+\/players\/[a-zA-Z0-9_-]+\/(?:v[0-9]+\/)?player\.js$/.test(scriptUrl))scriptUrl='';
+    if(!/^[a-zA-Z0-9_-]+$/.test(player))player='';
+    var source=player?'vturb':CONFIG.videoSrc?'mp4':'none';
+    var signature=JSON.stringify([source,player,CONFIG.vturbAccount,scriptUrl,CONFIG.videoSrc,CONFIG.vturbAspectRatio]);
+    if(mediaBox.dataset.mediaSignature===signature)return;
+    mediaBox.dataset.mediaSignature=signature;
+    mediaBox.replaceChildren();
+    mediaBox.classList.toggle('hidden',source==='none');
+    if(source==='none')return;
+    mediaBox.style.aspectRatio='16 / 9';
+    if(player){
+      var smart=/\/v[0-9]+\/player\.js$/.test(scriptUrl);
+      var vid=document.createElement(smart?'vturb-smartplayer':'div');vid.id='vid-'+player;
+      vid.style.cssText=smart?'display:block;margin:0 auto;width:100%;':'width:100%;height:100%;';
+      if(smart){
+        mediaBox.style.aspectRatio='auto';
+        var ratio=CONFIG.vturbAspectRatio;if(ratio<1||ratio>400)ratio=56.25;
+        var placeholder=document.createElement('div');placeholder.className='vturb-player-placeholder';
+        placeholder.style.cssText='position:relative;width:100%;padding:'+ratio+'% 0 0;z-index:0;background-color:black;';vid.appendChild(placeholder);
+      }
       mediaBox.appendChild(vid);
-      var s = document.createElement('script');
-      s.async = true;
-      var acc = CONFIG.vturbAccount ? CONFIG.vturbAccount + '/' : '';
-      s.src = 'https://scripts.converteai.net/' + acc + 'players/' + CONFIG.vturbPlayer + '/player.js';
-      document.head.appendChild(s);
-    } else if (CONFIG.videoSrc) {
-      mediaBox.classList.remove('hidden');
-      var v = $('offer-video');
-      v.src = CONFIG.videoSrc;
+      var account=/^[a-zA-Z0-9_-]+$/.test(CONFIG.vturbAccount)?CONFIG.vturbAccount+'/':'';
+      var url=scriptUrl||'https://scripts.converteai.net/'+account+'players/'+player+'/player.js';
+      var exists=Array.from(document.querySelectorAll('script[data-upscale-vturb]')).find(function(s){return s.src===url;});
+      if(!exists||!smart){
+        if(exists)exists.remove();
+        var script=document.createElement('script');script.async=true;script.src=url;script.dataset.upscaleVturb='true';
+        script.onerror=function(){if(mediaBox.dataset.mediaSignature!==signature)return;var message=document.createElement('p');message.textContent='Não foi possível carregar o vídeo. Tente atualizar a página.';message.setAttribute('role','status');mediaBox.appendChild(message);};
+        document.head.appendChild(script);
+      }
+    }else{
+      var video=document.createElement('video');video.id='offer-video';video.playsInline=true;video.controls=true;video.muted=true;video.src=CONFIG.videoSrc;mediaBox.appendChild(video);
     }
   }
 

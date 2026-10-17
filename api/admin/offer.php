@@ -5,6 +5,7 @@ require_once __DIR__ . '/../bootstrap.php';
 use App\Auth\AdminAuth;
 use App\Http\JsonResponse;
 use App\Support\OfferTheme;
+use App\Support\VturbEmbed;
 use App\Campaigns\CampaignPage;
 
 $token = AdminAuth::extractBearerToken();
@@ -255,6 +256,17 @@ if ($request->method() === 'POST') {
     }
 
     $theme = OfferTheme::fromInput($input, $storedTheme, $title, $price);
+    if ($theme['vturb_embed'] !== '') {
+        try { $vturb = VturbEmbed::parse($theme['vturb_embed']); }
+        catch (\InvalidArgumentException $e) { JsonResponse::error($e->getMessage(), 422); }
+        $vturbAccountId = $vturb['account_id'];
+        $vturbPlayerId = $vturb['player_id'];
+        $theme['vturb_script_url'] = $vturb['script_url'];
+        $theme['vturb_aspect_ratio'] = $vturb['aspect_ratio'];
+    } else {
+        // No modo manual, não reutilizar a URL de um embed anterior.
+        $theme['vturb_script_url'] = '';
+    }
     $themeJson = json_encode($theme, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     // Estrutura completa de dados da oferta para congelamento em JSON

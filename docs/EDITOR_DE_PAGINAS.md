@@ -14,6 +14,14 @@ Cada campanha mantém sua própria oferta e endereço `/o/{slug}`. Publicar uma 
 
 Páginas existentes permanecem no banco e podem ser abertas pelo HTML salvo, sem carregar o antigo motor. Campos de projeto e a biblioteca de modelos do editor removido permanecem no banco para preservar dados históricos; a interface antiga da biblioteca foi removida junto com aquele editor. Não exclua nem reverta migrações já aplicadas.
 
+## Embed de vídeo VTurb
+
+Em **Editar oferta e checkout → Mídia**, cole o código completo em **Código de incorporação VTurb**. O painel identifica a conta, o player, o caminho do carregador (inclusive `/v4/player.js`) e a proporção do placeholder. Os IDs manuais continuam disponíveis para integrações antigas. Apagar o código também limpa os IDs preenchidos automaticamente; editar um ID manualmente desativa o código anterior.
+
+O código colado fica salvo no tema/rascunho da oferta. A aplicação reconstrói o smartplayer e carrega somente o `player.js` HTTPS de `scripts.converteai.net`; outros scripts do texto colado não são executados. Um embed com IDs conflitantes ou vários players diferentes é rejeitado. O carregador não é duplicado em atualizações da mesma prévia, e a opção de MP4 continua disponível quando não há um player VTurb configurado.
+
+Os testes verificaram extração do embed, persistência, publicação, estrutura do smartplayer e troca para MP4. No teste de navegador, o carregador externo foi simulado: o acesso direto ao servidor VTurb retornou 403 neste ambiente, portanto a reprodução real deve ser conferida no site publicado.
+
 ## Ambiente e testes
 
 Ative o PHP, execute `php scripts/migrate.php` e inicie `php -S 127.0.0.1:8000 router.php`. Não é mais necessário baixar dependências de um editor visual externo. Execute `php scripts/test.php`.

@@ -498,4 +498,36 @@ class SecurityHardeningTest extends TestCase
         }
     }
 
+    public function testVturbEmbedRoundTripAndPublishedSnapshot(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $headers = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        [, $created] = $this->http('POST', '/api/admin/campaigns.php?workspace_id=' . $wsId,
+            ['action' => 'create', 'title' => 'Vídeo VTurb', 'ticket_price' => 10, 'status' => 'draft'], $headers);
+        $campaignId = $created['campaign_id'];
+        $embed = '<vturb-smartplayer id="vid-6ac537378f7efc03346a720e"></vturb-smartplayer><script>var s=document.createElement("script");s.src="https://scripts.converteai.net/4db00053-e2e0-4cfa-821c-3c3cb3bb0632/players/6ac537378f7efc03346a720e/v4/player.js";document.head.appendChild(s);</script>';
+        try {
+            $payload = ['workspace_id' => $wsId, 'campaign_id' => $campaignId, 'theme' => ['vturb_embed' => $embed]];
+            [$saved] = $this->http('POST', '/api/admin/offer.php?action=save_draft', $payload, $headers);
+            $this->assertEquals(200, $saved);
+            [, $loaded] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $campaignId, null, $headers);
+            $this->assertEquals('6ac537378f7efc03346a720e', $loaded['offer']['vturb_player_id']);
+            $this->assertEquals('4db00053-e2e0-4cfa-821c-3c3cb3bb0632', $loaded['offer']['vturb_account_id']);
+            $this->assertEquals($embed, $loaded['offer']['draft_config']['theme']['vturb_embed']);
+            [$published, $data] = $this->http('POST', '/api/admin/offer.php?action=publish', $payload, $headers);
+            $this->assertEquals(200, $published);
+            [, , $html] = $this->http('GET', parse_url($data['public_url'], PHP_URL_PATH) . '?native=1');
+            $this->assertStringContains('/v4/player.js', $html);
+            $this->assertFalse(str_contains($html, 'var s=document.createElement("script");s.src='), 'O script colado deve permanecer como dados codificados.');
+            $payload['theme']['vturb_embed'] = '<script src="https://evil.example/player.js"></script>';
+            [$invalid] = $this->http('POST', '/api/admin/offer.php?action=publish', $payload, $headers);
+            $this->assertEquals(422, $invalid);
+            [, $unchanged] = $this->http('GET', '/api/admin/offer.php?workspace_id=' . $wsId . '&campaign_id=' . $campaignId, null, $headers);
+            $this->assertEquals($embed, $unchanged['offer']['published_config']['theme']['vturb_embed']);
+        } finally {
+            self::$pdo->prepare('DELETE FROM upsell_offers WHERE campaign_id = ?')->execute([$campaignId]);
+            self::$pdo->prepare('DELETE FROM campaigns WHERE id = ?')->execute([$campaignId]);
+        }
+    }
+
 }
