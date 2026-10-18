@@ -25,7 +25,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Exo+2:ital,wght@1,800&family=DM+Serif+Display&family=Unbounded:wght@800&text=%2001236ADEFGKMNORZadegnor%C2%B7&display=swap" rel="stylesheet">
   
   <!-- Novo Design System Oficial -->
-  <link rel="stylesheet" href="hub-redesign.css?v=2.2">
+  <link rel="stylesheet" href="hub-redesign.css?v=2.3">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
   <link rel="stylesheet" href="theme-upscale.css?v=1.0">
 
@@ -755,6 +755,27 @@
           <button type="button" class="subtab-btn" onclick="selecionarSubabaCampanha('publicacao', this)">Publicação</button>
         </div>
 
+        <section class="card" id="campaign-identity-card" style="margin:20px 0 0;">
+          <div class="page-header-row">
+            <div>
+              <h3 class="card-title-clean">Identidade visual da campanha</h3>
+              <p class="card-subtitle-clean">Escolha um tema e ele é aplicado em todos os modelos desta campanha: oferta, raspadinha, roleta, downsell, pressel e landing.</p>
+            </div>
+            <span class="badge badge-neutral" id="campaign-identity-current">Sem tema definido</span>
+          </div>
+          <div class="identity-grid" id="campaign-identity-presets"><div style="font-size:12.5px; color:var(--text-muted);">Carregando temas...</div></div>
+          <div class="identity-custom">
+            <span class="identity-custom-title">Personalizado</span>
+            <select class="form-select" id="identity-custom-mode" style="width:120px;">
+              <option value="dark">Escuro</option>
+              <option value="light">Claro</option>
+            </select>
+            <label class="identity-color-field">Cor principal <input type="color" id="identity-custom-primary" value="#0229C4"></label>
+            <label class="identity-color-field">Destaque <input type="color" id="identity-custom-accent" value="#9FE870"></label>
+            <button type="button" class="btn-secondary" onclick="aplicarIdentidadePersonalizada()">Aplicar personalizado</button>
+          </div>
+        </section>
+
         <section class="card" id="campaign-page-settings" style="margin:20px 0;">
           <div class="page-header-row"><div><h3 class="card-title-clean">Páginas desta campanha</h3><p class="card-subtitle-clean">A pressel apresenta a campanha e leva ao checkout da rifa. As páginas de upsell formam o link da campanha; a principal é escolhida só entre elas.</p></div><button type="button" class="btn-primary" onclick="criarPaginaDaCampanha(selectedCampaignId)">+ Nova página nesta campanha</button></div>
           <a id="campaign-offer-link" class="btn-secondary" target="_blank" rel="noopener" hidden>Abrir link principal da campanha ↗</a>
@@ -978,20 +999,8 @@
                 <!-- Tema Base -->
                 <div class="theme-base-group">
                   <div class="theme-base-label">Tema base</div>
-                  <div class="theme-base-cards">
-                    <div class="theme-card-option" id="theme-base-dark" onclick="aplicarTemaBase('dark')">
-                      <div class="theme-circle-preview" style="background:#06152D;"></div>
-                      <span>Azul noturno</span>
-                    </div>
-                    <div class="theme-card-option" id="theme-base-light" onclick="aplicarTemaBase('light')">
-                      <div class="theme-circle-preview" style="background:#FFFFFF; border:1px solid #D0D5DD;"></div>
-                      <span>Claro</span>
-                    </div>
-                    <div class="theme-card-option active" id="theme-base-custom" onclick="aplicarTemaBase('custom')">
-                      <div class="theme-circle-preview" style="background:#1764FF;"></div>
-                      <span>Personalizado</span>
-                    </div>
-                  </div>
+                  <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px;">O tema escolhido vale para toda a campanha: oferta, raspadinha, roleta, downsell, pressel e landing. Para ajustar só esta oferta, use as cores abaixo.</p>
+                  <div class="identity-grid compact" id="offer-identity-presets"></div>
                 </div>
 
                 <!-- SANFONAS RECOLHÍVEIS (ACCORDIONS) -->
@@ -4134,6 +4143,7 @@
 
     navigate('campaign-details');
     carregarPaginasCampanha(campId);
+    carregarIdentidadeCampanha(campId);
   }
 
   function abrirEscolhaFunil(campId) {
@@ -4159,6 +4169,87 @@
     marcarEditorSalvo();
     carregarConfiguracaoOferta();
     navigate('offer-editor');
+    carregarIdentidadeCampanha(selectedCampaignId);
+  }
+
+  /* ═══ IDENTIDADE VISUAL DA CAMPANHA (vale para todos os modelos da campanha) ═══ */
+  var identityPresets = [];
+  var campaignIdentity = null;
+
+  function carregarIdentidadeCampanha(campId) {
+    if (!campId) return;
+    apiFetch('../api/admin/campaign-identity.php?workspace_id=' + (currentWsId || 1) + '&campaign_id=' + campId)
+      .then(function(data) {
+        if (data.status !== 'success' || Number(campId) !== Number(selectedCampaignId)) return;
+        identityPresets = data.presets || [];
+        campaignIdentity = data.identity || null;
+        renderizarIdentidades();
+      })
+      .catch(function(e) { console.error('Erro ao carregar identidade visual:', e); });
+  }
+
+  function cartaoIdentidadeHtml(p, ativo) {
+    return `<button type="button" class="identity-card${ativo ? ' active' : ''}" onclick="aplicarIdentidadeCampanha('${p.id}')" title="${escapeHtml(p.description || '')}">
+      <span class="identity-swatch" style="background:${p.bg};">
+        <span class="identity-swatch-card" style="background:${p.surface}; border-color:${p.line};">
+          <span class="identity-swatch-line" style="background:${p.text};"></span>
+          <span class="identity-swatch-line short" style="background:${p.muted};"></span>
+          <span class="identity-swatch-btn" style="background:${p.primary};"></span>
+        </span>
+        <span class="identity-swatch-dot" style="background:${p.accent};"></span>
+      </span>
+      <span class="identity-name">${escapeHtml(p.name)}${ativo ? ' <span class="badge badge-primary" style="padding:0 6px; font-size:10px;">Em uso</span>' : ''}</span>
+      <span class="identity-desc">${escapeHtml(p.description || '')}</span>
+    </button>`;
+  }
+
+  function renderizarIdentidades() {
+    var atual = campaignIdentity && campaignIdentity.preset;
+    ['campaign-identity-presets', 'offer-identity-presets'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = identityPresets.map(function(p) { return cartaoIdentidadeHtml(p, p.id === atual); }).join('');
+    });
+    var badge = document.getElementById('campaign-identity-current');
+    if (badge) {
+      badge.className = 'badge ' + (campaignIdentity ? 'badge-primary' : 'badge-neutral');
+      badge.textContent = campaignIdentity ? 'Tema: ' + campaignIdentity.name : 'Sem tema definido';
+    }
+    if (campaignIdentity && campaignIdentity.preset === 'custom') {
+      var m = document.getElementById('identity-custom-mode'); if (m) m.value = campaignIdentity.mode || 'dark';
+      var pc = document.getElementById('identity-custom-primary'); if (pc) pc.value = campaignIdentity.primary;
+      var ac = document.getElementById('identity-custom-accent'); if (ac) ac.value = campaignIdentity.accent;
+    }
+  }
+
+  function aplicarIdentidadeCampanha(presetId, extra) {
+    if (!selectedCampaignId) { showToast('Abra uma campanha para escolher a identidade visual.', 'error'); return; }
+    var preset = identityPresets.filter(function(p) { return p.id === presetId; })[0];
+    var nome = preset ? preset.name : 'Personalizado';
+    var noEditor = document.getElementById('view-offer-editor') && document.getElementById('view-offer-editor').classList.contains('active');
+    var aviso = 'Aplicar o tema "' + nome + '" em todos os modelos desta campanha (oferta, raspadinha, roleta, downsell, pressel e landing)?\n\nAs cores das páginas publicadas também mudam.';
+    if (noEditor && temAlteracoesPendentes) aviso += '\n\nAs alterações não salvas no editor serão descartadas.';
+    if (!confirm(aviso)) return;
+    var body = Object.assign({ campaign_id: selectedCampaignId, workspace_id: currentWsId || 1, preset: presetId }, extra || {});
+    apiFetch('../api/admin/campaign-identity.php', { method: 'POST', body: JSON.stringify(body) })
+      .then(function(data) {
+        if (data.status !== 'success') { showToast(data.message || 'Não foi possível aplicar o tema.', 'error'); return; }
+        campaignIdentity = data.identity || null;
+        renderizarIdentidades();
+        showToast(data.message || 'Identidade visual aplicada.', 'success');
+        if (noEditor) {
+          temAlteracoesPendentes = false;
+          carregarConfiguracaoOferta();
+        }
+      })
+      .catch(function(e) { showToast('Erro ao aplicar o tema: ' + e.message, 'error'); });
+  }
+
+  function aplicarIdentidadePersonalizada() {
+    aplicarIdentidadeCampanha('custom', {
+      mode: document.getElementById('identity-custom-mode').value,
+      primary: document.getElementById('identity-custom-primary').value,
+      accent: document.getElementById('identity-custom-accent').value
+    });
   }
 
   function voltarDoEditorOferta() {
@@ -4461,6 +4552,7 @@
       text_color: document.getElementById('hex-text-color').value,
       text_secondary: document.getElementById('hex-text-secondary').value,
       btn_bg: document.getElementById('hex-btn-bg').value,
+      cta_bg: document.getElementById('hex-btn-bg').value,
       btn_text: '#FFFFFF',
       btn_radius: parseInt(document.getElementById('btn-radius-input').value) || 12,
       font_heading: document.getElementById('font-titles-select').value,
@@ -4639,7 +4731,7 @@
         if (t.primary_color) atualizarParCor('picker-primary-color', 'hex-primary-color', t.primary_color);
         if (t.text_color) atualizarParCor('picker-text-color', 'hex-text-color', t.text_color);
         if (t.text_secondary) atualizarParCor('picker-text-secondary', 'hex-text-secondary', t.text_secondary);
-        if (t.btn_bg) atualizarParCor('picker-btn-bg', 'hex-btn-bg', t.btn_bg);
+        if (t.cta_bg || t.btn_bg) atualizarParCor('picker-btn-bg', 'hex-btn-bg', t.cta_bg || t.btn_bg);
         if (t.btn_radius) document.getElementById('btn-radius-input').value = t.btn_radius;
         if (t.font_heading) document.getElementById('font-titles-select').value = t.font_heading;
         if (t.font_body) document.getElementById('font-body-select').value = t.font_body;
