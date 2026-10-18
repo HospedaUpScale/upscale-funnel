@@ -368,3 +368,77 @@ html[data-ui="novo"] #publish-funnel-slug,
 html[data-ui="novo"] #modal-funnel-slug {
   color: var(--text-main) !important;
 }
+
+/* ══ Painel no estilo da referência: fundo com brilho, cartões de vidro e gráficos ══ */
+html[data-ui="novo"] .main-wrapper { background: transparent; }
+html[data-ui="novo"] .card,
+html[data-ui="novo"] .kpi-stat-card,
+html[data-ui="novo"] .chart-card-wrapper {
+  background: linear-gradient(180deg, rgba(24, 46, 128, 0.50) 0%, rgba(8, 19, 60, 0.42) 100%);
+  border: 1px solid rgba(140, 160, 255, 0.16);
+}
+
+/* cartões de números com minigráfico no rodapé */
+html[data-ui="novo"] .kpi-stat-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 158px;
+  padding: 18px 20px 76px;
+}
+html[data-ui="novo"] .kpi-stat-card .kpi-stat-icon { display: none; }
+html[data-ui="novo"] .kpi-stat-card .kpi-stat-header { margin-bottom: 6px; gap: 8px; }
+html[data-ui="novo"] .kpi-stat-card .kpi-stat-title { font-size: 13.5px; color: #E4E9FF; }
+html[data-ui="novo"] .kpi-stat-card .kpi-stat-value { font-size: 32px; line-height: 1.15; margin-bottom: 6px; }
+html[data-ui="novo"] .kpi-live-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: #9FE870;
+  background: rgba(159, 232, 112, 0.14); border: 1px solid rgba(159, 232, 112, 0.30);
+  padding: 1px 8px; border-radius: 999px;
+}
+html[data-ui="novo"] .kpi-live-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #9FE870; box-shadow: 0 0 8px #9FE870; }
+html[data-ui="novo"] .kpi-live-badge[hidden] { display: none; }
+html[data-ui="novo"] .kpi-trend-pill { font-size: 12px; }
+html[data-ui="novo"] .kpi-trend-pill.up { color: #9FE870; }
+html[data-ui="novo"] .kpi-trend-pill.down { color: #FF7A7F; }
+html[data-ui="novo"] .kpi-trend-pill.flat { color: var(--text-subtle); }
+html[data-ui="novo"] .kpi-trend-sub { color: var(--text-subtle); font-size: 11.5px; }
+html[data-ui="novo"] .kpi-spark { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 66px; pointer-events: none; }
+html[data-ui="novo"] .kpi-spark svg { display: block; overflow: visible; }
+html[data-ui="novo"] .kpi-spark .spark-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html[data-ui="novo"] .spark-area .spark-line { stroke: #5B7BFF; filter: drop-shadow(0 0 6px rgba(74, 99, 232, 0.9)); }
+html[data-ui="novo"] .spark-area .spark-stop-a { stop-color: #2448E6; stop-opacity: 0.55; }
+html[data-ui="novo"] .spark-area .spark-stop-b { stop-color: #2448E6; stop-opacity: 0; }
+html[data-ui="novo"] .spark-lime .spark-line { stroke: #9FE870; filter: drop-shadow(0 0 6px rgba(159, 232, 112, 0.7)); }
+html[data-ui="novo"] .spark-lime .spark-stop-a { stop-color: #9FE870; stop-opacity: 0.22; }
+html[data-ui="novo"] .spark-lime .spark-stop-b { stop-color: #9FE870; stop-opacity: 0; }
+html[data-ui="novo"] .spark-markers .spark-line { stroke: rgba(255, 255, 255, 0.75); stroke-width: 1.5; }
+html[data-ui="novo"] .spark-marker { fill: #FFFFFF; }
+html[data-ui="novo"] .spark-dot-on { fill: rgba(255, 255, 255, 0.9); }
+html[data-ui="novo"] .spark-dot-off { fill: rgba(255, 255, 255, 0.16); }
+
+/* gráfico de receita com brilho na linha */
+html[data-ui="novo"] .chart-line-glow { display: inline; fill: none; stroke: #2448E6; stroke-width: 7; opacity: 0.75; }
+html[data-ui="novo"] .chart-line-main { stroke: #6E88FF; stroke-width: 2.4; }
+html[data-ui="novo"] .chart-stop-a { stop-color: #2448E6; stop-opacity: 0.50; }
+html[data-ui="novo"] .chart-stop-b { stop-color: #2448E6; stop-opacity: 0; }
+html[data-ui="novo"] .chart-dot { fill: #FFFFFF; stroke: #4A63E8; stroke-width: 2.5; }
+html[data-ui="novo"] .chart-dot-last { filter: drop-shadow(0 0 6px rgba(110, 136, 255, 0.95)); }
+html[data-ui="novo"] .chart-grid-line { stroke: rgba(255, 255, 255, 0.07); }
+html[data-ui="novo"] .chart-axis-label { fill: #8290B8; font-size: 11px; font-family: var(--font-family); }
+
+/* funil em faixa azul → verde */
+html[data-ui="novo"] .dash-funnel-card { display: block; margin-bottom: 24px; }
+html[data-ui="novo"] .funnel-flow { margin-top: 14px; }
+html[data-ui="novo"] .funnel-stages { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 10px; }
+html[data-ui="novo"] .funnel-stage { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+html[data-ui="novo"] .funnel-stage-name { font-size: 12.5px; color: var(--text-muted); }
+html[data-ui="novo"] .funnel-stage-value { font-family: var(--ds-display); font-size: 26px; font-weight: 600; color: #FFFFFF; letter-spacing: -0.01em; }
+html[data-ui="novo"] .funnel-stage-pct { font-size: 11px; color: #DCE2FD; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 6px; padding: 1px 8px; background: rgba(255, 255, 255, 0.04); }
+html[data-ui="novo"] .funnel-ribbon { display: block; width: 100%; height: 120px; overflow: visible; }
+html[data-ui="novo"] .funnel-divider { stroke: rgba(255, 255, 255, 0.30); stroke-dasharray: 2 4; }
+html[data-ui="novo"] .funnel-total-row {
+  margin-top: 16px; display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; border-radius: 10px; font-size: 13px; color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.10);
+}
+html[data-ui="novo"] .funnel-total-row strong { color: #9FE870; font-size: 14px; }

@@ -113,6 +113,83 @@ $salesBySource = array_map(fn($r) => [
     'revenue' => (float)$r['revenue'],
 ], $sourceRows);
 
+// 5. Período escolhido no painel: série diária, totais e comparação com o período anterior
+$periodParam = (string)($request->get('period') ?? '30');
+$today = new DateTimeImmutable('today');
+if ($periodParam === 'month') {
+    $periodStart = $today->modify('first day of this month');
+} else {
+    $periodDays = in_array((int)$periodParam, [7, 14, 30, 90], true) ? (int)$periodParam : 30;
+    $periodStart = $today->modify('-' . ($periodDays - 1) . ' days');
+}
+$dayCount = (int)$periodStart->diff($today)->days + 1;
+$prevStart = $periodStart->modify('-' . $dayCount . ' days');
+
+$wsFilter = $isGlobal ? '' : 'workspace_id = ? AND ';
+$params = $isGlobal ? [$prevStart->format('Y-m-d 00:00:00')] : [$targetWsId, $prevStart->format('Y-m-d 00:00:00')];
+
+$stmt = $pdo->prepare("SELECT DATE(created_at) AS d, status, COUNT(*) AS n, COALESCE(SUM(upsell_amount), 0) AS v
+    FROM orders WHERE {$wsFilter}created_at >= ? GROUP BY DATE(created_at), status");
+$stmt->execute($params);
+$orderDays = $stmt->fetchAll();
+
+$stmt = $pdo->prepare("SELECT DATE(created_at) AS d, event_name, COUNT(*) AS n
+    FROM conversion_events WHERE {$wsFilter}created_at >= ? GROUP BY DATE(created_at), event_name");
+$stmt->execute($params);
+$eventDays = $stmt->fetchAll();
+
+$emptyDay = ['revenue' => 0.0, 'paid' => 0, 'orders' => 0, 'views' => 0, 'scratches' => 0, 'pix_generated' => 0];
+$byDay = [];
+foreach ($orderDays as $r) {
+    $d = substr((string)$r['d'], 0, 10);
+    $byDay[$d] = $byDay[$d] ?? $emptyDay;
+    $byDay[$d]['orders'] += (int)$r['n'];
+    if ($r['status'] === 'paid') {
+        $byDay[$d]['paid'] += (int)$r['n'];
+        $byDay[$d]['revenue'] += (float)$r['v'];
+    }
+}
+foreach ($eventDays as $r) {
+    $d = substr((string)$r['d'], 0, 10);
+    $byDay[$d] = $byDay[$d] ?? $emptyDay;
+    $name = $r['event_name'];
+    if ($name === 'view') $byDay[$d]['views'] += (int)$r['n'];
+    elseif ($name === 'scratch_win' || $name === 'scratch') $byDay[$d]['scratches'] += (int)$r['n'];
+    elseif ($name === 'pix_generated') $byDay[$d]['pix_generated'] += (int)$r['n'];
+}
+
+$sumRange = function (DateTimeImmutable $from, int $days) use ($byDay, $emptyDay): array {
+    $tot = $emptyDay;
+    for ($i = 0; $i < $days; $i++) {
+        $row = $byDay[$from->modify("+{$i} days")->format('Y-m-d')] ?? $emptyDay;
+        foreach ($tot as $k => $_) $tot[$k] += $row[$k];
+    }
+    $tot['average_ticket'] = $tot['paid'] > 0 ? round($tot['revenue'] / $tot['paid'], 2) : 0;
+    $tot['conversion_rate'] = $tot['views'] > 0 ? round($tot['paid'] / $tot['views'] * 100, 2) : null;
+    $tot['revenue'] = round($tot['revenue'], 2);
+    return $tot;
+};
+
+$series = [];
+for ($i = 0; $i < $dayCount; $i++) {
+    $d = $periodStart->modify("+{$i} days")->format('Y-m-d');
+    $row = $byDay[$d] ?? $emptyDay;
+    $row['revenue'] = round($row['revenue'], 2);
+    $row['average_ticket'] = $row['paid'] > 0 ? round($row['revenue'] / $row['paid'], 2) : 0;
+    $row['conversion_rate'] = $row['views'] > 0 ? round($row['paid'] / $row['views'] * 100, 2) : null;
+    $series[] = ['date' => $d] + $row;
+}
+
+$periodData = [
+    'key'      => $periodParam === 'month' ? 'month' : (string)$dayCount,
+    'start'    => $periodStart->format('Y-m-d'),
+    'end'      => $today->format('Y-m-d'),
+    'days'     => $dayCount,
+    'current'  => $sumRange($periodStart, $dayCount),
+    'previous' => $sumRange($prevStart, $dayCount),
+    'series'   => $series,
+];
+
 JsonResponse::send([
     'status' => 'success',
     'workspace_id' => $targetWsId,
@@ -131,6 +208,7 @@ JsonResponse::send([
             'pix_paid'       => $pixPaid,
         ]
     ],
+    'period' => $periodData,
     'recent_orders' => $recentOrders,
     'sales_by_source' => $salesBySource
 ]);
