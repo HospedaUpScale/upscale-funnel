@@ -882,11 +882,19 @@
   }
 
   // ══ CARREGAR DOMÍNIOS CONECTADOS DO WORKSPACE ══
+  function ordenarDominios(lista) {
+    // Oficial primeiro, depois domínios ativos, subdomínios e pendentes.
+    function peso(d) {
+      return (d.is_official ? 0 : 4) + (d.status === 'active' ? 0 : 2) + (d.kind === 'subdomain' ? 1 : 0);
+    }
+    return lista.slice().sort(function(a, b) { return peso(a) - peso(b) || String(a.domain).localeCompare(String(b.domain)); });
+  }
+
   function carregarDominiosBuilder() {
     var wsId = window.currentWsId || 2;
-    window.apiFetch('../api/admin/domains.php?workspace_id=' + wsId)
+    return window.apiFetch('../api/admin/domains.php?workspace_id=' + wsId)
       .then(function (data) {
-        var domains = (data.domains || []);
+        var domains = ordenarDominios(data.domains || []);
         state.availableDomains = domains;
 
         var selTopbar = document.getElementById('builder-funnel-domain-select');
@@ -909,7 +917,8 @@
 
         // Se o funil atual não tem domínio definido e há um primário ativo
         if (!state.customDomainId && domains.length > 0) {
-          var primary = domains.find(function(d) { return d.is_primary && d.status === 'active'; }) || domains[0];
+          var primary = domains.find(function(d) { return d.is_official && d.status === 'active'; })
+            || domains.find(function(d) { return d.status === 'active'; });
           if (primary && primary.status === 'active') {
             state.customDomainId = primary.id;
             state.customDomainName = primary.domain;
@@ -2076,25 +2085,32 @@
       return;
     }
 
-    publishSelectedDomainId = state.customDomainId;
-    publishSelectedDomainName = state.customDomainName;
-
-    if (!publishSelectedDomainId && state.availableDomains && state.availableDomains.length > 0) {
-      var act = state.availableDomains.find(function(d) { return d.status === 'active'; }) || state.availableDomains[0];
-      if (act) {
-        publishSelectedDomainId = act.id;
-        publishSelectedDomainName = act.domain;
-      }
-    }
-
     var slugInput = document.getElementById('publish-funnel-slug');
     if (slugInput) slugInput.value = state.slug || 'minha-campanha';
 
-    renderizarHostingCards('publish-hosting-cards-grid', publishSelectedDomainId, state.slug);
-    atualizarPublishUrlPreview();
-
+    var grid = document.getElementById('publish-hosting-cards-grid');
+    if (grid) grid.innerHTML = '<div style="text-align:center; padding:16px; color:#94a3b8; font-size:12px;">Carregando domínios do workspace...</div>';
     if (typeof modal.showModal === 'function') modal.showModal();
     else modal.style.display = 'block';
+
+    // Recarrega os domínios a cada abertura para mostrar os recém-conectados.
+    var pronto = function() {
+      escolherDominioPublicacaoInicial();
+      atualizarPublishUrlPreview();
+    };
+    var carregamento = carregarDominiosBuilder();
+    if (carregamento && carregamento.then) carregamento.then(pronto, pronto);
+    else pronto();
+  }
+
+  function escolherDominioPublicacaoInicial() {
+    var domains = state.availableDomains || [];
+    var atual = state.customDomainId && domains.find(function(d) { return String(d.id) === String(state.customDomainId); });
+    var escolhido = (atual && atual.status === 'active') ? atual
+      : domains.find(function(d) { return d.is_official && d.status === 'active'; })
+      || domains.find(function(d) { return d.status === 'active'; });
+    publishSelectedDomainId = escolhido ? escolhido.id : null;
+    publishSelectedDomainName = escolhido ? escolhido.domain : '';
   }
 
   function fecharModalPublicarHospedagem() {
@@ -2375,9 +2391,13 @@
       var isSelected = (String(d.id) === String(currentSelectedId));
       var isOk = (d.status === 'active');
       var fullUrl = 'https://' + escapeHtml(d.domain) + '/f/' + escapeHtml(safeSlug);
+      var papel = d.is_official ? 'Domínio oficial' : (d.kind === 'subdomain' ? 'Subdomínio' : 'Domínio próprio');
+      var acao = isOk
+        ? `selecionarHostingCard('${containerId}', '${d.id}', '${escapeHtml(d.domain)}')`
+        : `window.showToast && window.showToast('Este domínio ainda está aguardando o DNS. Publique nele quando o DNS for confirmado.', 'warning')`;
 
       html += `
-        <div class="hosting-card ${isSelected ? 'selected' : ''}" onclick="selecionarHostingCard('${containerId}', '${d.id}', '${escapeHtml(d.domain)}')">
+        <div class="hosting-card ${isSelected ? 'selected' : ''}" onclick="${acao}" style="${isOk ? '' : 'opacity:.6; cursor:not-allowed;'}">
           <div class="hosting-card-head">
             <div class="hosting-card-radio-row">
               <div class="hosting-radio-dot"></div>
@@ -2385,9 +2405,9 @@
                 <div class="hosting-card-domain-name">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#175CFF" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                   <span>${escapeHtml(d.domain)}</span>
-                  ${d.is_primary ? '<span class="badge badge-primary" style="font-size:10px; padding:1px 5px;">Principal</span>' : ''}
+                  ${d.is_official ? '<span class="badge badge-primary" style="font-size:10px; padding:1px 5px;">Oficial</span>' : ''}
                 </div>
-                <div class="hosting-card-domain-desc">Domínio próprio verificado • Servidor <code>179.198.96.35</code></div>
+                <div class="hosting-card-domain-desc">${papel} • ${isOk ? 'DNS confirmado' : 'aguardando DNS'}</div>
               </div>
             </div>
             <div class="hosting-card-badges">
@@ -2401,7 +2421,7 @@
           </div>
           <div class="hosting-card-url-box">
             <span>Link: ${fullUrl}</span>
-            <span style="font-size:10.5px; opacity:0.8;">${isSelected ? '✓ Selecionado' : 'Clique para selecionar'}</span>
+            <span style="font-size:10.5px; opacity:0.8;">${isSelected ? '✓ Selecionado' : (isOk ? 'Clique para selecionar' : 'Indisponível')}</span>
           </div>
         </div>
       `;
@@ -2515,7 +2535,8 @@
     var initialDomId = state.customDomainId;
     var initialDomName = state.customDomainName;
     if (!initialDomId && state.availableDomains && state.availableDomains.length > 0) {
-      var act = state.availableDomains.find(function(d) { return d.status === 'active'; }) || state.availableDomains[0];
+      var act = state.availableDomains.find(function(d) { return d.is_official && d.status === 'active'; })
+        || state.availableDomains.find(function(d) { return d.status === 'active'; });
       if (act) {
         initialDomId = act.id;
         initialDomName = act.domain;
