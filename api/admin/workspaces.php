@@ -328,6 +328,26 @@ if ($request->method() === 'POST') {
             'status'           => 'active',
         ]);
 
+        // Domínio informado na criação entra na lista de domínios como domínio oficial do workspace
+        if (!empty($created->customDomain)) {
+            $officialDomain = strtolower(trim((string)$created->customDomain));
+            $officialDomain = preg_replace('#^https?://#', '', $officialDomain);
+            $officialDomain = rtrim(explode('/', $officialDomain)[0], '.');
+            if (str_starts_with($officialDomain, 'www.')) $officialDomain = substr($officialDomain, 4);
+            if ($officialDomain !== '' && filter_var($officialDomain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+                try {
+                    $exists = $pdo->prepare("SELECT id FROM custom_domains WHERE domain = ? LIMIT 1");
+                    $exists->execute([$officialDomain]);
+                    if (!$exists->fetchColumn()) {
+                        $pdo->prepare("INSERT INTO custom_domains (workspace_id, domain, verification_token, is_primary) VALUES (?, ?, ?, 1)")
+                            ->execute([$created->id, $officialDomain, bin2hex(random_bytes(16))]);
+                    }
+                } catch (\Throwable $e) {
+                    // o workspace já foi criado; o domínio pode ser conectado depois em Domínios
+                }
+            }
+        }
+
         if ($type === 'merchant') {
             // Create default campaign & upsell offer for new client workspace
             $campaignStmt = $pdo->prepare("

@@ -1503,21 +1503,33 @@
         <div id="sites-subtab-dominios" class="subtab-pane active">
           <div class="card" style="margin-bottom:20px;">
             <div class="card-header-clean">
-              <div>
-                <h3 class="card-title-clean">Conectar Novo Domínio</h3>
-                <p class="card-subtitle-clean">Aponte um domínio ou subdomínio para a rede upScale.</p>
+                <div>
+                  <h3 class="card-title-clean">Domínio oficial do workspace</h3>
+                  <p class="card-subtitle-clean">O domínio principal conectado aqui vira o endereço oficial do workspace. Subdomínios (ex.: oferta.seudominio.com.br) ficam embaixo dele.</p>
+                </div>
               </div>
-            </div>
-            <div style="display:flex; gap:10px; max-width:720px; flex-wrap:wrap; align-items:center;">
-              <input type="text" class="form-input" id="domain-input" placeholder="ex: rifa.seusite.com.br" style="flex:1; min-width:260px;">
-              <button type="button" class="btn-primary" onclick="adicionarDominio()">Conectar domínio</button>
-              <button type="button" class="btn-secondary" id="btn-testar-dns-topo" onclick="testarDnsAvulso()" title="Testar se o DNS já está apontado para o IP 179.198.96.35">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Testar Apontamento</span>
-              </button>
-            </div>
+              <div id="official-domain-box" style="margin-bottom:12px;"></div>
+              <div style="display:flex; gap:10px; max-width:720px; flex-wrap:wrap; align-items:center;">
+                <input type="text" class="form-input" id="domain-input" placeholder="seudominio.com.br" style="flex:1; min-width:260px;">
+                <button type="button" class="btn-primary" id="btn-conectar-dominio" onclick="adicionarDominio()">Conectar domínio oficial</button>
+                <button type="button" class="btn-secondary" id="btn-testar-dns-topo" onclick="testarDnsAvulso()" title="Testar se o DNS já está apontado para o IP 179.198.96.35">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Testar Apontamento</span>
+                </button>
+              </div>
+              <div id="subdomain-row" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--border-light);">
+                <div style="font-size:12.5px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Adicionar subdomínio</div>
+                <div style="display:flex; gap:10px; max-width:720px; flex-wrap:wrap; align-items:center;">
+                  <div style="display:flex; flex:1; min-width:260px;">
+                    <input type="text" class="form-input" id="subdomain-input" placeholder="oferta" style="flex:1; min-width:0; border-top-right-radius:0; border-bottom-right-radius:0;" onkeydown="if(event.key==='Enter'){adicionarSubdominio();}">
+                    <span id="subdomain-suffix" style="display:inline-flex; align-items:center; padding:0 12px; border:1px solid var(--border-light); border-left:0; border-radius:0 var(--radius-md) var(--radius-md) 0; background:var(--bg-subtle); color:var(--text-muted); font-size:13px; white-space:nowrap;">.seudominio.com.br</span>
+                  </div>
+                  <button type="button" class="btn-secondary" onclick="adicionarSubdominio()">Adicionar subdomínio</button>
+                </div>
+                <div style="font-size:11.5px; color:var(--text-muted); margin-top:6px;">No DNS, crie um registro <strong>CNAME</strong> com o nome do subdomínio apontando para <code>upscalefunnel.site</code>.</div>
+              </div>
 
-            <!-- Guias Recolhíveis de DNS e Cloudflare -->
+              <!-- Guias Recolhíveis de DNS e Cloudflare -->
             <details class="collapsible-guide" open>
               <summary class="collapsible-summary">Instruções de Apontamento DNS (IP da VPS: 179.198.96.35)</summary>
               <div class="collapsible-content">
@@ -1554,7 +1566,7 @@
                 <thead>
                   <tr>
                     <th>Domínio</th>
-                    <th>Destino Vinculado</th>
+                    <th>Papel</th>
                     <th>Status DNS</th>
                     <th>SSL</th>
                     <th style="text-align:right;">Ações</th>
@@ -5580,26 +5592,33 @@
     var selectCamp = document.getElementById('camp-domain-select');
     if (!tbody) return;
 
+    renderizarDominioOficial();
+
     if (!allDomainsData.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted);">Nenhum domínio próprio conectado. Conecte acima.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted);">Nenhum domínio conectado. Conecte acima o domínio oficial do workspace.</td></tr>';
       if (selectCamp) selectCamp.innerHTML = '<option value="">Sem domínios conectados</option>';
       return;
     }
 
-    tbody.innerHTML = allDomainsData.map(function(d) {
+    tbody.innerHTML = ordenarDominiosPorGrupo(allDomainsData).map(function(d) {
       var isOk = (d.status === 'active');
       var domainName = escapeHtml(d.domain);
+      var isSub = d.kind === 'subdomain';
+      var cname = (isSub && d.dns && d.dns.records && d.dns.records[0]) ? d.dns.records[0] : null;
+      var papel = d.is_official ? '<span class="badge badge-primary">Oficial</span>'
+        : isSub ? '<span class="badge badge-neutral">Subdomínio</span>'
+        : '<span class="badge badge-neutral">Secundário</span>';
       return `<tr id="domain-row-${d.id}">
         <td>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; ${isSub ? 'padding-left:16px;' : ''}">
+            ${isSub ? '<span style="color:var(--text-subtle);">↳</span>' : ''}
             <strong style="color:var(--text-main); font-size:13.5px;">${domainName}</strong>
-            ${d.is_primary ? '<span class="badge badge-primary" style="font-size:10px; padding:1px 6px;">Principal</span>' : ''}
           </div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-            IP Alvo: <code>179.198.96.35</code> &bull; ${d.last_checked_at ? 'Última checagem: ' + d.last_checked_at.substring(0, 16) : 'Checagem pendente'}
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px; ${isSub ? 'padding-left:16px;' : ''}">
+            ${cname ? 'DNS: <code>CNAME ' + escapeHtml(cname.name) + ' → ' + escapeHtml(cname.value) + '</code>' : 'IP Alvo: <code>179.198.96.35</code>'} &bull; ${d.last_checked_at ? 'Última checagem: ' + d.last_checked_at.substring(0, 16) : 'Checagem pendente'}
           </div>
         </td>
-        <td><span style="font-size:12px; color:var(--text-muted);">Workspace #${d.workspace_id}</span></td>
+        <td>${papel}${isSub && d.parent_domain ? '<div style="font-size:11px; color:var(--text-muted); margin-top:3px;">de ' + escapeHtml(d.parent_domain) + '</div>' : ''}</td>
         <td>
           <span class="badge ${isOk ? 'badge-success' : 'badge-warning'}" id="domain-status-badge-${d.id}">
             <span class="badge-dot-indicator"></span> ${isOk ? 'Conectado (Ativo)' : 'Pendente DNS'}
@@ -5616,6 +5635,7 @@
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               <span>Verificar Apontamento</span>
             </button>
+            ${(!isSub && !d.is_official) ? `<button type="button" class="btn-secondary" style="min-height:28px; padding:0 10px; font-size:11.5px;" onclick="tornarDominioOficial(${d.id}, '${domainName}')" title="Usar este domínio como oficial do workspace">Tornar oficial</button>` : ''}
             <button type="button" class="btn-danger-ghost" style="min-height:28px; padding:0 8px; font-size:11.5px;" onclick="removerDominio(${d.id})" title="Remover este domínio">Remover</button>
           </div>
         </td>
@@ -5727,19 +5747,107 @@
     });
   }
 
+  function dominioOficialAtual() {
+    return (allDomainsData || []).filter(function(d) { return d.is_official; })[0] || null;
+  }
+
+  // Oficial primeiro, cada domínio seguido dos seus subdomínios
+  function ordenarDominiosPorGrupo(lista) {
+    var roots = lista.filter(function(d) { return d.kind !== 'subdomain'; })
+      .sort(function(a, b) { return (b.is_official ? 1 : 0) - (a.is_official ? 1 : 0) || a.domain.localeCompare(b.domain); });
+    var out = [];
+    roots.forEach(function(r) {
+      out.push(r);
+      lista.filter(function(d) { return d.kind === 'subdomain' && d.parent_domain === r.domain; })
+        .sort(function(a, b) { return a.domain.localeCompare(b.domain); })
+        .forEach(function(sub) { out.push(sub); });
+    });
+    lista.forEach(function(d) { if (out.indexOf(d) === -1) out.push(d); });
+    return out;
+  }
+
+  function renderizarDominioOficial() {
+    var box = document.getElementById('official-domain-box');
+    var btn = document.getElementById('btn-conectar-dominio');
+    var input = document.getElementById('domain-input');
+    var subRow = document.getElementById('subdomain-row');
+    var suffix = document.getElementById('subdomain-suffix');
+    var oficial = dominioOficialAtual();
+    if (!box) return;
+    if (!oficial) {
+      box.innerHTML = '<div style="font-size:12.5px; color:var(--text-muted);">Nenhum domínio oficial ainda. O primeiro domínio que você conectar vira o domínio oficial do workspace.</div>';
+      if (btn) btn.textContent = 'Conectar domínio oficial';
+      if (input) input.placeholder = 'seudominio.com.br';
+      if (subRow) subRow.style.display = 'none';
+      return;
+    }
+    var ok = oficial.status === 'active';
+    box.innerHTML = `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 14px; border:1px solid var(--primary-border); background:var(--primary-subtle); border-radius:var(--radius-md);">
+        <span class="badge badge-primary">Oficial</span>
+        <strong style="font-size:14px; color:var(--text-main);">${escapeHtml(oficial.domain)}</strong>
+        <span class="badge ${ok ? 'badge-success' : 'badge-warning'}"><span class="badge-dot-indicator"></span> ${ok ? 'Conectado' : 'Aguardando DNS'}</span>
+        <span style="font-size:11.5px; color:var(--text-muted);">${ok ? 'O workspace responde neste domínio.' : 'Assim que o DNS for verificado, o workspace passa a responder neste domínio.'}</span>
+      </div>`;
+    if (btn) btn.textContent = 'Trocar domínio oficial';
+    if (input) input.placeholder = 'outro-dominio.com.br';
+    if (subRow) subRow.style.display = '';
+    if (suffix) suffix.textContent = '.' + oficial.domain;
+  }
+
+  function normalizarDominioDigitado(v) {
+    v = String(v || '').trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].replace(/\.$/, '');
+    return v.indexOf('www.') === 0 ? v.slice(4) : v;
+  }
+
   function adicionarDominio() {
-    var dom = document.getElementById('domain-input').value.trim();
+    var dom = normalizarDominioDigitado(document.getElementById('domain-input').value);
     if (!dom) return;
+    var oficial = dominioOficialAtual();
+    var ehSub = (allDomainsData || []).some(function(d) { return dom !== d.domain && dom.endsWith('.' + d.domain); });
+    if (oficial && !ehSub && dom !== oficial.domain &&
+        !confirm(dom + ' passará a ser o domínio oficial do workspace.\n' + oficial.domain + ' continua conectado como domínio secundário.\n\nContinuar?')) return;
     apiFetch('../api/admin/domains.php', {
       method: 'POST',
       body: JSON.stringify({ action: 'create', domain: dom, workspace_id: currentWsId || 2 })
     })
     .then(function(data) {
-      document.getElementById('domain-input').value = '';
       if (data.status === 'success') {
-        showToast('Domínio adicionado com sucesso!', 'success');
+        document.getElementById('domain-input').value = '';
+        showToast(data.message || 'Domínio adicionado.', 'success');
         carregarDominios();
       } else showToast(data.message || 'Erro ao adicionar domínio.', 'error');
+    });
+  }
+
+  function adicionarSubdominio() {
+    var input = document.getElementById('subdomain-input');
+    var oficial = dominioOficialAtual();
+    var label = String(input.value || '').trim().toLowerCase().replace(/\.+$/, '');
+    if (!oficial) { showToast('Conecte primeiro o domínio oficial do workspace.', 'error'); return; }
+    if (label.endsWith('.' + oficial.domain)) label = label.slice(0, -(oficial.domain.length + 1));
+    if (!label) { showToast('Digite o nome do subdomínio (ex.: oferta).', 'error'); return; }
+    apiFetch('../api/admin/domains.php', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'create_subdomain', subdomain: label, parent_domain_id: oficial.id, workspace_id: currentWsId || 2 })
+    })
+    .then(function(data) {
+      if (data.status === 'success') {
+        input.value = '';
+        showToast(data.message || 'Subdomínio adicionado.', 'success');
+        carregarDominios();
+      } else showToast(data.message || 'Erro ao adicionar subdomínio.', 'error');
+    });
+  }
+
+  function tornarDominioOficial(id, nome) {
+    if (!confirm(nome + ' passará a ser o domínio oficial do workspace. Continuar?')) return;
+    apiFetch('../api/admin/domains.php', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'make_official', domain_id: id, workspace_id: currentWsId || 2 })
+    })
+    .then(function(data) {
+      if (data.status === 'success') { showToast(data.message || 'Domínio oficial atualizado.', 'success'); carregarDominios(); }
+      else showToast(data.message || 'Erro ao atualizar o domínio oficial.', 'error');
     });
   }
 
@@ -5747,7 +5855,7 @@
     if (!confirm('Deseja realmente remover este domínio?')) return;
     apiFetch('../api/admin/domains.php', {
       method: 'POST',
-      body: JSON.stringify({ action: 'delete', domain_id: id })
+      body: JSON.stringify({ action: 'delete', domain_id: id, workspace_id: currentWsId || 2 })
     })
     .then(function(data) {
       if (data.status === 'success') {
