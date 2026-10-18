@@ -18,6 +18,17 @@ if ($request->method() === 'GET') {
     $workspaces = [];
     $partners = [];
 
+    // Plataformas usadas pelas campanhas de cada workspace (o workspace em si não guarda plataforma)
+    $platformsByWs = [];
+    try {
+        $stmt = $pdo->query('SELECT workspace_id, external_platform FROM campaigns GROUP BY workspace_id, external_platform');
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $platformsByWs[(int)$row['workspace_id']][] = (string)$row['external_platform'];
+        }
+    } catch (\Throwable $e) {
+        $platformsByWs = [];
+    }
+
     // Carregar parceiros white-label para seleção rápida
     $allWorkspaces = $wsRepo->all();
     foreach ($allWorkspaces as $w) {
@@ -47,6 +58,8 @@ if ($request->method() === 'GET') {
                 'custom_domain' => $w->customDomain,
                 'status'        => $w->status,
                 'is_subaccount' => !empty($w->parentId),
+                'created_at'    => $w->createdAt,
+                'platforms'     => $platformsByWs[$w->id] ?? [],
             ];
         }
     } elseif ($auth['role'] === 'partner_admin') {
@@ -61,6 +74,8 @@ if ($request->method() === 'GET') {
             'custom_domain' => $me->customDomain,
             'status'        => $me->status,
             'is_subaccount' => false,
+            'created_at'    => $me->createdAt,
+            'platforms'     => $platformsByWs[$me->id] ?? [],
         ];
         $descendants = $wsRepo->findDescendants($me->id);
         foreach ($descendants as $w) {
@@ -74,6 +89,8 @@ if ($request->method() === 'GET') {
                 'custom_domain' => $w->customDomain,
                 'status'        => $w->status,
                 'is_subaccount' => true,
+                'created_at'    => $w->createdAt,
+                'platforms'     => $platformsByWs[$w->id] ?? [],
             ];
         }
     } else { // merchant_admin
@@ -93,6 +110,8 @@ if ($request->method() === 'GET') {
             'custom_domain' => $me->customDomain,
             'status'        => $me->status,
             'is_subaccount' => !empty($me->parentId),
+            'created_at'    => $me->createdAt,
+            'platforms'     => $platformsByWs[$me->id] ?? [],
         ];
     }
 
