@@ -17,7 +17,8 @@ class Workspace
         public string $gatewayProvider,
         public ?array $gatewayCredentials,
         public ?string $splitRecipientId,
-        public string $status
+        public string $status,
+        public ?string $createdAt = null
     ) {}
 
     public static function fromRow(array $row): self
@@ -42,7 +43,8 @@ class Workspace
             gatewayProvider: $row['gateway_provider'] ?? 'mock',
             gatewayCredentials: $creds,
             splitRecipientId: $row['split_recipient_id'] ?? null,
-            status: $row['status'] ?? 'active'
+            status: $row['status'] ?? 'active',
+            createdAt: isset($row['created_at']) ? (string)$row['created_at'] : null
         );
     }
 }

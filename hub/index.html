@@ -2867,7 +2867,7 @@
             <div class="table-filter-bar">
               <div class="search-input-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" class="form-input" id="search-workspaces-input" placeholder="Buscar workspace por nome ou slug..." oninput="filtrarWorkspacesNaTabela()">
+                <input type="text" class="form-input" id="search-workspaces-input" placeholder="Buscar por nome, slug ou ID…" oninput="filtrarWorkspacesNaTabela()">
               </div>
             </div>
 
@@ -2878,7 +2878,7 @@
                     <th>Workspace</th>
                     <th>Slug Identificador</th>
                     <th>Tipo de Conta</th>
-                    <th>Vinculação / Parceiro</th>
+                    <th>Parceiro / Plataformas</th>
                     <th>Status</th>
                     <th style="text-align:right;">Ações</th>
                   </tr>
@@ -4054,7 +4054,7 @@
     document.getElementById('detail-booster-summary').textContent=camp.offer?'Booster: '+camp.offer.title+' · '+Number(camp.offer.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Configure o Booster em Editar campanha e Booster.';
     document.getElementById('detail-camp-title').textContent = camp.title;
     document.getElementById('detail-camp-id').textContent = camp.id;
-    document.getElementById('detail-camp-platform').textContent = (camp.external_platform || 'sorteime').toUpperCase();
+    document.getElementById('detail-camp-platform').textContent = formatarPlataforma(camp.external_platform) || '—';
     
     var badge = document.getElementById('detail-camp-status-badge');
     if (camp.status === 'published') {
@@ -4912,43 +4912,77 @@
     }
 
     tbody.innerHTML = lista.map(function(w) {
-      var initials = (w.name || 'WS').substring(0, 2).toUpperCase();
-      var isPartner = w.type === 'partner_whitelabel';
-      var isCurrent = w.id === currentWsId;
+      var initials = iniciaisDoNome(w.name, 'WS');
+      var tipo = TIPOS_WORKSPACE[w.type] || { label: 'Cliente Lojista', badge: 'badge-neutral' };
+      var isCurrent = Number(w.id) === Number(currentWsId);
+      var isActive = (w.status || 'active') === 'active';
+      var criado = formatarDataCurta(w.created_at);
+      var plataformas = (w.platforms || []).map(formatarPlataforma).join(', ');
+      var vinculo = w.parent_name
+        ? `<div style="font-size:12.5px; color:var(--text-main); font-weight:600;">${escapeHtml(w.parent_name)}</div>`
+        : `<div style="font-size:12.5px; color:var(--text-muted); font-weight:500;">Direto</div>`;
 
       return `<tr>
         <td>
           <div class="table-user-cell">
-            <div class="user-avatar-initials">${initials}</div>
+            <div class="user-avatar-initials">${escapeHtml(initials)}</div>
             <div>
-              <div class="table-user-name">${escapeHtml(w.name)} ${isCurrent ? '<span style="font-size:10.5px; color:var(--primary); font-weight:700;">(Ativo)</span>' : ''}</div>
-              <div class="table-user-sub">ID #${w.id} &bull; Criado em ${w.created_at ? w.created_at.substring(0, 10) : 'Recente'}</div>
+              <div class="table-user-name">${escapeHtml(w.name)} ${isCurrent ? '<span class="badge badge-primary" style="margin-left:6px; padding:1px 7px; font-size:10.5px;">Atual</span>' : ''}</div>
+              <div class="table-user-sub">ID #${w.id}${criado ? ' &bull; Criado em ' + criado : ''}</div>
             </div>
           </div>
         </td>
-        <td><code>${escapeHtml(w.slug || 'padrao')}</code></td>
-        <td><span class="badge ${isPartner ? 'badge-primary' : 'badge-neutral'}">${isPartner ? 'Parceiro White-Label' : 'Cliente Lojista'}</span></td>
+        <td><code>${escapeHtml(w.slug || '')}</code></td>
+        <td><span class="badge ${tipo.badge}">${tipo.label}</span></td>
         <td>
-          <span style="font-size:12.5px; color:var(--text-main); font-weight:500;">
-            ${escapeHtml((w.external_platform || 'sorteime').toUpperCase())}
-          </span>
+          ${vinculo}
+          <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">${plataformas ? escapeHtml(plataformas) : 'Sem campanhas'}</div>
         </td>
-        <td><span class="badge badge-success"><span class="badge-dot-indicator"></span> Ativo</span></td>
+        <td>${isActive
+          ? '<span class="badge badge-success"><span class="badge-dot-indicator"></span> Ativo</span>'
+          : '<span class="badge badge-warning"><span class="badge-dot-indicator"></span> Suspenso</span>'}</td>
         <td style="text-align:right;">
           <div style="display:flex; justify-content:flex-end; gap:6px;">
-            <button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="abrirModalTokensPorWorkspace(${w.id})" title="Ver chaves de acesso deste workspace">
+            <button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="abrirModalTokensPorWorkspace(${w.id})" title="Ver chaves de API deste workspace">
               Chaves
             </button>
-            <button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="abrirModalAcessos(${w.id})" title="Gerenciar logins deste cliente">
+            <button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 8px;" onclick="abrirModalAcessos(${w.id})" title="Gerenciar logins deste workspace">
               Logins
             </button>
-            <button type="button" class="btn-primary" style="min-height:28px; font-size:11.5px; padding:0 10px;" onclick="selecionarWorkspacePorId(${w.id})">
-              Acessar
-            </button>
+            ${isCurrent
+              ? '<button type="button" class="btn-secondary" style="min-height:28px; font-size:11.5px; padding:0 10px; opacity:.6; cursor:default;" disabled title="Você já está neste workspace">Em uso</button>'
+              : `<button type="button" class="btn-primary" style="min-height:28px; font-size:11.5px; padding:0 10px;" onclick="selecionarWorkspacePorId(${w.id})">Acessar</button>`}
           </div>
         </td>
       </tr>`;
     }).join('');
+  }
+
+  var TIPOS_WORKSPACE = {
+    super_admin: { label: 'Super admin', badge: 'badge-primary' },
+    partner_whitelabel: { label: 'Parceiro White-Label', badge: 'badge-primary' },
+    merchant: { label: 'Cliente Lojista', badge: 'badge-neutral' }
+  };
+
+  // "Vendedor Sincero" -> "VS"; "Admin upScale" -> "AU"; uma palavra -> 2 primeiras letras
+  function iniciaisDoNome(nome, padrao) {
+    var partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return padrao || '?';
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+  }
+
+  // "2026-10-02 14:31:00" -> "02/10/2026"
+  function formatarDataCurta(valor) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(valor || ''));
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+  }
+
+  var NOMES_PLATAFORMA = { sorteamos: 'Sorteamos', sorteime: 'SorteiMe', propria: 'Própria' };
+  function formatarPlataforma(slug) {
+    var k = String(slug || '').toLowerCase().trim();
+    if (!k) return '';
+    return NOMES_PLATAFORMA[k] || (k.charAt(0).toUpperCase() + k.slice(1));
   }
 
   function filtrarWorkspacesNaTabela() {
@@ -5004,7 +5038,7 @@
     }
 
     tbody.innerHTML = lista.map(function(u) {
-      var initials = (u.name || u.email || 'US').substring(0, 2).toUpperCase();
+      var initials = iniciaisDoNome(u.name || u.email, 'US');
       var wList = u.workspaces || [];
       var isSuper = wList.some(function(w) { return w.role === 'super_admin'; });
 
@@ -5414,7 +5448,7 @@
       return;
     }
     tbody.innerHTML = orders.slice(0, 5).map(function(o) {
-      var initials = (o.customer_name || 'US').substring(0, 2).toUpperCase();
+      var initials = iniciaisDoNome(o.customer_name, 'US');
       var isPaid = o.status === 'paid';
       var badgeClass = isPaid ? 'badge-success' : (o.status === 'expired' ? 'badge-neutral' : 'badge-warning');
       var badgeLabel = isPaid ? 'Pago' : (o.status === 'expired' ? 'Expirado' : 'Aguardando');
@@ -6007,7 +6041,7 @@
     document.getElementById('account-name-text').textContent = cleanName;
     document.getElementById('topbar-user-name').textContent = cleanName;
     document.getElementById('breadcrumb-ws-title').textContent = cleanName;
-    document.getElementById('account-avatar-text').textContent = (cleanName.substring(0, 2)).toUpperCase();
+    document.getElementById('account-avatar-text').textContent = iniciaisDoNome(cleanName, 'US');
 
     carregarMetricas();
     if (currentWsId !== 0) {
