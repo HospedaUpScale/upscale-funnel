@@ -25,9 +25,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Exo+2:ital,wght@1,800&family=DM+Serif+Display&family=Unbounded:wght@800&text=%2001236ADEFGKMNORZadegnor%C2%B7&display=swap" rel="stylesheet">
   
   <!-- Novo Design System Oficial -->
-  <link rel="stylesheet" href="hub-redesign.css?v=2.3">
+  <link rel="stylesheet" href="hub-redesign.css?v=2.4">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
-  <link rel="stylesheet" href="theme-upscale.css?v=1.1">
+  <link rel="stylesheet" href="theme-upscale.css?v=1.2">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -430,70 +430,60 @@
           </div>
         </div>
 
-        <!-- 4 INDICADORES (KPIS) -->
+        <!-- 4 INDICADORES (KPIS): valor do período, variação real e minigráfico -->
         <div class="kpi-grid-4">
-          <!-- KPI 1: Receita adicional -->
-          <div class="kpi-stat-card">
+          <div class="kpi-stat-card kpi-revenue">
             <div class="kpi-stat-header">
               <div class="kpi-stat-icon green">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               </div>
               <span class="kpi-stat-title">Receita adicional</span>
+              <span class="kpi-live-badge" id="kpi-live-badge" hidden>Ao vivo</span>
             </div>
-            <div class="kpi-stat-value" id="kpi-recovered">R$ 8.450,00</div>
-            <div class="kpi-trend-pill">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-              <span>12,4%</span>
-              <span class="kpi-trend-sub">em relação aos 7 dias anteriores</span>
+            <div class="kpi-stat-value" id="kpi-recovered">R$ 0,00</div>
+            <div class="kpi-trend-pill" id="kpi-trend-revenue">
+              <span class="kpi-trend-sub">carregando...</span>
             </div>
+            <div class="kpi-spark" id="kpi-spark-revenue" aria-hidden="true"></div>
           </div>
-
-          <!-- KPI 2: Pix pagos -->
-          <div class="kpi-stat-card">
+          <div class="kpi-stat-card kpi-paid">
             <div class="kpi-stat-header">
               <div class="kpi-stat-icon blue">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </div>
               <span class="kpi-stat-title">Pix pagos</span>
             </div>
-            <div class="kpi-stat-value" id="kpi-paid-orders">76</div>
-            <div class="kpi-trend-pill">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-              <span>9,1%</span>
-              <span class="kpi-trend-sub" id="kpi-total-orders">em relação aos 7 dias anteriores</span>
+            <div class="kpi-stat-value" id="kpi-paid-orders">0</div>
+            <div class="kpi-trend-pill" id="kpi-trend-paid">
+              <span class="kpi-trend-sub">carregando...</span>
             </div>
+            <div class="kpi-spark" id="kpi-spark-paid" aria-hidden="true"></div>
           </div>
-
-          <!-- KPI 3: Ticket médio -->
-          <div class="kpi-stat-card">
+          <div class="kpi-stat-card kpi-ticket">
             <div class="kpi-stat-header">
               <div class="kpi-stat-icon purple">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               </div>
               <span class="kpi-stat-title">Ticket médio</span>
             </div>
-            <div class="kpi-stat-value" id="kpi-aov">R$ 111,18</div>
-            <div class="kpi-trend-pill">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-              <span>5,6%</span>
-              <span class="kpi-trend-sub">em relação aos 7 dias anteriores</span>
+            <div class="kpi-stat-value" id="kpi-aov">R$ 0,00</div>
+            <div class="kpi-trend-pill" id="kpi-trend-ticket">
+              <span class="kpi-trend-sub">carregando...</span>
             </div>
+            <div class="kpi-spark" id="kpi-spark-ticket" aria-hidden="true"></div>
           </div>
-
-          <!-- KPI 4: Conversão Pix -->
-          <div class="kpi-stat-card">
+          <div class="kpi-stat-card kpi-conversion">
             <div class="kpi-stat-header">
               <div class="kpi-stat-icon orange">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               </div>
               <span class="kpi-stat-title">Conversão Pix</span>
             </div>
-            <div class="kpi-stat-value" id="kpi-conversion">83,5%</div>
-            <div class="kpi-trend-pill">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-              <span>2,3%</span>
-              <span class="kpi-trend-sub">em relação aos 7 dias anteriores</span>
+            <div class="kpi-stat-value" id="kpi-conversion">—</div>
+            <div class="kpi-trend-pill" id="kpi-trend-conversion">
+              <span class="kpi-trend-sub">carregando...</span>
             </div>
+            <div class="kpi-spark" id="kpi-spark-conversion" aria-hidden="true"></div>
           </div>
         </div>
 
@@ -508,52 +498,9 @@
               </div>
             </div>
 
-            <!-- Gráfico Interativo com Curva Suave SVG -->
+            <!-- Gráfico de receita do período (desenhado a partir de /api/admin/metrics.php) -->
             <div class="chart-svg-container" id="chart-svg-box">
-              <svg class="chart-svg" viewBox="0 0 600 200" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#175CFF" stop-opacity="0.22"/>
-                    <stop offset="100%" stop-color="#175CFF" stop-opacity="0.00"/>
-                  </linearGradient>
-                </defs>
-
-                <!-- Linhas Guia do Eixo Y -->
-                <line x1="50" y1="20" x2="580" y2="20" class="chart-grid-line"/>
-                <line x1="50" y1="58" x2="580" y2="58" class="chart-grid-line"/>
-                <line x1="50" y1="96" x2="580" y2="96" class="chart-grid-line"/>
-                <line x1="50" y1="134" x2="580" y2="134" class="chart-grid-line"/>
-                <line x1="50" y1="172" x2="580" y2="172" class="chart-grid-line"/>
-
-                <!-- Labels do Eixo Y -->
-                <text x="5" y="24" class="chart-axis-label">R$ 2.000</text>
-                <text x="5" y="62" class="chart-axis-label">R$ 1.500</text>
-                <text x="5" y="100" class="chart-axis-label">R$ 1.000</text>
-                <text x="15" y="138" class="chart-axis-label">R$ 500</text>
-                <text x="25" y="176" class="chart-axis-label">R$ 0</text>
-
-                <!-- Área e Linha -->
-                <path d="M60,140 Q145,110 230,126 T400,90 T485,108 T570,84 L570,172 L60,172 Z" class="chart-area-fill"/>
-                <path d="M60,140 Q145,110 230,126 T400,90 T485,108 T570,84" class="chart-line-main"/>
-
-                <!-- Pontos Interativos com Tooltip -->
-                <circle cx="60" cy="140" r="4.5" class="chart-dot"><title>14 abr: R$ 680,00</title></circle>
-                <circle cx="145" cy="118" r="4.5" class="chart-dot"><title>15 abr: R$ 1.120,00</title></circle>
-                <circle cx="230" cy="126" r="4.5" class="chart-dot"><title>16 abr: R$ 940,00</title></circle>
-                <circle cx="315" cy="108" r="4.5" class="chart-dot"><title>17 abr: R$ 1.250,00</title></circle>
-                <circle cx="400" cy="90" r="4.5" class="chart-dot"><title>18 abr: R$ 1.590,00</title></circle>
-                <circle cx="485" cy="108" r="4.5" class="chart-dot"><title>19 abr: R$ 1.340,00</title></circle>
-                <circle cx="570" cy="84" r="4.5" class="chart-dot"><title>20 abr: R$ 1.710,00</title></circle>
-
-                <!-- Labels do Eixo X -->
-                <text x="45" y="194" class="chart-axis-label">14 abr</text>
-                <text x="130" y="194" class="chart-axis-label">15 abr</text>
-                <text x="215" y="194" class="chart-axis-label">16 abr</text>
-                <text x="300" y="194" class="chart-axis-label">17 abr</text>
-                <text x="385" y="194" class="chart-axis-label">18 abr</text>
-                <text x="470" y="194" class="chart-axis-label">19 abr</text>
-                <text x="555" y="194" class="chart-axis-label">20 abr</text>
-              </svg>
+              <div class="chart-empty-state">Carregando gráfico...</div>
             </div>
             <!-- Container legado para compatibilidade JS -->
             <div id="chart-bars-wrap" style="display:none;"></div>
@@ -604,6 +551,21 @@
               <span>Taxa SaaS: <strong id="kpi-split-saas" style="color:var(--text-main);">R$ 0,00</strong></span>
               <span>Parceiro: <strong id="kpi-split-partner" style="color:var(--text-main);">R$ 0,00</strong></span>
             </div>
+          </div>
+        </div>
+
+        <!-- FUNIL DE CONVERSÃO DO PERÍODO -->
+        <div class="card dash-funnel-card">
+          <div class="card-header-clean">
+            <div>
+              <h3 class="card-title-clean">Funil de conversão</h3>
+              <p class="card-subtitle-clean">Visitas → raspadinha → Pix gerado → pago, no período escolhido.</p>
+            </div>
+          </div>
+          <div class="funnel-flow" id="dash-funnel-flow"></div>
+          <div class="funnel-total-row">
+            <span>Conversão do período</span>
+            <strong id="dash-funnel-total">—</strong>
           </div>
         </div>
 
@@ -5563,27 +5525,268 @@
   }
 
   function carregarMetricas() {
-    apiFetch('../api/admin/metrics.php?workspace_id=' + wsParam())
+    var periodoSel = document.getElementById('dash-period-select');
+    var periodo = periodoSel ? periodoSel.value : '30';
+    apiFetch('../api/admin/metrics.php?workspace_id=' + wsParam() + '&period=' + encodeURIComponent(periodo))
     .then(function(data) {
       if (data.status !== 'success') return;
       var m = data.metrics;
       allOrdersData = data.recent_orders || [];
+      ultimoPeriodoMetricas = data.period || null;
 
-      document.getElementById('kpi-recovered').textContent = m.total_recovered.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      document.getElementById('kpi-paid-orders').textContent = m.paid_orders;
-      document.getElementById('kpi-aov').textContent = m.average_ticket.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      document.getElementById('kpi-conversion').textContent = Math.min(100, m.conversion_rate) + '%';
+      var brl = function(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+      var p = data.period;
+      if (p) {
+        var cur = p.current, prev = p.previous;
+        document.getElementById('kpi-recovered').textContent = brl(cur.revenue);
+        document.getElementById('kpi-paid-orders').textContent = (cur.paid || 0).toLocaleString('pt-BR');
+        document.getElementById('kpi-aov').textContent = brl(cur.average_ticket);
+        document.getElementById('kpi-conversion').textContent = cur.conversion_rate === null ? '—' : formatarPct(cur.conversion_rate);
+        var rotulo = rotuloComparacao(p);
+        renderizarTendencia('revenue', variacaoPct(cur.revenue, prev.revenue), rotulo);
+        renderizarTendencia('paid', variacaoPct(cur.paid, prev.paid), rotulo);
+        renderizarTendencia('ticket', variacaoPct(cur.average_ticket, prev.average_ticket), rotulo);
+        renderizarTendencia('conversion', (cur.conversion_rate === null || prev.conversion_rate === null) ? null : cur.conversion_rate - prev.conversion_rate, rotulo, true);
+        var hoje = p.series.length ? p.series[p.series.length - 1] : null;
+        var live = document.getElementById('kpi-live-badge');
+        if (live) live.hidden = !(hoje && hoje.orders > 0);
+        renderizarGraficosPainel();
+      } else {
+        document.getElementById('kpi-recovered').textContent = brl(m.total_recovered);
+        document.getElementById('kpi-paid-orders').textContent = m.paid_orders;
+        document.getElementById('kpi-aov').textContent = brl(m.average_ticket);
+        document.getElementById('kpi-conversion').textContent = Math.min(100, m.conversion_rate) + '%';
+      }
 
-      var saasVal = (m.total_recovered * 0.10).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      var partVal = (m.total_recovered * 0.05).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      document.getElementById('kpi-split-saas').textContent = saasVal;
-      document.getElementById('kpi-split-partner').textContent = partVal;
+      var base = p ? p.current.revenue : m.total_recovered;
+      document.getElementById('kpi-split-saas').textContent = brl(base * 0.10);
+      document.getElementById('kpi-split-partner').textContent = brl(base * 0.05);
 
       renderizarTabelaDash(allOrdersData);
       renderizarTabelaFull(allOrdersData);
     })
     .catch(function(e) { console.error('Erro ao carregar métricas:', e); });
   }
+
+  /* ═══ GRÁFICOS DO PAINEL (cartões, receita e funil) ═══ */
+  var ultimoPeriodoMetricas = null;
+  var MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+  function formatarPct(v) { return (Math.round(v * 10) / 10).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'; }
+  function variacaoPct(atual, anterior) {
+    if (!anterior) return atual ? null : 0;
+    return (atual - anterior) / anterior * 100;
+  }
+  function rotuloComparacao(p) {
+    if (p.key === 'month') return 'vs mês anterior';
+    if (p.days === 7) return 'vs semana passada';
+    return 'vs ' + p.days + ' dias anteriores';
+  }
+  function rotuloDia(iso) {
+    var d = iso.split('-');
+    return parseInt(d[2], 10) + ' ' + MESES_CURTOS[parseInt(d[1], 10) - 1];
+  }
+
+  function renderizarTendencia(chave, delta, rotulo, pontos) {
+    var el = document.getElementById('kpi-trend-' + chave);
+    if (!el) return;
+    if (delta === null || delta === undefined || !isFinite(delta)) {
+      el.className = 'kpi-trend-pill flat';
+      el.innerHTML = '<span class="kpi-trend-sub">sem dados do período anterior</span>';
+      return;
+    }
+    var dir = delta > 0.05 ? 'up' : (delta < -0.05 ? 'down' : 'flat');
+    var seta = dir === 'up' ? '<polyline points="18 15 12 9 6 15"/>' : (dir === 'down' ? '<polyline points="6 9 12 15 18 9"/>' : '<line x1="6" y1="12" x2="18" y2="12"/>');
+    var valor = (Math.abs(Math.round(delta * 10) / 10)).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + (pontos ? ' p.p.' : '%');
+    el.className = 'kpi-trend-pill ' + dir;
+    el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">' + seta + '</svg><span>' + valor + '</span><span class="kpi-trend-sub">' + rotulo + '</span>';
+  }
+
+  // Curva monótona (Fritsch–Carlson): passa pelos pontos sem subir ou descer além deles.
+  function caminhoMonotono(pts) {
+    var n = pts.length;
+    if (n === 0) return '';
+    if (n === 1) return 'M' + pts[0][0] + ',' + pts[0][1];
+    var dx = [], dy = [], m = [], t = [];
+    for (var i = 0; i < n - 1; i++) { dx[i] = pts[i + 1][0] - pts[i][0]; dy[i] = pts[i + 1][1] - pts[i][1]; m[i] = dy[i] / dx[i]; }
+    t[0] = m[0]; t[n - 1] = m[n - 2];
+    for (i = 1; i < n - 1; i++) t[i] = (m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2;
+    for (i = 0; i < n - 1; i++) {
+      if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; continue; }
+      var a = t[i] / m[i], b = t[i + 1] / m[i], h = a * a + b * b;
+      if (h > 9) { var k = 3 / Math.sqrt(h); t[i] = k * a * m[i]; t[i + 1] = k * b * m[i]; }
+    }
+    var d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (i = 0; i < n - 1; i++) {
+      var c = dx[i] / 3;
+      d += ' C' + (pts[i][0] + c).toFixed(1) + ',' + (pts[i][1] + c * t[i]).toFixed(1) + ' ' +
+        (pts[i + 1][0] - c).toFixed(1) + ',' + (pts[i + 1][1] - c * t[i + 1]).toFixed(1) + ' ' +
+        pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+    }
+    return d;
+  }
+
+  function escalaY(valores, alto, topo) {
+    var max = Math.max.apply(null, valores.concat([0])), min = Math.min.apply(null, valores.concat([max]));
+    if (max === min) { max = max ? max * 1.2 : 1; min = 0; }
+    var pad = (max - min) * 0.15;
+    min = Math.max(0, min - pad); max = max + pad;
+    return function(v) { return topo + (alto - topo) * (1 - (v - min) / (max - min)); };
+  }
+
+  function renderizarSparkline(id, valores, estilo) {
+    var box = document.getElementById(id);
+    if (!box) return;
+    var w = box.clientWidth || 260, h = box.clientHeight || 64;
+    var vals = valores.slice(-Math.min(valores.length, 30));
+    if (!vals.length) { box.innerHTML = ''; return; }
+    // Média móvel para mostrar a tendência, como na referência (o detalhe diário fica no gráfico grande).
+    if (estilo !== 'dots' && vals.length > 10) {
+      var jan = Math.max(3, Math.round(vals.length / 6));
+      vals = vals.map(function(_, i) {
+        var ini = Math.max(0, i - jan + 1), fatia = vals.slice(ini, i + 1);
+        return fatia.reduce(function(a, b) { return a + b; }, 0) / fatia.length;
+      });
+      if (estilo === 'markers') vals = vals.filter(function(_, i) { return (vals.length - 1 - i) % Math.max(1, Math.round(vals.length / 8)) === 0; });
+    }
+    var gid = id + '-g';
+    if (estilo === 'dots') {
+      var cols = Math.min(vals.length, 14), dados = vals.slice(-cols), maxv = Math.max.apply(null, dados.concat([1]));
+      var linhas = 5, passoX = w / cols, passoY = (h - 10) / linhas, html = '';
+      dados.forEach(function(v, c) {
+        var cheios = Math.round(v / maxv * linhas);
+        for (var r = 0; r < linhas; r++) {
+          var on = r < cheios;
+          html += '<circle cx="' + (passoX * c + passoX / 2).toFixed(1) + '" cy="' + (h - 6 - r * passoY).toFixed(1) + '" r="' + (on ? 1.9 : 1.4) + '" class="' + (on ? 'spark-dot-on' : 'spark-dot-off') + '"/>';
+        }
+      });
+      box.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + html + '</svg>';
+      return;
+    }
+    var y = escalaY(vals, h - 4, 8);
+    var passo = vals.length > 1 ? w / (vals.length - 1) : 0;
+    var pts = vals.map(function(v, i) { return [i * passo, y(v)]; });
+    var linha = caminhoMonotono(pts);
+    var area = linha + ' L' + w + ',' + h + ' L0,' + h + ' Z';
+    var marcas = '';
+    if (estilo === 'markers') {
+      var step = Math.max(1, Math.round(vals.length / 7));
+      pts.forEach(function(pt, i) { if (i % step === 0 || i === pts.length - 1) marcas += '<circle cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="2.6" class="spark-marker"/>'; });
+    }
+    box.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="spark-' + estilo + '">' +
+      '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" class="spark-stop-a"/><stop offset="100%" class="spark-stop-b"/></linearGradient></defs>' +
+      (estilo === 'markers' ? '' : '<path d="' + area + '" fill="url(#' + gid + ')"/>') +
+      '<path d="' + linha + '" class="spark-line"/>' + marcas + '</svg>';
+  }
+
+  function valorEixo(v) {
+    if (v >= 1000) return 'R$ ' + (Math.round(v / 100) / 10).toLocaleString('pt-BR') + ' mil';
+    return 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+  }
+
+  function renderizarGraficoReceita(series) {
+    var box = document.getElementById('chart-svg-box');
+    if (!box) return;
+    if (!series || !series.length) { box.innerHTML = '<div class="chart-empty-state">Sem dados no período.</div>'; return; }
+    var w = box.clientWidth || 600, h = box.clientHeight || 220;
+    var esq = 64, dir = 12, topo = 12, base = h - 28;
+    var vals = series.map(function(d) { return d.revenue; });
+    var maxv = Math.max.apply(null, vals.concat([0]));
+    var bruto = maxv > 0 ? maxv / 4 : 250, mag = Math.pow(10, Math.floor(Math.log10(bruto))), passoY = Math.ceil(bruto / mag) * mag;
+    if ([1, 2, 2.5, 5, 10].indexOf(passoY / mag) === -1) passoY = (passoY / mag <= 5 ? 5 : 10) * mag;
+    var topoV = passoY * 4;
+    var y = function(v) { return base - (base - topo) * (v / topoV); };
+    var x = function(i) { return series.length > 1 ? esq + (w - esq - dir) * i / (series.length - 1) : (esq + w - dir) / 2; };
+    var g = '';
+    for (var k = 0; k <= 4; k++) {
+      var yy = y(passoY * k).toFixed(1);
+      g += '<line x1="' + esq + '" y1="' + yy + '" x2="' + (w - dir) + '" y2="' + yy + '" class="chart-grid-line"/>';
+      g += '<text x="' + (esq - 10) + '" y="' + (parseFloat(yy) + 4) + '" text-anchor="end" class="chart-axis-label">' + valorEixo(passoY * k) + '</text>';
+    }
+    var nRot = Math.max(2, Math.min(7, series.length, Math.floor((w - esq) / 64))), passoRot = (series.length - 1) / Math.max(1, nRot - 1);
+    for (k = 0; k < nRot; k++) {
+      var idx = Math.round(k * passoRot);
+      g += '<text x="' + x(idx).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="' + (k === 0 ? 'start' : (k === nRot - 1 ? 'end' : 'middle')) + '" class="chart-axis-label">' + rotuloDia(series[idx].date) + '</text>';
+    }
+    var pts = series.map(function(d, i) { return [x(i), y(d.revenue)]; });
+    var linha = caminhoMonotono(pts);
+    var area = linha + ' L' + pts[pts.length - 1][0].toFixed(1) + ',' + base + ' L' + pts[0][0].toFixed(1) + ',' + base + ' Z';
+    var alvos = series.map(function(d, i) {
+      return '<g class="chart-hit"><rect x="' + (x(i) - (w - esq) / series.length / 2).toFixed(1) + '" y="' + topo + '" width="' + ((w - esq) / series.length).toFixed(1) + '" height="' + (base - topo) + '" fill="transparent"/>' +
+        '<circle cx="' + pts[i][0].toFixed(1) + '" cy="' + pts[i][1].toFixed(1) + '" r="4.5" class="chart-dot"/>' +
+        '<title>' + rotuloDia(d.date) + ': ' + (d.revenue || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + d.paid + ' Pix pagos</title></g>';
+    }).join('');
+    var ultimo = pts[pts.length - 1];
+    box.innerHTML = '<svg class="chart-svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
+      '<defs><linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" class="chart-stop-a"/><stop offset="100%" class="chart-stop-b"/></linearGradient>' +
+      '<filter id="chartGlow" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="5"/></filter></defs>' +
+      g + '<path d="' + area + '" class="chart-area-fill"/>' +
+      '<path d="' + linha + '" class="chart-line-glow" filter="url(#chartGlow)"/>' +
+      '<path d="' + linha + '" class="chart-line-main"/>' +
+      '<circle cx="' + ultimo[0].toFixed(1) + '" cy="' + ultimo[1].toFixed(1) + '" r="4.5" class="chart-dot chart-dot-last"/>' +
+      alvos + '</svg>';
+  }
+
+  function renderizarFunilPainel(cur) {
+    var box = document.getElementById('dash-funnel-flow');
+    if (!box) return;
+    var etapas = [
+      { nome: 'Visitas', v: cur.views },
+      { nome: 'Raspadinha', v: cur.scratches },
+      { nome: 'Pix gerado', v: cur.pix_generated },
+      { nome: 'Pago', v: cur.paid }
+    ];
+    var topoV = etapas[0].v || Math.max.apply(null, etapas.map(function(e) { return e.v; })) || 0;
+    var totalEl = document.getElementById('dash-funnel-total');
+    if (totalEl) totalEl.textContent = (cur.views > 0) ? formatarPct(cur.paid / cur.views * 100) : '—';
+    if (!topoV) { box.innerHTML = '<div class="chart-empty-state">Sem visitas registradas no período.</div>'; return; }
+
+    var w = box.clientWidth || 700, hRibbon = 120, meio = hRibbon / 2;
+    var cab = etapas.map(function(e, i) {
+      var pct = i === 0 ? 100 : (e.v / topoV * 100);
+      return '<div class="funnel-stage"><span class="funnel-stage-name">' + (i + 1) + '. ' + e.nome + '</span>' +
+        '<strong class="funnel-stage-value">' + (e.v || 0).toLocaleString('pt-BR') + '</strong>' +
+        '<span class="funnel-stage-pct">' + formatarPct(pct) + '</span></div>';
+    }).join('');
+    // Faixa contínua: a espessura acompanha o volume de cada etapa e afina até a ponta no fim.
+    var col = w / etapas.length;
+    var alturaDe = function(v) { return Math.max(8, (hRibbon - 6) * ((v || 0) / topoV)); };
+    var ctrl = [[0, alturaDe(etapas[0].v)]];
+    etapas.forEach(function(e, i) { ctrl.push([col * (i + 0.5), alturaDe(e.v)]); });
+    ctrl.push([w - col * 0.12, Math.max(6, alturaDe(etapas[etapas.length - 1].v) * 0.55)]);
+    ctrl.push([w, 2]);
+    var topoPts = ctrl.map(function(c) { return [c[0], meio - c[1] / 2]; });
+    var basePts = ctrl.map(function(c) { return [c[0], meio + c[1] / 2]; }).reverse();
+    var cima = caminhoMonotono(topoPts);
+    var baixo = ' L' + basePts[0][0].toFixed(1) + ',' + basePts[0][1].toFixed(1) + caminhoMonotono(basePts).replace(/^M[^C]*/, '');
+    var forma = cima + baixo + ' Z';
+    var divisores = '';
+    for (var i = 1; i < etapas.length; i++) divisores += '<line x1="' + (col * i).toFixed(1) + '" y1="0" x2="' + (col * i).toFixed(1) + '" y2="' + hRibbon + '" class="funnel-divider"/>';
+    box.innerHTML = '<div class="funnel-stages">' + cab + '</div>' +
+      '<svg class="funnel-ribbon" width="' + w + '" height="' + hRibbon + '" viewBox="0 0 ' + w + ' ' + hRibbon + '" preserveAspectRatio="none">' +
+      '<defs><linearGradient id="funnelGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2448E6" stop-opacity=".55"/><stop offset="45%" stop-color="#4A63E8" stop-opacity=".85"/><stop offset="72%" stop-color="#C7D2FE" stop-opacity=".75"/><stop offset="100%" stop-color="#9FE870"/></linearGradient>' +
+      '<filter id="funnelGlow" x="-5%" y="-40%" width="110%" height="180%"><feGaussianBlur stdDeviation="9"/></filter></defs>' +
+      '<path d="' + forma + '" fill="url(#funnelGrad)" opacity=".55" filter="url(#funnelGlow)"/>' +
+      '<path d="' + forma + '" fill="url(#funnelGrad)"/>' + divisores + '</svg>';
+  }
+
+  function renderizarGraficosPainel() {
+    var p = ultimoPeriodoMetricas;
+    if (!p) return;
+    var s = p.series || [];
+    renderizarSparkline('kpi-spark-revenue', s.map(function(d) { return d.revenue; }), 'area');
+    renderizarSparkline('kpi-spark-paid', s.map(function(d) { return d.paid; }), 'dots');
+    renderizarSparkline('kpi-spark-ticket', s.map(function(d) { return d.average_ticket; }), 'markers');
+    renderizarSparkline('kpi-spark-conversion', s.map(function(d) { return d.conversion_rate || 0; }), 'lime');
+    renderizarGraficoReceita(s);
+    renderizarFunilPainel(p.current);
+  }
+
+  var timerGraficos = null;
+  window.addEventListener('resize', function() {
+    clearTimeout(timerGraficos);
+    timerGraficos = setTimeout(renderizarGraficosPainel, 150);
+  });
 
   function renderizarTabelaDash(orders) {
     var tbody = document.getElementById('dash-orders-body');
