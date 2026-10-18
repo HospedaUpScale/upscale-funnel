@@ -442,3 +442,107 @@ html[data-ui="novo"] .funnel-total-row {
   background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.10);
 }
 html[data-ui="novo"] .funnel-total-row strong { color: #9FE870; font-size: 14px; }
+
+/* ══ Menu lateral em grupos e cartão flutuante (como na referência) ══ */
+html[data-ui="novo"] .nav-group-label {
+  display: block;
+  padding: 14px 12px 6px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-subtle);
+}
+html[data-ui="novo"] .nav-group-analytics { order: 1; padding-top: 4px; }
+html[data-ui="novo"] #nav-btn-dash { order: 2; }
+html[data-ui="novo"] #nav-btn-funnels { order: 3; }
+html[data-ui="novo"] #nav-btn-tx { order: 4; }
+html[data-ui="novo"] .nav-group-vendas { order: 5; }
+html[data-ui="novo"] #nav-btn-campaigns { order: 6; }
+html[data-ui="novo"] #nav-btn-customers { order: 7; }
+html[data-ui="novo"] #nav-btn-partners { order: 8; }
+html[data-ui="novo"] .nav-group-operacao { order: 9; }
+html[data-ui="novo"] #nav-btn-pages { order: 10; }
+html[data-ui="novo"] #nav-btn-page-editor { order: 11; }
+html[data-ui="novo"] #nav-btn-sites { order: 12; }
+html[data-ui="novo"] #nav-btn-integrations { order: 13; }
+html[data-ui="novo"] .sidebar-nav .sidebar-divider { display: none; }
+html[data-ui="novo"] .nav-group-ajustes { order: 14; }
+html[data-ui="novo"] #nav-btn-settings { order: 15; }
+html[data-ui="novo"] .nav-item-btn { min-height: 34px; font-size: 13.5px; }
+
+@media (min-width: 1025px) {
+  html[data-ui="novo"] .sidebar {
+    margin: 12px 0 12px 12px;
+    top: 12px;
+    height: calc(100vh - 24px);
+    border: 1px solid rgba(140, 160, 255, 0.16);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(14, 30, 92, 0.62) 0%, rgba(5, 13, 42, 0.70) 100%);
+    box-shadow: var(--ds-shadow-card);
+  }
+  html[data-ui="novo"] .top-header { background: transparent; border-bottom-color: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* ══ Barra do topo enxuta: busca, sino e avatar ══ */
+html[data-ui="novo"] .header-breadcrumbs,
+html[data-ui="novo"] .header-extra,
+html[data-ui="novo"] .header-user-name,
+html[data-ui="novo"] .header-user-chevron,
+html[data-ui="novo"] .ui-toggle-label { display: none; }
+html[data-ui="novo"] .header-user-pill { padding: 2px; border-radius: 50%; border-color: rgba(140, 160, 255, 0.35); }
+html[data-ui="novo"] .header-user-badge { width: 34px; height: 34px; }
+html[data-ui="novo"] .header-search {
+  position: relative; display: flex; align-items: center; gap: 8px;
+  width: min(340px, 42vw); height: 38px; padding: 0 10px 0 12px;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 10px;
+  color: var(--text-subtle);
+}
+html[data-ui="novo"] .header-search:focus-within { border-color: var(--primary-border); box-shadow: var(--ds-ring); }
+html[data-ui="novo"] .header-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--text-main); font: inherit; font-size: 13px; }
+html[data-ui="novo"] .header-search input::-webkit-search-cancel-button { display: none; }
+html[data-ui="novo"] .header-search-kbd { display: flex; gap: 3px; }
+html[data-ui="novo"] .header-search-kbd kbd {
+  font: 600 10.5px var(--font-family); color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 5px; padding: 1px 5px; background: rgba(255, 255, 255, 0.04);
+}
+html[data-ui="novo"] .header-search-results {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 300;
+  background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px;
+  box-shadow: var(--shadow-dropdown); padding: 6px; max-height: 360px; overflow-y: auto;
+}
+html[data-ui="novo"] .header-search-results[hidden] { display: none; }
+html[data-ui="novo"] .header-search-item {
+  display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text-main);
+  font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+html[data-ui="novo"] .header-search-item small { color: var(--text-subtle); font-size: 11.5px; white-space: nowrap; }
+html[data-ui="novo"] .header-search-item.active,
+html[data-ui="novo"] .header-search-item:hover { background: rgba(2, 41, 196, 0.35); }
+html[data-ui="novo"] .header-search-empty { padding: 10px; color: var(--text-muted); font-size: 13px; }
+@media (max-width: 640px) {
+  html[data-ui="novo"] .header-search-kbd { display: none; }
+  html[data-ui="novo"] .header-search { width: auto; flex: 1; }
+}
+
+/* ══ Tela da campanha no visual novo ══ */
+html[data-ui="novo"] .header-extra { display: none !important; }
+html[data-ui="novo"] .camp-title-row h1 { font-family: var(--ds-display); font-size: 30px; font-weight: 600; letter-spacing: -0.02em; }
+html[data-ui="novo"] .camp-detail-header .btn-secondary { background: rgba(255, 255, 255, 0.04); }
+html[data-ui="novo"] .camp-detail-header .btn-primary { box-shadow: var(--ds-glow); }
+html[data-ui="novo"] .camp-booster-summary { color: var(--amber-text); }
+html[data-ui="novo"] #view-campaign-details .subtabs-nav { border-bottom: 1px solid var(--border-light); gap: 18px; }
+html[data-ui="novo"] #view-campaign-details .subtab-btn { background: transparent; border: 0; border-radius: 0; padding: 8px 0; color: var(--text-muted); box-shadow: none; }
+html[data-ui="novo"] #view-campaign-details .subtab-btn.active { color: #FFFFFF; box-shadow: inset 0 -2px 0 #8A9DF7; }
+html[data-ui="novo"] .camp-kpis .kpi-stat-card .kpi-stat-value { font-size: 30px; }
+html[data-ui="novo"] .camp-switch { background: #0229C4; box-shadow: 0 0 12px rgba(2, 41, 196, 0.8); }
+html[data-ui="novo"] .camp-booster-state.off .camp-switch { background: rgba(255, 255, 255, 0.15); box-shadow: none; }
+html[data-ui="novo"] .camp-kv-list > div { border-bottom-color: rgba(255, 255, 255, 0.07); }
+html[data-ui="novo"] .camp-kv-list dd.camp-kv-accent { color: #9FE870; }
+html[data-ui="novo"] .camp-page-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
+html[data-ui="novo"] .camp-page-icon { background: rgba(2, 41, 196, 0.35); color: #AFC0FF; box-shadow: inset 0 0 0 1px rgba(138, 157, 247, 0.25); }
+html[data-ui="novo"] .camp-code-field { background: rgba(2, 8, 30, 0.55); border-color: rgba(255, 255, 255, 0.10); color: #DCE2FD; }
+html[data-ui="novo"] .camp-funnel-card .funnel-flow { margin-top: 4px; }
+@media (max-width: 640px) {
+  html[data-ui="novo"] .header-left { flex: 1; min-width: 0; }
+  html[data-ui="novo"] .header-right { gap: 6px; flex-shrink: 0; }
+  html[data-ui="novo"] .ui-toggle-btn { display: none; }
+}

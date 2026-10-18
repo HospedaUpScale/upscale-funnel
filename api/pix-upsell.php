@@ -142,7 +142,7 @@ $eventRepo->log($workspace->id, $order['id'], 'pix_generated', [
     'transaction_id' => $transaction['id'],
     'amount'         => $price,
     'offer_id'       => $offer['id']
-]);
+], ['offer_id' => (int)$offer['id']]);
 
 // 8. Atualizar token de acesso pós-compra se fornecido (Auditoria de Ganhadores & Bônus Extra)
 if (!empty($input['token'])) {
