@@ -27,7 +27,7 @@
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.3">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
-  <link rel="stylesheet" href="theme-upscale.css?v=1.0">
+  <link rel="stylesheet" href="theme-upscale.css?v=1.1">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -39,7 +39,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="pressel-premium-builder.js?v=2.4" defer></script>
   <script src="landing-enxuta-template.js?v=1" defer></script>
-  <script src="elementor-builder.js?v=4.3" defer></script>
+  <script src="elementor-builder.js?v=4.4" defer></script>
   <script src="list-pagination.js?v=1" defer></script>
 <script src="pages-manager.js?v=6" defer></script>
   <script src="editor-workspace.js?v=6" defer></script>
@@ -4137,7 +4137,8 @@
     offerLink.hidden = !(camp.offer && camp.offer.public_url);
     offerLink.href = camp.offer && camp.offer.public_url || '#';
     // Iframe snippet
-    var snippet = '<iframe src="' + (camp.offer && camp.offer.public_url || window.location.origin + '/index.html?campaign_id=' + camp.id) + '" width="100%" height="600" frameborder="0"></iframe>';
+    publicBaseUrl = camp.public_base_url || publicBaseUrl;
+    var snippet = '<iframe src="' + (camp.offer && camp.offer.public_url || (publicBaseUrl || window.location.origin) + '/index.html?campaign_id=' + camp.id) + '" width="100%" height="600" frameborder="0"></iframe>';
     var snippetEl = document.getElementById('camp-iframe-snippet');
     if (snippetEl) snippetEl.value = snippet;
 
@@ -4455,8 +4456,12 @@
     marcarEditorAlterado();
   }
 
+  // Domínio oficial do workspace (vem da API); sem ele, o endereço do painel.
+  var publicBaseUrl = '';
+  function baseUrlPublica() { return publicBaseUrl || window.location.origin; }
+
   function atualizarPreviewUrlSlug(slug) {
-    var baseUrl = window.location.origin;
+    var baseUrl = baseUrlPublica();
     var full = baseUrl + '/o/' + slug;
     var linkEl = document.getElementById('full-public-url-link');
     var footerEl = document.getElementById('footer-preview-slug-text');
@@ -4677,6 +4682,9 @@
       .then(function(data) {
         if (data.status !== 'success' || !data.offer) return;
         var o = data.offer;
+        if (o.public_url) {
+          try { publicBaseUrl = new URL(o.public_url).origin; } catch (e) {}
+        }
         currentOfferData = o;
 
         if (o.title) {
@@ -4750,14 +4758,14 @@
   }
 
   function copiarLinkPublico() {
-    var full = window.location.origin + '/o/' + currentOfferSlug;
+    var full = baseUrlPublica() + '/o/' + currentOfferSlug;
     navigator.clipboard.writeText(full).then(function() {
       showToast('Link público copiado para a área de transferência!', 'success');
     });
   }
 
   function abrirLinkPublico() {
-    var full = window.location.origin + '/o/' + currentOfferSlug;
+    var full = baseUrlPublica() + '/o/' + currentOfferSlug;
     window.open(full, '_blank');
   }
 

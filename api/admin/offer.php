@@ -61,13 +61,9 @@ function normalizeOfferSlug(string $raw): string {
 
 // Determinar baseUrl do sistema
 function getSystemBaseUrl(): string {
-    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
-        || (!empty($_SERVER['HTTP_CF_VISITOR']) && str_contains($_SERVER['HTTP_CF_VISITOR'], 'https'))
-        || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
-    $scheme = $isHttps ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-    return $scheme . '://' . $host;
+    global $pdo, $targetWsId;
+    // Domínio oficial do workspace (quando ativo); senão o endereço atual.
+    return \App\Support\PublicUrl::base($pdo, (int)$targetWsId);
 }
 
 // Ação de checagem de slug (via GET ou POST)

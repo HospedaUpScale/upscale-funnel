@@ -362,3 +362,9 @@ html[data-ui="novo"] #view-template-picker .card { background: #FFFFFF; backdrop
 
 /* rótulo do botão de visual não pode ser cortado */
 .header-icon-btn.ui-toggle-btn { width: auto; padding: 0 12px; }
+
+/* Campos de slug dos modais de publicação: texto legível no fundo escuro */
+html[data-ui="novo"] #publish-funnel-slug,
+html[data-ui="novo"] #modal-funnel-slug {
+  color: var(--text-main) !important;
+}

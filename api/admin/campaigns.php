@@ -58,9 +58,8 @@ if ($request->method() === 'GET') {
             ->execute([$newCampId, $targetWsId]);
     }
 
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8000';
-    $baseUrl = $scheme . '://' . $host;
+    // Links e iframes usam o domínio oficial do workspace quando ele está ativo.
+    $baseUrl = \App\Support\PublicUrl::base($pdo, $targetWsId);
 
     // Busca campanhas com detalhes da oferta vinculada, funil/pressel e volume de vendas
     $stmt = $pdo->prepare("
@@ -117,6 +116,7 @@ if ($request->method() === 'GET') {
             'published_at'         => $c['published_at'],
             'ended_at'             => $c['ended_at'],
             'created_at'           => $c['created_at'],
+            'public_base_url'      => $baseUrl,
             'offer'                => $c['offer_id'] ? [
                 'id'            => (int)$c['offer_id'],
                 'title'         => $offerDraft['title'] ?? $c['offer_title'],
