@@ -197,6 +197,49 @@ function domainIsPointed(string $domain, array $config, string $verificationToke
     return !empty($res['is_pointed']);
 }
 
+/**
+ * Domínio do mesmo workspace do qual $domain é subdomínio (o mais específico), ou null.
+ */
+function findParentDomain(PDO $pdo, int $wsId, string $domain): ?array
+{
+    $stmt = $pdo->prepare("SELECT * FROM custom_domains WHERE workspace_id = ?");
+    $stmt->execute([$wsId]);
+    $best = null;
+    foreach ($stmt->fetchAll() as $row) {
+        $root = (string)$row['domain'];
+        if ($root !== $domain && str_ends_with($domain, '.' . $root)) {
+            if (!$best || strlen($root) > strlen($best['domain'])) $best = $row;
+        }
+    }
+    return $best;
+}
+
+/** Instruções de DNS de um subdomínio: CNAME do rótulo para o host da plataforma. */
+function subdomainDnsInstructions(string $domain, string $parent, array $config): array
+{
+    $base = domainDnsInstructions($domain, $config);
+    $label = substr($domain, 0, -strlen('.' . $parent));
+    $base['records'] = [
+        ['type' => 'CNAME', 'name' => $label, 'value' => $base['target_hostname'], 'recommended_for' => 'Subdomínio (recomendado)'],
+        ['type' => 'A', 'name' => $label, 'value' => $base['target_ip'], 'recommended_for' => 'Alternativa se o provedor não aceitar CNAME'],
+    ];
+    return $base;
+}
+
+/** Torna um domínio raiz o domínio oficial do workspace (só um oficial por workspace). */
+function makeOfficialDomain(PDO $pdo, int $wsId, int $domainId): void
+{
+    $pdo->prepare("UPDATE custom_domains SET is_primary = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ?")->execute([$wsId]);
+    $pdo->prepare("UPDATE custom_domains SET is_primary = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$domainId]);
+    // O workspace passa a responder no domínio oficial assim que o DNS dele estiver confirmado.
+    $row = $pdo->prepare("SELECT domain, status FROM custom_domains WHERE id = ?");
+    $row->execute([$domainId]);
+    $d = $row->fetch();
+    if ($d && $d['status'] === 'active') {
+        $pdo->prepare("UPDATE workspaces SET custom_domain = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$d['domain'], $wsId]);
+    }
+}
+
 if ($request->method() === 'GET') {
     $stmt = $pdo->prepare("SELECT * FROM custom_domains WHERE workspace_id = ? ORDER BY is_primary DESC, id DESC");
     $stmt->execute([$targetWsId]);
@@ -205,19 +248,42 @@ if ($request->method() === 'GET') {
     $stmtWs->execute([$targetWsId]);
     $currentWsDomain = (string)($stmtWs->fetchColumn() ?: '');
 
+    $names = array_column($domains, 'domain');
+    $official = null;
     foreach ($domains as &$domain) {
         $domain['id'] = (int)$domain['id'];
         $domain['workspace_id'] = (int)$domain['workspace_id'];
         $domain['is_primary'] = (bool)$domain['is_primary'];
         $domain['is_published_offer'] = ($domain['domain'] === $currentWsDomain);
-        $domain['dns'] = domainDnsInstructions($domain['domain'], $config);
+        $parent = null;
+        foreach ($names as $root) {
+            if ($root !== $domain['domain'] && str_ends_with($domain['domain'], '.' . $root) && (!$parent || strlen($root) > strlen($parent))) {
+                $parent = $root;
+            }
+        }
+        $domain['kind'] = $parent ? 'subdomain' : 'root';
+        $domain['parent_domain'] = $parent;
+        $domain['is_official'] = $domain['is_primary'] && !$parent;
+        if ($domain['is_official']) $official = $domain['domain'];
+        $domain['dns'] = $parent ? subdomainDnsInstructions($domain['domain'], $parent, $config) : domainDnsInstructions($domain['domain'], $config);
         $domain['verification_txt'] = 'upscale-verification=' . $domain['verification_token'];
     }
+    unset($domain);
     JsonResponse::success([
         'domains' => $domains,
         'published_domain' => $currentWsDomain,
+        'official_domain' => $official,
         'dns' => domainDnsInstructions('', $config)
     ]);
+}
+
+function deleteWorkspaceDomain(PDO $pdo, int $wsId, int $domainId, array $domain): void
+{
+    $pdo->prepare("UPDATE funnels SET custom_domain_id = NULL, is_home = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ? AND custom_domain_id = ?")
+        ->execute([$wsId, $domainId]);
+    $pdo->prepare("DELETE FROM custom_domains WHERE id = ? AND workspace_id = ?")->execute([$domainId, $wsId]);
+    $pdo->prepare("UPDATE workspaces SET custom_domain = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND custom_domain = ?")
+        ->execute([$wsId, $domain['domain']]);
 }
 
 if ($request->method() === 'POST') {
@@ -237,6 +303,28 @@ if ($request->method() === 'POST') {
             'expected_ips' => $check['expected_ips'] ?? ['179.198.96.35'],
             'message'      => $check['message'],
         ]);
+    }
+
+    if ($action === 'create_subdomain') {
+        $label = strtolower(trim((string)($input['subdomain'] ?? $input['label'] ?? '')));
+        $label = trim($label, '.');
+        if ($label === '' || !preg_match('/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/', $label)) {
+            JsonResponse::error('Informe só o começo do subdomínio, com letras, números e hífen (ex.: oferta).', 422);
+        }
+        if ($label === 'www') {
+            JsonResponse::error('O www já aponta para o domínio oficial. Escolha outro nome (ex.: oferta, rifa).', 422);
+        }
+        $parentId = (int)($input['parent_domain_id'] ?? 0);
+        $stmt = $parentId > 0
+            ? $pdo->prepare("SELECT * FROM custom_domains WHERE id = ? AND workspace_id = ?")
+            : $pdo->prepare("SELECT * FROM custom_domains WHERE workspace_id = ? AND is_primary = 1 LIMIT 1");
+        $stmt->execute($parentId > 0 ? [$parentId, $targetWsId] : [$targetWsId]);
+        $parentRow = $stmt->fetch();
+        if (!$parentRow) {
+            JsonResponse::error('Conecte primeiro o domínio oficial do workspace para criar subdomínios.', 422);
+        }
+        $input['domain'] = $label . '.' . $parentRow['domain'];
+        $action = 'create';
     }
 
     if ($action === 'create') {
@@ -280,14 +368,19 @@ if ($request->method() === 'POST') {
             ]);
         }
 
+        // Domínio principal adicionado à conta vira o domínio oficial do workspace;
+        // subdomínio de um domínio já conectado entra como subdomínio.
+        $parentRow = findParentDomain($pdo, $targetWsId, $domain);
+        $isOfficial = !$parentRow;
         $tokenValue = bin2hex(random_bytes(16));
         try {
             $pdo->beginTransaction();
-            if (!empty($input['is_primary'])) {
+            if ($isOfficial) {
                 $pdo->prepare("UPDATE custom_domains SET is_primary = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ?")->execute([$targetWsId]);
             }
             $stmt = $pdo->prepare("INSERT INTO custom_domains (workspace_id, domain, verification_token, is_primary) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$targetWsId, $domain, $tokenValue, !empty($input['is_primary']) ? 1 : 0]);
+            $stmt->execute([$targetWsId, $domain, $tokenValue, $isOfficial ? 1 : 0]);
+            $newId = (int)$pdo->lastInsertId();
             $pdo->commit();
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -297,10 +390,15 @@ if ($request->method() === 'POST') {
             JsonResponse::error('Não foi possível cadastrar o domínio agora.', 500, ['code' => 'domain_create_failed']);
         }
         JsonResponse::success([
-            'message' => 'Domínio adicionado. Configure o DNS e clique em verificar.',
-            'domain_id' => (int)$pdo->lastInsertId(),
+            'message' => $isOfficial
+                ? "Domínio {$domain} definido como domínio oficial do workspace. Configure o DNS e clique em verificar."
+                : "Subdomínio {$domain} adicionado. Configure o DNS e clique em verificar.",
+            'domain_id' => $newId,
             'domain' => $domain,
-            'dns' => domainDnsInstructions($domain, $config),
+            'kind' => $isOfficial ? 'root' : 'subdomain',
+            'parent_domain' => $parentRow['domain'] ?? null,
+            'is_official' => $isOfficial,
+            'dns' => $isOfficial ? domainDnsInstructions($domain, $config) : subdomainDnsInstructions($domain, $parentRow['domain'], $config),
             'verification_txt' => 'upscale-verification=' . $tokenValue,
         ], 201);
     }
@@ -443,14 +541,17 @@ if ($request->method() === 'POST') {
         ]);
     }
 
-    if ($action === 'primary') {
-        $pdo->prepare("UPDATE custom_domains SET is_primary = 0, updated_at = CURRENT_TIMESTAMP WHERE workspace_id = ?")->execute([$targetWsId]);
-        $pdo->prepare("UPDATE custom_domains SET is_primary = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$domainId]);
-        if ($domain['status'] === 'active') {
-            $pdo->prepare("UPDATE workspaces SET custom_domain = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-                ->execute([$domain['domain'], $targetWsId]);
+    if ($action === 'primary' || $action === 'make_official') {
+        if (findParentDomain($pdo, $targetWsId, $domain['domain'])) {
+            JsonResponse::error('Um subdomínio não pode ser o domínio oficial. Escolha o domínio principal.', 422);
         }
-        JsonResponse::success(['message' => 'Domínio principal atualizado.']);
+        makeOfficialDomain($pdo, $targetWsId, $domainId);
+        JsonResponse::success(['message' => "{$domain['domain']} agora é o domínio oficial do workspace."]);
+    }
+
+    if ($action === 'delete') {
+        deleteWorkspaceDomain($pdo, $targetWsId, $domainId, $domain);
+        JsonResponse::success(['message' => 'Domínio removido.']);
     }
 
     JsonResponse::error('Ação inválida.', 422);
@@ -459,15 +560,11 @@ if ($request->method() === 'POST') {
 if ($request->method() === 'DELETE') {
     $input = $request->all();
     $domainId = (int)($input['domain_id'] ?? 0);
-    $stmt = $pdo->prepare("SELECT domain, is_primary FROM custom_domains WHERE id = ? AND workspace_id = ?");
+    $stmt = $pdo->prepare("SELECT * FROM custom_domains WHERE id = ? AND workspace_id = ?");
     $stmt->execute([$domainId, $targetWsId]);
     $domain = $stmt->fetch();
     if (!$domain) JsonResponse::error('Domínio não encontrado.', 404);
-    $pdo->prepare("DELETE FROM custom_domains WHERE id = ? AND workspace_id = ?")->execute([$domainId, $targetWsId]);
-    if (!empty($domain['is_primary'])) {
-        $pdo->prepare("UPDATE workspaces SET custom_domain = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND custom_domain = ?")
-            ->execute([$targetWsId, $domain['domain']]);
-    }
+    deleteWorkspaceDomain($pdo, $targetWsId, $domainId, $domain);
     JsonResponse::success(['message' => 'Domínio removido.']);
 }
 
