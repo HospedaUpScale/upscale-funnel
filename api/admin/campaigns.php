@@ -80,8 +80,8 @@ if ($request->method() === 'GET') {
             f.slug as funnel_slug,
             f.status as funnel_status,
             f.template_slug as funnel_template_slug,
-            (SELECT COUNT(*) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_orders_paid,
-            (SELECT COALESCE(SUM(ord.total_amount), 0) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid') as total_volume_paid
+            (SELECT COUNT(*) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid' AND ord.offer_id IN (SELECT co.id FROM upsell_offers co WHERE co.campaign_id = c.id)) as total_orders_paid,
+            (SELECT COALESCE(SUM(ord.upsell_amount), 0) FROM orders ord WHERE ord.workspace_id = c.workspace_id AND ord.status = 'paid' AND ord.offer_id IN (SELECT co.id FROM upsell_offers co WHERE co.campaign_id = c.id)) as total_volume_paid
         FROM campaigns c
         LEFT JOIN upsell_offers o ON o.id = (SELECT MIN(oi.id) FROM upsell_offers oi WHERE oi.campaign_id = c.id AND oi.workspace_id = c.workspace_id AND oi.offer_role = 'upsell')
         LEFT JOIN funnels f ON f.id = c.primary_funnel_id AND f.workspace_id = c.workspace_id AND f.campaign_id = c.id
@@ -97,7 +97,16 @@ if ($request->method() === 'GET') {
     $stmt->execute([$targetWsId]);
     $campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $formatted = array_map(function($c) use ($baseUrl) {
+    // Domínios ativos do workspace: a campanha pode publicar num deles (senão usa o oficial).
+    $activeDomains = [];
+    $stmtDom = $pdo->prepare("SELECT id, domain FROM custom_domains WHERE workspace_id = ? AND status = 'active'");
+    $stmtDom->execute([$targetWsId]);
+    foreach ($stmtDom->fetchAll(PDO::FETCH_ASSOC) as $dRow) $activeDomains[(int)$dRow['id']] = $dRow['domain'];
+    $officialBaseUrl = $baseUrl;
+
+    $formatted = array_map(function($c) use ($officialBaseUrl, $activeDomains) {
+        $domainId = (int)($c['public_domain_id'] ?? 0);
+        $baseUrl = ($domainId && isset($activeDomains[$domainId])) ? 'https://' . $activeDomains[$domainId] : $officialBaseUrl;
         $offerDraft = json_decode($c['offer_draft'] ?? '', true) ?: [];
         $offerTheme = $offerDraft['theme'] ?? (json_decode($c['offer_theme'] ?? '', true) ?: []);
         $statusNormalized = in_array($c['status'], ['active', 'published']) ? 'published' : ($c['status'] === 'ended' ? 'ended' : 'draft');
@@ -117,6 +126,8 @@ if ($request->method() === 'GET') {
             'ended_at'             => $c['ended_at'],
             'created_at'           => $c['created_at'],
             'public_base_url'      => $baseUrl,
+            'public_domain_id'     => ($domainId && isset($activeDomains[$domainId])) ? $domainId : null,
+            'brand_identity'       => !empty($c['brand_identity']) ? json_decode($c['brand_identity'], true) : null,
             'offer'                => $c['offer_id'] ? [
                 'id'            => (int)$c['offer_id'],
                 'title'         => $offerDraft['title'] ?? $c['offer_title'],
@@ -155,6 +166,36 @@ if ($request->method() === 'POST') {
     $input = $request->all();
     $action = $input['action'] ?? 'save';
     $campaignId = !empty($input['campaign_id']) ? (int)$input['campaign_id'] : null;
+
+    // 3.0 DOMÍNIO DE PUBLICAÇÃO DA CAMPANHA (0 = domínio oficial do workspace)
+    if ($action === 'set_domain') {
+        if (!$campaignId) JsonResponse::error('Informe a campanha.', 422);
+        $domainId = (int)($input['domain_id'] ?? 0);
+        $domainName = null;
+        if ($domainId > 0) {
+            $stmtD = $pdo->prepare("SELECT domain, status FROM custom_domains WHERE id = ? AND workspace_id = ?");
+            $stmtD->execute([$domainId, $targetWsId]);
+            $dRow = $stmtD->fetch();
+            if (!$dRow) JsonResponse::error('Domínio não encontrado neste workspace.', 404);
+            if ($dRow['status'] !== 'active') JsonResponse::error('Este domínio ainda está aguardando o DNS. Escolha outro ou aguarde a confirmação.', 422);
+            $domainName = $dRow['domain'];
+        }
+        $stmtUp = $pdo->prepare("UPDATE campaigns SET public_domain_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND workspace_id = ?");
+        $stmtUp->execute([$domainId ?: null, $campaignId, $targetWsId]);
+        if (!$stmtUp->rowCount()) {
+            $chk = $pdo->prepare("SELECT id FROM campaigns WHERE id = ? AND workspace_id = ?");
+            $chk->execute([$campaignId, $targetWsId]);
+            if (!$chk->fetchColumn()) JsonResponse::error('Campanha não encontrada.', 404);
+        }
+        $base = $domainName ? 'https://' . $domainName : \App\Support\PublicUrl::base($pdo, $targetWsId);
+        JsonResponse::send([
+            'status'          => 'success',
+            'campaign_id'     => $campaignId,
+            'public_domain_id'=> $domainId ?: null,
+            'public_base_url' => $base,
+            'message'         => $domainName ? 'Campanha publicada em ' . $domainName . '.' : 'Campanha usando o domínio oficial do workspace.',
+        ]);
+    }
 
     // 3.1 PUBLICAR AÇÃO (COLOCAR NO AR)
     if ($action === 'publish') {

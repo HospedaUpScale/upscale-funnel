@@ -2269,3 +2269,70 @@ dialog.win-clean::backdrop {
 .chart-hit .chart-dot { opacity: 0; transition: opacity .12s ease; }
 .chart-hit:hover .chart-dot { opacity: 1; }
 .chart-empty-state { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; }
+.nav-group-label, .header-search { display: none; }
+
+/* ── Tela da campanha: estrutura (vale nos dois visuais) ── */
+.camp-back-link { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; padding: 0; margin-bottom: 8px; color: var(--text-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.camp-back-link:hover { color: var(--primary); }
+.camp-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.camp-title-row h1 { margin: 0; }
+.camp-meta-line { color: var(--text-muted); font-size: 13px; margin: 0; }
+.camp-booster-summary:empty { display: none; }
+.camp-booster-summary { font-size: 13px; color: var(--amber-text, #B54708); margin-top: 6px; }
+.camp-detail-header .page-header-actions { flex-wrap: wrap; gap: 8px; }
+.camp-detail-header .page-header-actions button svg,
+.camp-booster-actions svg, .camp-pages-card .btn-secondary svg, .camp-publish-card .btn-secondary svg { vertical-align: -2px; margin-right: 4px; }
+.btn-ghost-clean { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--radius-md, 8px); background: transparent; color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; }
+.btn-ghost-clean:hover { background: var(--bg-hover, rgba(0,0,0,.04)); color: var(--text-main); }
+.btn-ghost-clean[hidden] { display: none; }
+.camp-kpis { margin: 18px 0 20px; }
+.camp-grid-main, .camp-grid-bottom { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; margin-bottom: 20px; }
+.camp-grid-bottom { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.camp-period-select { width: auto; min-width: 150px; height: 34px; }
+.camp-funnel-card .card-header-clean, .camp-booster-card .card-header-clean, .camp-pages-card .card-header-clean { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.funnel-stages { display: grid; grid-template-columns: repeat(4, 1fr); margin: 14px 0 10px; }
+.funnel-stage { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.funnel-stage-name { font-size: 12px; color: var(--text-muted); }
+.funnel-stage-value { font-size: 22px; font-weight: 700; color: var(--text-main); }
+.funnel-stage-pct { font-size: 11px; border: 1px solid var(--border-light); border-radius: 6px; padding: 1px 8px; color: var(--text-muted); }
+.funnel-ribbon { display: block; width: 100%; height: 120px; }
+.funnel-divider { stroke: rgba(0, 0, 0, 0.15); stroke-dasharray: 2 4; }
+.funnel-total-row { margin-top: 14px; display: flex; justify-content: space-between; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-light); font-size: 13px; color: var(--text-muted); }
+.funnel-total-row strong { color: var(--green-text); }
+.camp-booster-state { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-main); white-space: nowrap; }
+.camp-switch { width: 30px; height: 18px; border-radius: 999px; background: var(--primary); position: relative; }
+.camp-switch::after { content: ''; position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+.camp-booster-state.off .camp-switch { background: var(--border-light); }
+.camp-booster-state.off .camp-switch::after { right: auto; left: 2px; }
+.camp-kv-list { margin: 10px 0 14px; }
+.camp-kv-list > div { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border-subtle, var(--border-light)); font-size: 13px; }
+.camp-kv-list dt { color: var(--text-muted); }
+.camp-kv-list dd { margin: 0; font-weight: 600; color: var(--text-main); text-align: right; }
+.camp-kv-list dd.camp-kv-accent { color: var(--green-text); }
+.camp-booster-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.camp-pages-compact { margin-top: 8px; }
+.camp-page-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto 30px; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle, var(--border-light)); }
+.camp-page-row:last-child { border-bottom: 0; }
+.camp-page-icon { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--primary-subtle, #EEF1FE); color: var(--primary); }
+.camp-page-name { display: flex; flex-direction: column; min-width: 0; }
+.camp-page-name strong { font-size: 13.5px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.camp-page-name small { font-size: 11.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.camp-page-visits { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
+.camp-page-edit { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; display: grid; place-items: center; }
+.camp-page-edit:hover { background: var(--bg-hover, rgba(0,0,0,.04)); color: var(--text-main); }
+.camp-publish-card .form-label { margin-top: 14px; display: block; }
+.camp-inline-row { display: flex; gap: 8px; align-items: center; }
+.camp-inline-row.camp-inline-top { align-items: flex-start; }
+.camp-inline-row > .form-select, .camp-inline-row > .form-input { flex: 1; min-width: 0; }
+.camp-inline-row > button { white-space: nowrap; }
+.camp-code-field { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; }
+textarea.camp-code-field { resize: vertical; min-height: 70px; }
+@media (max-width: 1100px) {
+  .camp-grid-main, .camp-grid-bottom { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .camp-page-row { grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .camp-page-visits, .camp-page-edit { display: none; }
+  .camp-inline-row { flex-direction: column; align-items: stretch; }
+  .funnel-stage-value { font-size: 18px; }
+}

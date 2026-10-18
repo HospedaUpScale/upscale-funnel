@@ -128,15 +128,48 @@ $prevStart = $periodStart->modify('-' . $dayCount . ' days');
 $wsFilter = $isGlobal ? '' : 'workspace_id = ? AND ';
 $params = $isGlobal ? [$prevStart->format('Y-m-d 00:00:00')] : [$targetWsId, $prevStart->format('Y-m-d 00:00:00')];
 
+// Recorte por campanha: pedidos das ofertas da campanha e eventos marcados com ela.
+$campaignId = (int)($request->get('campaign_id') ?? 0);
+$orderCampaignFilter = '';
+$eventCampaignFilter = '';
+$campaignParams = [];
+if ($campaignId > 0 && !$isGlobal) {
+    $chk = $pdo->prepare("SELECT id FROM campaigns WHERE id = ? AND workspace_id = ?");
+    $chk->execute([$campaignId, $targetWsId]);
+    if (!$chk->fetchColumn()) JsonResponse::error('Campanha não encontrada.', 404);
+    $orderCampaignFilter = ' AND offer_id IN (SELECT id FROM upsell_offers WHERE campaign_id = ?)';
+    $eventCampaignFilter = ' AND campaign_id = ?';
+    $campaignParams = [$campaignId];
+} else {
+    $campaignId = 0;
+}
+
 $stmt = $pdo->prepare("SELECT DATE(created_at) AS d, status, COUNT(*) AS n, COALESCE(SUM(upsell_amount), 0) AS v
-    FROM orders WHERE {$wsFilter}created_at >= ? GROUP BY DATE(created_at), status");
-$stmt->execute($params);
+    FROM orders WHERE {$wsFilter}created_at >= ?{$orderCampaignFilter} GROUP BY DATE(created_at), status");
+$stmt->execute(array_merge($params, $campaignParams));
 $orderDays = $stmt->fetchAll();
 
-$stmt = $pdo->prepare("SELECT DATE(created_at) AS d, event_name, COUNT(*) AS n
-    FROM conversion_events WHERE {$wsFilter}created_at >= ? GROUP BY DATE(created_at), event_name");
-$stmt->execute($params);
-$eventDays = $stmt->fetchAll();
+try {
+    $stmt = $pdo->prepare("SELECT DATE(created_at) AS d, event_name, COUNT(*) AS n
+        FROM conversion_events WHERE {$wsFilter}created_at >= ?{$eventCampaignFilter} GROUP BY DATE(created_at), event_name");
+    $stmt->execute(array_merge($params, $campaignParams));
+    $eventDays = $stmt->fetchAll();
+} catch (\PDOException $e) {
+    $eventDays = []; // banco ainda sem a migração 0027
+}
+
+// Visitas por página da campanha no período
+$pageVisits = [];
+if ($campaignId > 0) {
+    try {
+        $stmt = $pdo->prepare("SELECT funnel_id, COUNT(*) AS n FROM conversion_events
+            WHERE workspace_id = ? AND campaign_id = ? AND event_name = 'page_view' AND funnel_id IS NOT NULL AND created_at >= ?
+            GROUP BY funnel_id");
+        $stmt->execute([$targetWsId, $campaignId, $periodStart->format('Y-m-d 00:00:00')]);
+        foreach ($stmt->fetchAll() as $r) $pageVisits[(int)$r['funnel_id']] = (int)$r['n'];
+    } catch (\PDOException $e) {
+    }
+}
 
 $emptyDay = ['revenue' => 0.0, 'paid' => 0, 'orders' => 0, 'views' => 0, 'scratches' => 0, 'pix_generated' => 0];
 $byDay = [];
@@ -188,6 +221,8 @@ $periodData = [
     'current'  => $sumRange($periodStart, $dayCount),
     'previous' => $sumRange($prevStart, $dayCount),
     'series'   => $series,
+    'campaign_id' => $campaignId ?: null,
+    'page_visits' => (object)$pageVisits,
 ];
 
 JsonResponse::send([

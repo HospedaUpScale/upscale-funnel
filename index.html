@@ -1010,6 +1010,7 @@
   function revelarOferta() {
     if (revelado) return;
     revelado = true;
+    if (CONFIG.mechanic !== 'direct' && window.upscaleRastrear) window.upscaleRastrear('scratch_win');
     if(window.upscaleSounds && CONFIG.mechanic!=='direct')upscaleSounds.reveal();
 
     canvas.classList.add('gone');
@@ -1296,9 +1297,24 @@
     if (revelado) iniciarMedia();
   }
 
+  // Métricas da campanha: visita e raspada/giro (uma vez por sessão, nunca na prévia do painel)
+  function rastrearEvento(evento) {
+    var d = window.__INITIAL_OFFER_DATA__;
+    if (!d || !d.id || isEditorPreview || param(['preview'])) return;
+    var chave = 'upscale_ev_' + d.id + '_' + evento;
+    try { if (sessionStorage.getItem(chave)) return; sessionStorage.setItem(chave, '1'); } catch (e) {}
+    var url = '/api/track.php?offer_id=' + encodeURIComponent(d.id) + '&event=' + evento;
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon(url)) return;
+    } catch (e) {}
+    try { fetch(url, { method: 'POST', keepalive: true }); } catch (e) {}
+  }
+  window.upscaleRastrear = rastrearEvento;
+
   // Se houver dados pré-injetados pelo offer-public.php
   if (window.__INITIAL_OFFER_DATA__) {
     aplicarDados(window.__INITIAL_OFFER_DATA__);
+    rastrearEvento('view');
   }
 
   // Ouvinte de mensagens da prévia do Hub

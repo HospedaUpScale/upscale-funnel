@@ -65,6 +65,22 @@ if (!$funnel) {
     exit;
 }
 
+// Visita da página (uma por visitante a cada 30 min; ignora robôs e prévias)
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && empty($_GET['preview'])
+    && !preg_match('/bot|crawl|spider|preview|facebookexternalhit|whatsapp|curl|wget/i', $_SERVER['HTTP_USER_AGENT'] ?? 'bot')) {
+    $visitCookie = 'upv_' . (int)$funnel['id'];
+    if (empty($_COOKIE[$visitCookie])) {
+        try {
+            (new \App\Repositories\ConversionEventRepository($pdo))->log((int)$funnel['workspace_id'], null, 'page_view', null, [
+                'funnel_id'   => (int)$funnel['id'],
+                'campaign_id' => !empty($funnel['campaign_id']) ? (int)$funnel['campaign_id'] : null,
+            ]);
+            @setcookie($visitCookie, '1', ['expires' => time() + 1800, 'path' => '/', 'samesite' => 'Lax']);
+        } catch (\Throwable $e) {
+        }
+    }
+}
+
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
     || (!empty($_SERVER['HTTP_CF_VISITOR']) && str_contains($_SERVER['HTTP_CF_VISITOR'], 'https'))
