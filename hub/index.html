@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>upScale — Painel Administrativo</title>
+  <!-- Visual do painel: "novo" (design system upScale) ou "classico" (anterior). ?ui=classico|novo troca e memoriza. -->
+  <script>
+    (function () {
+      var ui = 'novo';
+      try {
+        var q = new URLSearchParams(location.search).get('ui');
+        if (q === 'classico' || q === 'novo') localStorage.setItem('upscale_ui', q);
+        ui = localStorage.getItem('upscale_ui') || 'novo';
+      } catch (e) {}
+      document.documentElement.setAttribute('data-ui', ui === 'classico' ? 'classico' : 'novo');
+    })();
+  </script>
   
   <!-- Fontes Oficiais -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +27,7 @@
   <!-- Novo Design System Oficial -->
   <link rel="stylesheet" href="hub-redesign.css?v=2.2">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
+  <link rel="stylesheet" href="theme-upscale.css?v=1.0">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -342,6 +355,12 @@
       </div>
 
       <div class="header-right">
+        <!-- Alternar entre o visual novo e o clássico -->
+        <button type="button" class="header-icon-btn ui-toggle-btn" onclick="alternarVisualPainel()" title="Alternar entre o visual novo e o clássico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" stroke="none"/></svg>
+          <span class="ui-toggle-label" id="ui-toggle-label">Visual clássico</span>
+        </button>
+
         <!-- Ícone de Ajuda -->
         <button type="button" class="header-icon-btn" onclick="showToast('Documentação técnica disponível em COMO_FUNCIONA_O_SISTEMA.md', 'success')" title="Ajuda e Documentação">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -3804,6 +3823,20 @@
     var pw = document.getElementById('login-password');
     pw.type = pw.type === 'password' ? 'text' : 'password';
   }
+
+  function alternarVisualPainel() {
+    var atual = document.documentElement.getAttribute('data-ui') === 'classico' ? 'classico' : 'novo';
+    var proximo = atual === 'novo' ? 'classico' : 'novo';
+    document.documentElement.setAttribute('data-ui', proximo);
+    try { localStorage.setItem('upscale_ui', proximo); } catch (e) {}
+    atualizarRotuloVisual();
+    showToast(proximo === 'novo' ? 'Visual novo ativado.' : 'Visual clássico ativado.', 'success');
+  }
+  function atualizarRotuloVisual() {
+    var el = document.getElementById('ui-toggle-label');
+    if (el) el.textContent = document.documentElement.getAttribute('data-ui') === 'classico' ? 'Visual novo' : 'Visual clássico';
+  }
+  document.addEventListener('DOMContentLoaded', atualizarRotuloVisual);
 
   function selecionarTipoLogin(type) {
     loginType = type === 'client' ? 'client' : 'master';
