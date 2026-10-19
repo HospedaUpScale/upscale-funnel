@@ -138,6 +138,8 @@ JsonResponse::send([
             'can_create_subaccounts' => $canCreateSubaccounts,
             'can_view_partners'      => $canViewPartners,
             'can_view_all_workspaces'=> $canViewAllWorkspaces,
+            // Histórico (audit log): só o dono da conta.
+            'is_owner'               => \App\Support\AuditLog::isOwner($auth, $config, $pdo),
         ],
         'accessible_workspaces' => $accessibleWorkspaces,
     ]

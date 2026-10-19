@@ -15,6 +15,13 @@ class AdminAuth
 
     public function authenticate(?string $token): ?array
     {
+        $auth = $this->resolve($token);
+        if ($auth) \App\Support\AuditLog::setActor($auth);
+        return $auth;
+    }
+
+    private function resolve(?string $token): ?array
+    {
         if (empty($token)) {
             return null;
         }
