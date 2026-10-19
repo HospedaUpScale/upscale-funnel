@@ -6,6 +6,9 @@ class JsonResponse
 {
     public static function send(mixed $data, int $status = 200, array $headers = []): void
     {
+        // Histórico do painel: registra ações de escrita bem-sucedidas (não altera a resposta).
+        \App\Support\AuditLog::capture($status, $data);
+
         while (ob_get_level() > 0) {
             ob_end_clean();
         }

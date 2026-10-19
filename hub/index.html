@@ -25,9 +25,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Exo+2:ital,wght@1,800&family=DM+Serif+Display&family=Unbounded:wght@800&text=%2001236ADEFGKMNORZadegnor%C2%B7&display=swap" rel="stylesheet">
   
   <!-- Novo Design System Oficial -->
-  <link rel="stylesheet" href="hub-redesign.css?v=2.7">
+  <link rel="stylesheet" href="hub-redesign.css?v=2.8">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
-  <link rel="stylesheet" href="theme-upscale.css?v=1.4">
+  <link rel="stylesheet" href="theme-upscale.css?v=1.5">
 
   <!-- CodeMirror para o Editor de Código do Funil -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -326,6 +326,12 @@
       <button class="nav-item-btn" id="nav-btn-settings" onclick="navigate('settings')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>Configurações</span>
+      </button>
+
+      <!-- 9. Histórico (só o dono da conta) -->
+      <button class="nav-item-btn owner-only" id="nav-btn-history" onclick="navigate('history')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/><polyline points="12 7 12 12 15 14"/></svg>
+        <span>Histórico</span>
       </button>
     </nav>
 
@@ -3075,6 +3081,27 @@
       <!-- ══════════════════════════════════════════════════════════════════
            TELA 10: CONFIGURAÇÕES (GATEWAY, SIMULADOR, LOGS)
            ══════════════════════════════════════════════════════════════════ -->
+      <!-- ══ HISTÓRICO (AUDITORIA) — só o dono da conta ══ -->
+      <div id="view-history" class="view-pane">
+        <div class="page-header-row">
+          <div class="page-header-info">
+            <h1>Histórico</h1>
+            <p>Tudo o que foi criado, alterado ou apagado no painel, com quem fez e quando. Só você vê esta tela.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="history-filters">
+            <input type="search" class="form-input" id="history-q" placeholder="Buscar por nome, e-mail, campanha, domínio..." oninput="agendarCarregarHistorico()">
+            <select class="form-select" id="history-entity" onchange="carregarHistorico(1)"><option value="">Tudo</option></select>
+            <select class="form-select" id="history-actor" onchange="carregarHistorico(1)"><option value="">Todas as pessoas</option></select>
+            <input type="date" class="form-input" id="history-from" onchange="carregarHistorico(1)" title="De">
+            <input type="date" class="form-input" id="history-to" onchange="carregarHistorico(1)" title="Até">
+          </div>
+          <div class="history-list" id="history-list"><div class="chart-empty-state">Carregando histórico...</div></div>
+          <div class="history-pager" id="history-pager"></div>
+        </div>
+      </div>
+
       <div id="view-settings" class="view-pane">
         <div class="page-header-row">
           <div class="page-header-info">
@@ -4034,6 +4061,7 @@
   /* ═══ NAVEGAÇÃO ENTRE TELAS ═══ */
   function navigate(viewId, options) {
     if ((viewId === 'customers' || viewId === 'partners') && currentRole !== 'super_admin' && currentRole !== 'partner_admin') viewId = 'dash';
+    if (viewId === 'history' && !souDonoDaConta) viewId = 'dash';
     options = options || {};
     var funnelView=viewId==='funnels';
     if(funnelView)viewId='pages';
@@ -4074,7 +4102,8 @@
       funnels: 'Funis',
       'page-editor': 'Editor de páginas',
       integrations: 'Central de Integrações',
-      settings: 'Configurações'
+      settings: 'Configurações',
+      history: 'Histórico'
     };
     var currentName = funnelView?'Funis':breadcrumbTitles[viewId] || 'Visão geral';
     var bc = document.getElementById('breadcrumb-current');
@@ -4090,6 +4119,7 @@
     if (viewId === 'partners') carregarParceiro();
     if (viewId === 'pages') carregarGerenciadorPaginas();
     if (viewId === 'sites') carregarDominios();
+    if (viewId === 'history') carregarHistorico(1);
     if (viewId === 'page-editor') { document.body.classList.add('in-editor'); if (!options.skipEditorLoad) carregarFunis(); }
     if (viewId === 'funnels') carregarGerenciadorPaginas();
     if (viewId === 'integrations') verificarIntegracoes();
@@ -6694,9 +6724,66 @@
     return currentWsId === 0 ? '0' : (currentWsId || 2);
   }
 
+  /* ═══ HISTÓRICO (AUDITORIA) ═══ */
+  var souDonoDaConta = false;
+  var historicoTimer = null, historicoPagina = 1, historicoItens = [];
+  var HISTORICO_TIPOS = { campaigns: 'Campanhas', 'campaign-identity': 'Identidade visual', offer: 'Ofertas', funnels: 'Páginas', 'visual-editor': 'Editor visual', domains: 'Domínios', users: 'Usuários', workspaces: 'Workspaces', upload: 'Imagens' };
+  function agendarCarregarHistorico() { clearTimeout(historicoTimer); historicoTimer = setTimeout(function() { carregarHistorico(1); }, 300); }
+  function dataHoraBr(s) {
+    if (!s) return '';
+    // O servidor grava em UTC; o navegador mostra no horário de quem está vendo.
+    var d = new Date(String(s).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? '' : 'Z'));
+    if (isNaN(d)) return s;
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function carregarHistorico(pagina) {
+    historicoPagina = pagina || 1;
+    var box = document.getElementById('history-list');
+    if (!box) return;
+    var qs = new URLSearchParams({ page: historicoPagina });
+    [['q', 'history-q'], ['entity', 'history-entity'], ['actor', 'history-actor'], ['from', 'history-from'], ['to', 'history-to']].forEach(function(p) {
+      var el = document.getElementById(p[1]);
+      if (el && el.value) qs.set(p[0], el.value);
+    });
+    apiFetch('../api/admin/audit-log.php?' + qs.toString())
+      .then(function(data) {
+        if (data.status !== 'success') { box.innerHTML = '<div class="chart-empty-state">' + escapeHtml(data.message || 'Não foi possível carregar o histórico.') + '</div>'; return; }
+        preencherFiltrosHistorico(data.filters || {});
+        historicoItens = data.items || [];
+        if (!historicoItens.length) { box.innerHTML = '<div class="chart-empty-state">Nada registrado com esses filtros.</div>'; document.getElementById('history-pager').innerHTML = ''; return; }
+        box.innerHTML = historicoItens.map(function(it, i) {
+          var quem = it.actor && (it.actor.name || it.actor.email) || 'Master';
+          var vezes = it.repeat_count > 1 ? '<span class="history-repeat" title="Salvo várias vezes seguidas">' + it.repeat_count + '×</span>' : '';
+          return '<details class="history-item">' +
+            '<summary><span class="history-when">' + dataHoraBr(it.updated_at) + '</span>' +
+            '<span class="history-what"><strong>' + escapeHtml(it.summary) + vezes + '</strong>' +
+            '<small>' + escapeHtml(HISTORICO_TIPOS[it.entity] || it.entity) + (it.workspace ? ' · ' + escapeHtml(it.workspace.name || ('#' + it.workspace.id)) : '') + (it.actor && it.actor.email ? ' · ' + escapeHtml(it.actor.email) : '') + '</small></span>' +
+            '<span class="history-who">' + escapeHtml(quem) + '</span></summary>' +
+            '<div class="history-details">' +
+              '<div><b>Primeiro registro:</b> ' + dataHoraBr(it.created_at) + (it.ip ? ' · <b>IP:</b> ' + escapeHtml(it.ip) : '') + '</div>' +
+              (it.details && it.details.mensagem ? '<div><b>Resposta:</b> ' + escapeHtml(it.details.mensagem) + '</div>' : '') +
+              '<pre>' + escapeHtml(JSON.stringify(it.details && it.details.dados || {}, null, 2)) + '</pre>' +
+            '</div></details>';
+        }).join('');
+        var pager = document.getElementById('history-pager');
+        pager.innerHTML = data.pages > 1
+          ? '<button type="button" class="btn-secondary" ' + (data.page <= 1 ? 'disabled' : '') + ' onclick="carregarHistorico(' + (data.page - 1) + ')">← Anteriores</button>' +
+            '<span>Página ' + data.page + ' de ' + data.pages + ' · ' + data.total + ' registros</span>' +
+            '<button type="button" class="btn-secondary" ' + (data.page >= data.pages ? 'disabled' : '') + ' onclick="carregarHistorico(' + (data.page + 1) + ')">Próximas →</button>'
+          : '<span>' + data.total + ' registro' + (data.total === 1 ? '' : 's') + '</span>';
+      })
+      .catch(function(e) { box.innerHTML = '<div class="chart-empty-state">' + escapeHtml(e.message || 'Erro ao carregar o histórico.') + '</div>'; });
+  }
+  function preencherFiltrosHistorico(f) {
+    var selE = document.getElementById('history-entity'), selA = document.getElementById('history-actor');
+    if (selE && selE.options.length <= 1) (f.entities || []).forEach(function(e) { var o = document.createElement('option'); o.value = e; o.textContent = HISTORICO_TIPOS[e] || e; selE.appendChild(o); });
+    if (selA && selA.options.length <= 1) (f.actors || []).forEach(function(a) { var o = document.createElement('option'); o.value = a.id; o.textContent = (a.name || 'Master') + (a.email ? ' (' + a.email + ')' : ''); selA.appendChild(o); });
+  }
+
   // Visibilidade por papel: "Todos os usuários" só para o admin; cliente não vê gestão de outros workspaces.
   function aplicarPermissoesPorPapel() {
     var b = document.body;
+    b.classList.toggle('role-owner', souDonoDaConta);
     b.classList.toggle('role-master', currentRole === 'super_admin');
     b.classList.toggle('role-partner', currentRole === 'partner_admin');
     b.classList.toggle('role-merchant', currentRole !== 'super_admin' && currentRole !== 'partner_admin');
@@ -6706,6 +6793,7 @@
       allSystemUsers = [];
     }
     var bloqueadas = currentRole === 'super_admin' || currentRole === 'partner_admin' ? [] : ['customers', 'partners'];
+    if (!souDonoDaConta) bloqueadas = bloqueadas.concat(['history']);
     PAGINAS_BUSCA_VISIVEIS = PAGINAS_BUSCA.filter(function(p) { return bloqueadas.indexOf(p.v) === -1; });
     var ativa = document.querySelector('.view-pane.active');
     if (ativa && bloqueadas.some(function(v) { return ativa.id === 'view-' + v; })) navigate('dash');
@@ -6720,6 +6808,7 @@
       }
       var auth = data.auth;
       currentRole = auth.role;
+      souDonoDaConta = !!(auth.permissions && auth.permissions.is_owner);
       accessibleWorkspaces = auth.accessible_workspaces || [];
       aplicarPermissoesPorPapel();
 
@@ -6759,7 +6848,7 @@
     { t: 'Visão geral', v: 'dash' }, { t: 'Campanhas', v: 'campaigns' }, { t: 'Transações e Pix', v: 'tx' },
     { t: 'Workspaces', v: 'customers' }, { t: 'Parceiros', v: 'partners' }, { t: 'Páginas', v: 'pages' },
     { t: 'Domínios', v: 'sites' }, { t: 'Funis', v: 'funnels' }, { t: 'Editor de páginas', v: 'page-editor' },
-    { t: 'Integrações', v: 'integrations' }, { t: 'Configurações', v: 'settings' }
+    { t: 'Integrações', v: 'integrations' }, { t: 'Configurações', v: 'settings' }, { t: 'Histórico', v: 'history' }
   ];
   var PAGINAS_BUSCA_VISIVEIS = PAGINAS_BUSCA;
   var resultadosBusca = [], indiceBusca = 0;
