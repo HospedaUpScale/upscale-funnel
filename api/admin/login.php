@@ -25,19 +25,20 @@ $directToken = trim((string) ($input['token'] ?? ''));
 
 $superAdminToken = (string) ($config['super_admin_token'] ?? '');
 
-// O rate limit vale para todas as tentativas, inclusive as do login master.
-if ($rateLimiter->isTooManyAttempts($rateKey, 5, 900)) {
-    $seconds = $rateLimiter->availableIn($rateKey, 900);
-    header('Retry-After: ' . $seconds);
-    JsonResponse::error("Muitas tentativas incorretas. Acesso bloqueado por {$seconds}s para segurança.", 429);
-}
+// Sem bloqueio de acesso: erros seguidos só deixam cada nova resposta de erro um pouco mais lenta
+// (veja login_fail), o que atrapalha quem tenta adivinhar senhas sem trancar quem errou a senha.
 
 function login_fail(string $message, ?RateLimiter $limiter = null, ?string $key = null): void
 {
+    $attempts = 0;
     if ($limiter && $key) {
-        $limiter->hit($key);
+        // Zera a contagem 15 minutos depois do primeiro erro (efeito de isTooManyAttempts).
+        $limiter->isTooManyAttempts($key, 1, 900);
+        $attempts = $limiter->hit($key);
     }
-    usleep(400000);
+    // 0,4 s por erro; a partir do 6º erro seguido, +0,3 s por erro, até no máximo 2 s.
+    $delayMs = 400 + max(0, $attempts - 5) * 300;
+    usleep(min(2000, $delayMs) * 1000);
     JsonResponse::error($message, 401);
 }
 
