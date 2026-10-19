@@ -148,7 +148,8 @@ if (!$memberships) {
 // Usuário com perfil super_admin em algum workspace recebe uma sessão master.
 $hasSuperAdmin = false;
 foreach ($memberships as $m) {
-    if ($m['membership_role'] === 'super_admin') {
+    // Acesso master só pelo workspace administrativo; vínculo de cliente nunca abre os outros painéis.
+    if ($m['membership_role'] === 'super_admin' && ($m['workspace_type'] ?? '') === 'super_admin') {
         $hasSuperAdmin = true;
         break;
     }
@@ -157,6 +158,12 @@ foreach ($memberships as $m) {
 if ($hasSuperAdmin) {
     $rateLimiter->clear($rateKey);
     login_master_success($pdo, (int) $user['id'], $user['name'] ?: 'upScale Master', $user['email']);
+}
+
+// Daqui em diante só vínculos de cliente (o administrativo já saiu acima como master).
+$memberships = array_values(array_filter($memberships, fn($m) => ($m['workspace_type'] ?? '') !== 'super_admin' && $m['membership_role'] !== 'super_admin'));
+if (!$memberships) {
+    login_fail('Este usuário não possui acesso a nenhum workspace ativo. Fale com o administrador.', $rateLimiter, $rateKey);
 }
 
 $wanted = (int) ($input['workspace_id'] ?? 0);

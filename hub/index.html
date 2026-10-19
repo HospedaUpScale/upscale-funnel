@@ -5554,11 +5554,13 @@
           <input type="checkbox" class="chk-ws-membership" data-ws-id="${w.id}" ${isChecked ? 'checked' : ''} style="accent-color:var(--primary);">
           <span><strong>${escapeHtml(w.name)}</strong> <code style="font-size:11px;">#${w.id}</code></span>
         </label>
-        <select class="form-select sel-ws-role" data-ws-id="${w.id}" style="font-size:11.5px; height:28px; width:140px; padding:2px 6px;">
-          <option value="merchant_admin" ${currentRole === 'merchant_admin' ? 'selected' : ''}>Administrador</option>
+        ${w.type === 'super_admin'
+          ? `<select class="form-select sel-ws-role" data-ws-id="${w.id}" disabled title="Quem entra no workspace administrativo é sempre Super admin" style="font-size:11.5px; height:28px; width:140px; padding:2px 6px;"><option value="super_admin" selected>Super admin</option></select>`
+          : `<select class="form-select sel-ws-role" data-ws-id="${w.id}" style="font-size:11.5px; height:28px; width:140px; padding:2px 6px;">
+          <option value="merchant_admin" ${currentRole === 'merchant_admin' || currentRole === 'super_admin' ? 'selected' : ''}>Administrador</option>
           <option value="merchant_operator" ${currentRole === 'merchant_operator' ? 'selected' : ''}>Operador</option>
-          <option value="partner_admin" ${currentRole === 'partner_admin' ? 'selected' : ''}>Parceiro</option>
-        </select>
+          ${w.type === 'partner_whitelabel' ? `<option value="partner_admin" ${currentRole === 'partner_admin' ? 'selected' : ''}>Parceiro</option>` : ''}
+        </select>`}
       </div>`;
     }).join('');
   }
@@ -5623,8 +5625,10 @@
 
     var memberships = [];
     if (isSuperAdmin) {
+      // Super admin sempre pelo workspace administrativo (o servidor aplica a mesma regra).
+      var wsAdmin = (allWorkspacesList || []).find(function(w) { return w.type === 'super_admin'; });
       memberships.push({
-        workspace_id: currentWsId || 2,
+        workspace_id: wsAdmin ? wsAdmin.id : (currentWsId || 2),
         role: 'super_admin'
       });
     } else {

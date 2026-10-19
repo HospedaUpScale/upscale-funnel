@@ -10,6 +10,66 @@ class UserRepository
 
     public function __construct(private PDO $pdo) {}
 
+    /**
+     * Regra fixa de papéis:
+     * - vínculo no workspace administrativo (tipo super_admin) é sempre "super_admin";
+     * - "super_admin" nunca fica em workspace de cliente: o pedido de Super admin vira
+     *   vínculo no workspace administrativo, e quem é de cliente fica só no próprio workspace.
+     */
+    public function roleForWorkspace(int $workspaceId, string $requestedRole): ?string
+    {
+        $type = $this->workspaceType($workspaceId);
+        if ($type === null) return null;
+        if ($type === 'super_admin') return 'super_admin';
+        if ($requestedRole === 'super_admin' || !in_array($requestedRole, self::CLIENT_ROLES, true)) {
+            return $type === 'partner_whitelabel' ? 'partner_admin' : 'merchant_admin';
+        }
+        if ($requestedRole === 'partner_admin' && $type !== 'partner_whitelabel') return 'merchant_admin';
+        return $requestedRole;
+    }
+
+    /** Aplica a regra a uma lista de vínculos [{workspace_id, role}] e remove repetidos. */
+    public function normalizeMemberships(array $memberships): array
+    {
+        $out = [];
+        foreach ($memberships as $m) {
+            $wsId = (int) ($m['workspace_id'] ?? 0);
+            $role = (string) ($m['role'] ?? 'merchant_admin');
+            if ($wsId <= 0) continue;
+            if ($role === 'super_admin' && $this->workspaceType($wsId) !== 'super_admin') {
+                // Pedido de Super admin feito com outro workspace selecionado: vai para o administrativo.
+                $adminWs = $this->adminWorkspaceId();
+                if ($adminWs) $out[$adminWs] = 'super_admin';
+                continue;
+            }
+            $final = $this->roleForWorkspace($wsId, $role);
+            if ($final !== null && !isset($out[$wsId])) $out[$wsId] = $final;
+        }
+        $list = [];
+        foreach ($out as $wsId => $role) $list[] = ['workspace_id' => $wsId, 'role' => $role];
+        return $list;
+    }
+
+    public function adminWorkspaceId(): ?int
+    {
+        $stmt = $this->pdo->query("SELECT id FROM workspaces WHERE type = 'super_admin' ORDER BY CASE WHEN slug = 'admin-upscale' THEN 0 ELSE 1 END, id ASC LIMIT 1");
+        $id = $stmt ? (int) $stmt->fetchColumn() : 0;
+        return $id ?: null;
+    }
+
+    private array $typeCache = [];
+
+    private function workspaceType(int $workspaceId): ?string
+    {
+        if (!array_key_exists($workspaceId, $this->typeCache)) {
+            $stmt = $this->pdo->prepare('SELECT type FROM workspaces WHERE id = ?');
+            $stmt->execute([$workspaceId]);
+            $type = $stmt->fetchColumn();
+            $this->typeCache[$workspaceId] = $type === false ? null : (string) $type;
+        }
+        return $this->typeCache[$workspaceId];
+    }
+
     public function findByEmail(string $email): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1');
@@ -22,7 +82,7 @@ class UserRepository
     public function activeMemberships(int $userId): array
     {
         $stmt = $this->pdo->prepare("
-            SELECT m.role AS membership_role, w.id AS workspace_id, w.name AS workspace_name, w.slug AS workspace_slug
+            SELECT m.role AS membership_role, w.id AS workspace_id, w.name AS workspace_name, w.slug AS workspace_slug, w.type AS workspace_type
             FROM workspace_memberships m
             INNER JOIN workspaces w ON w.id = m.workspace_id
             WHERE m.user_id = ? AND w.status = 'active'
@@ -65,6 +125,7 @@ class UserRepository
 
     public function upsertForWorkspace(int $workspaceId, string $role, string $email, ?string $password, ?string $name): array
     {
+        $role = $this->roleForWorkspace($workspaceId, $role) ?? 'merchant_admin';
         $email = strtolower(trim($email));
         $generated = false;
         if ($password === null || $password === '') {
@@ -167,13 +228,9 @@ class UserRepository
         $stmt->execute([$name, $email, $hash, $phone]);
         $userId = (int) $this->pdo->lastInsertId();
 
-        foreach ($memberships as $m) {
-            $wsId = (int) ($m['workspace_id'] ?? 0);
-            $role = (string) ($m['role'] ?? 'merchant_admin');
-            if ($wsId > 0 && in_array($role, array_merge(self::CLIENT_ROLES, ['super_admin']), true)) {
-                $this->pdo->prepare('INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, ?)')
-                    ->execute([$wsId, $userId, $role]);
-            }
+        foreach ($this->normalizeMemberships($memberships) as $m) {
+            $this->pdo->prepare('INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, ?)')
+                ->execute([$m['workspace_id'], $userId, $m['role']]);
         }
 
         return [
@@ -233,13 +290,9 @@ class UserRepository
 
         if (isset($data['memberships']) && is_array($data['memberships'])) {
             $this->pdo->prepare('DELETE FROM workspace_memberships WHERE user_id = ?')->execute([$userId]);
-            foreach ($data['memberships'] as $m) {
-                $wsId = (int) ($m['workspace_id'] ?? 0);
-                $role = (string) ($m['role'] ?? 'merchant_admin');
-                if ($wsId > 0 && in_array($role, array_merge(self::CLIENT_ROLES, ['super_admin']), true)) {
-                    $this->pdo->prepare('INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, ?)')
-                        ->execute([$wsId, $userId, $role]);
-                }
+            foreach ($this->normalizeMemberships($data['memberships']) as $m) {
+                $this->pdo->prepare('INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, ?)')
+                    ->execute([$m['workspace_id'], $userId, $m['role']]);
             }
         }
 
