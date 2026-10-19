@@ -328,11 +328,6 @@
         <span>Configurações</span>
       </button>
 
-      <!-- 9. Histórico (só o dono da conta) -->
-      <button class="nav-item-btn owner-only" id="nav-btn-history" onclick="navigate('history')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/><polyline points="12 7 12 12 15 14"/></svg>
-        <span>Histórico</span>
-      </button>
     </nav>
 
     <!-- FOOTER DA SIDEBAR COM PERFIL -->
@@ -4061,7 +4056,8 @@
   /* ═══ NAVEGAÇÃO ENTRE TELAS ═══ */
   function navigate(viewId, options) {
     if ((viewId === 'customers' || viewId === 'partners') && currentRole !== 'super_admin' && currentRole !== 'partner_admin') viewId = 'dash';
-    if (viewId === 'history' && !souDonoDaConta) viewId = 'dash';
+    if (viewId === 'historico') viewId = 'history';
+    if (viewId === 'history' && !souDonoDaConta) { if (!statusAutenticacaoCarregado) historicoPendente = true; viewId = 'dash'; }
     options = options || {};
     var funnelView=viewId==='funnels';
     if(funnelView)viewId='pages';
@@ -4108,7 +4104,7 @@
     var currentName = funnelView?'Funis':breadcrumbTitles[viewId] || 'Visão geral';
     var bc = document.getElementById('breadcrumb-current');
     if (bc) bc.textContent = currentName;
-    var route=funnelView?'funnels':viewId;
+    var route=funnelView?'funnels':(viewId==='history'?'historico':viewId);
     if (window.location.hash !== '#' + route) history.replaceState(null, '', '#' + route);
 
     // Carregamento de dados por tela
@@ -6725,7 +6721,18 @@
   }
 
   /* ═══ HISTÓRICO (AUDITORIA) ═══ */
-  var souDonoDaConta = false;
+  // Tela oculta: não aparece no menu nem na busca. Abre só pelo endereço /hub/#historico
+  // ou pelo atalho Ctrl+Shift+H (⌘+Shift+H no Mac), e apenas para o dono da conta.
+  var souDonoDaConta = false, statusAutenticacaoCarregado = false, historicoPendente = false;
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'h' || e.key === 'H') && souDonoDaConta) {
+      e.preventDefault();
+      navigate('history');
+    }
+  });
+  window.addEventListener('hashchange', function() {
+    if (/^#historico$/.test(window.location.hash) && souDonoDaConta) navigate('history');
+  });
   var historicoTimer = null, historicoPagina = 1, historicoItens = [];
   var HISTORICO_TIPOS = { campaigns: 'Campanhas', 'campaign-identity': 'Identidade visual', offer: 'Ofertas', funnels: 'Páginas', 'visual-editor': 'Editor visual', domains: 'Domínios', users: 'Usuários', workspaces: 'Workspaces', upload: 'Imagens' };
   function agendarCarregarHistorico() { clearTimeout(historicoTimer); historicoTimer = setTimeout(function() { carregarHistorico(1); }, 300); }
@@ -6809,6 +6816,8 @@
       var auth = data.auth;
       currentRole = auth.role;
       souDonoDaConta = !!(auth.permissions && auth.permissions.is_owner);
+      statusAutenticacaoCarregado = true;
+      if (historicoPendente) { historicoPendente = false; if (souDonoDaConta) setTimeout(function() { navigate('history'); }, 0); }
       accessibleWorkspaces = auth.accessible_workspaces || [];
       aplicarPermissoesPorPapel();
 
@@ -6848,7 +6857,7 @@
     { t: 'Visão geral', v: 'dash' }, { t: 'Campanhas', v: 'campaigns' }, { t: 'Transações e Pix', v: 'tx' },
     { t: 'Workspaces', v: 'customers' }, { t: 'Parceiros', v: 'partners' }, { t: 'Páginas', v: 'pages' },
     { t: 'Domínios', v: 'sites' }, { t: 'Funis', v: 'funnels' }, { t: 'Editor de páginas', v: 'page-editor' },
-    { t: 'Integrações', v: 'integrations' }, { t: 'Configurações', v: 'settings' }, { t: 'Histórico', v: 'history' }
+    { t: 'Integrações', v: 'integrations' }, { t: 'Configurações', v: 'settings' }
   ];
   var PAGINAS_BUSCA_VISIVEIS = PAGINAS_BUSCA;
   var resultadosBusca = [], indiceBusca = 0;
