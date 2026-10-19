@@ -25,7 +25,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Exo+2:ital,wght@1,800&family=DM+Serif+Display&family=Unbounded:wght@800&text=%2001236ADEFGKMNORZadegnor%C2%B7&display=swap" rel="stylesheet">
   
   <!-- Novo Design System Oficial -->
-  <link rel="stylesheet" href="hub-redesign.css?v=2.6">
+  <link rel="stylesheet" href="hub-redesign.css?v=2.7">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
   <link rel="stylesheet" href="theme-upscale.css?v=1.4">
 
@@ -291,13 +291,13 @@
       </button>
 
       <!-- 4. Workspaces & Clientes -->
-      <button class="nav-item-btn" id="nav-btn-customers" onclick="navigate('customers')">
+      <button class="nav-item-btn no-merchant" id="nav-btn-customers" onclick="navigate('customers')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
         <span>Workspaces</span>
       </button>
 
       <!-- 5. Parceiros e comissões -->
-      <button class="nav-item-btn" id="nav-btn-partners" onclick="navigate('partners')">
+      <button class="nav-item-btn no-merchant" id="nav-btn-partners" onclick="navigate('partners')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         <span>Parceiros</span>
       </button>
@@ -385,7 +385,7 @@
         </button>
 
         <!-- Botão Novo Workspace Global no Topo -->
-        <button type="button" class="btn-primary header-extra" style="min-height:36px; padding:0 14px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px;" onclick="abrirModalNovoWorkspace()" title="Criar um novo workspace para outro cliente">
+        <button type="button" class="btn-primary header-extra no-merchant" style="min-height:36px; padding:0 14px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px;" onclick="abrirModalNovoWorkspace()" title="Criar um novo workspace para outro cliente">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
           <span>+ Novo Workspace</span>
         </button>
@@ -2872,15 +2872,15 @@
             <p>Gerenciamento de workspaces, organizadores de rifas e usuários do sistema.</p>
           </div>
           <div class="page-header-actions" style="display:flex; gap:8px;">
-            <button type="button" class="btn-primary" onclick="abrirModalNovoWorkspace()">
+            <button type="button" class="btn-primary no-merchant" onclick="abrirModalNovoWorkspace()">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
               <span>Novo Workspace</span>
             </button>
-            <button type="button" class="btn-secondary" onclick="abrirModalNovoUsuario()">
+            <button type="button" class="btn-secondary master-only" onclick="abrirModalNovoUsuario()">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
               <span>Novo Usuário</span>
             </button>
-            <button type="button" class="btn-secondary" onclick="abrirModalAcessos()">
+            <button type="button" class="btn-secondary no-merchant" onclick="abrirModalAcessos()">
               Acessos por Workspace
             </button>
           </div>
@@ -2891,7 +2891,7 @@
           <button type="button" class="subtab-btn active" id="subtab-btn-ws" onclick="selecionarSubabaClientes('workspaces', this)">
             Subcontas & Workspaces (<span id="count-workspaces-badge">0</span>)
           </button>
-          <button type="button" class="subtab-btn" id="subtab-btn-users" onclick="selecionarSubabaClientes('users', this)">
+          <button type="button" class="subtab-btn master-only" id="subtab-btn-users" onclick="selecionarSubabaClientes('users', this)">
             Todos os Usuários do Sistema (<span id="count-users-badge">0</span>)
           </button>
         </div>
@@ -3215,7 +3215,7 @@
     <div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:12px; margin-bottom:16px; background:var(--bg-card);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span style="font-size:12.5px; font-weight:700; color:var(--text-main);">Alternar Workspace:</span>
-        <button type="button" class="btn-primary" style="min-height:28px; padding:0 10px; font-size:11.5px;" onclick="fecharModalAuth(); abrirModalNovoWorkspace();">
+        <button type="button" class="btn-primary no-merchant" style="min-height:28px; padding:0 10px; font-size:11.5px;" onclick="fecharModalAuth(); abrirModalNovoWorkspace();">
           + Novo Workspace
         </button>
       </div>
@@ -4033,6 +4033,7 @@
 
   /* ═══ NAVEGAÇÃO ENTRE TELAS ═══ */
   function navigate(viewId, options) {
+    if ((viewId === 'customers' || viewId === 'partners') && currentRole !== 'super_admin' && currentRole !== 'partner_admin') viewId = 'dash';
     options = options || {};
     var funnelView=viewId==='funnels';
     if(funnelView)viewId='pages';
@@ -5290,7 +5291,7 @@
   /* ─── GERENCIAMENTO DE TODOS OS USUÁRIOS DO SISTEMA ─── */
   function carregarTodosUsuarios() {
     var tbody = document.getElementById('users-table-body');
-    if (!tbody) return;
+    if (!tbody || currentRole !== 'super_admin') return;
 
     apiFetch('../api/admin/users.php?action=list_all')
     .then(function(data) {
@@ -6693,6 +6694,23 @@
     return currentWsId === 0 ? '0' : (currentWsId || 2);
   }
 
+  // Visibilidade por papel: "Todos os usuários" só para o admin; cliente não vê gestão de outros workspaces.
+  function aplicarPermissoesPorPapel() {
+    var b = document.body;
+    b.classList.toggle('role-master', currentRole === 'super_admin');
+    b.classList.toggle('role-partner', currentRole === 'partner_admin');
+    b.classList.toggle('role-merchant', currentRole !== 'super_admin' && currentRole !== 'partner_admin');
+    if (currentRole !== 'super_admin') {
+      var paneUsers = document.getElementById('customers-subtab-users');
+      if (paneUsers && paneUsers.style.display === 'block') selecionarSubabaClientes('workspaces', document.getElementById('subtab-btn-ws'));
+      allSystemUsers = [];
+    }
+    var bloqueadas = currentRole === 'super_admin' || currentRole === 'partner_admin' ? [] : ['customers', 'partners'];
+    PAGINAS_BUSCA_VISIVEIS = PAGINAS_BUSCA.filter(function(p) { return bloqueadas.indexOf(p.v) === -1; });
+    var ativa = document.querySelector('.view-pane.active');
+    if (ativa && bloqueadas.some(function(v) { return ativa.id === 'view-' + v; })) navigate('dash');
+  }
+
   function carregarStatusAutenticacao() {
     apiFetch('../api/admin/auth-status.php')
     .then(function(data) {
@@ -6703,6 +6721,7 @@
       var auth = data.auth;
       currentRole = auth.role;
       accessibleWorkspaces = auth.accessible_workspaces || [];
+      aplicarPermissoesPorPapel();
 
       // Preenche select de workspace
       var sel = document.getElementById('workspace-select');
@@ -6742,6 +6761,7 @@
     { t: 'Domínios', v: 'sites' }, { t: 'Funis', v: 'funnels' }, { t: 'Editor de páginas', v: 'page-editor' },
     { t: 'Integrações', v: 'integrations' }, { t: 'Configurações', v: 'settings' }
   ];
+  var PAGINAS_BUSCA_VISIVEIS = PAGINAS_BUSCA;
   var resultadosBusca = [], indiceBusca = 0;
   function normalizarBusca(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
   function buscarNoPainel(q) {
@@ -6749,7 +6769,7 @@
     if (!box) return;
     var termo = normalizarBusca(q).trim();
     var campanhas = (window.allCampaignsData || allCampaignsData || []).map(function(c) { return { t: c.title, sub: 'Campanha #' + c.id, camp: c.id }; });
-    var base = PAGINAS_BUSCA.map(function(p) { return { t: p.t, sub: 'Ir para a página', v: p.v }; }).concat(campanhas);
+    var base = PAGINAS_BUSCA_VISIVEIS.map(function(p) { return { t: p.t, sub: 'Ir para a página', v: p.v }; }).concat(campanhas);
     resultadosBusca = (termo ? base.filter(function(r) { return normalizarBusca(r.t + ' ' + r.sub).indexOf(termo) !== -1; }) : base).slice(0, 8);
     indiceBusca = 0;
     if (!resultadosBusca.length) { box.innerHTML = '<div class="header-search-empty">Nada encontrado.</div>'; box.hidden = false; return; }
