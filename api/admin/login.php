@@ -126,9 +126,7 @@ if ($type === '' || $type === 'master') {
         login_master_success($pdo, 0, 'upScale Master', $username);
     }
 
-    if ($type === 'master') {
-        login_fail('Usuário ou senha Master incorretos.', $rateLimiter, $rateKey);
-    }
+    // Não para aqui: Super admins cadastrados pelo painel (e-mail + senha) também entram pela aba Master.
 }
 
 // 3. Login de CLIENTE / PARCEIRO (e-mail + senha vinculados a um workspace)
@@ -146,11 +144,14 @@ if (!$memberships) {
     login_fail('Este usuário não possui acesso a nenhum workspace ativo. Fale com o administrador.', $rateLimiter, $rateKey);
 }
 
-// Usuário com perfil super_admin em algum workspace recebe uma sessão master.
+// Usuário com perfil super_admin recebe uma sessão master.
+// Regra: o acesso master vem do workspace administrativo; vínculo de cliente nunca abre os outros painéis.
+// Exceção de segurança: se o sistema ainda não tem workspace administrativo (banco antigo),
+// o papel super_admin continua valendo para ninguém perder o acesso.
+$hasAdminWorkspace = (bool) $users->adminWorkspaceId();
 $hasSuperAdmin = false;
 foreach ($memberships as $m) {
-    // Acesso master só pelo workspace administrativo; vínculo de cliente nunca abre os outros painéis.
-    if ($m['membership_role'] === 'super_admin' && ($m['workspace_type'] ?? '') === 'super_admin') {
+    if ($m['membership_role'] === 'super_admin' && (($m['workspace_type'] ?? '') === 'super_admin' || !$hasAdminWorkspace)) {
         $hasSuperAdmin = true;
         break;
     }
