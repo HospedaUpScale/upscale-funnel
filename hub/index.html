@@ -3133,7 +3133,7 @@
               <h3 class="card-title-clean">Webhooks do workspace</h3>
               <button type="button" class="btn-secondary" onclick="carregarWebhooks()">Atualizar</button>
             </div>
-            <p class="card-subtitle-clean" style="margin-bottom:12px;">Cadastre cada URL na plataforma indicada. Envie o token em <code>Authorization: Bearer SEU_TOKEN</code> ou, se a plataforma não permitir cabeçalhos, use a URL com <code>?token=</code>.</p>
+            <p class="card-subtitle-clean" style="margin-bottom:12px;">Cadastre cada URL na plataforma indicada. Envie o token em <code>Authorization: Bearer SEU_TOKEN</code> ou, se a plataforma não permitir cabeçalhos, use a URL com <code>?token=</code> (gere o token acima e o botão já copia a URL com ele). Na venda, mande também o ID da rifa (<code>rifa_id</code> ou <code>campaign_id</code>) para o card abrir a oferta da campanha certa.</p>
             <div id="webhooks-list" style="display:flex; flex-direction:column; gap:12px;">
               <div style="color:var(--text-muted); font-size:13px;">Carregando endpoints…</div>
             </div>
@@ -6536,7 +6536,7 @@
       }
       box.innerHTML = (data.endpoints || []).map(function(ep) {
         var queryUrl = ep.auth_query || '';
-        var copyQuery = queryUrl ? `<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 10px;" onclick="copiarValor('${queryUrl.replace(/'/g, "\\'")}')">Copiar URL com ?token=</button>` : '';
+        var copyQuery = queryUrl ? `<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 10px;" onclick="copiarUrlComToken('${queryUrl.replace(/'/g, "\\'")}')">Copiar URL com ?token=</button>` : '';
         return `<div style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:12px;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
             <strong style="font-size:14px;">${escapeHtml(ep.name)}</strong>
@@ -6554,6 +6554,18 @@
     .catch(function() {
       box.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Não foi possível carregar os endpoints.</div>';
     });
+  }
+
+  // Copia a URL já com o token real (o token só aparece logo depois de gerado).
+  function copiarUrlComToken(modelo) {
+    var tokenAtual = (document.getElementById('api-token-display') || {}).value || '';
+    if (!tokenAtual) {
+      showToast('Gere o token de API acima primeiro: por segurança ele só aparece logo depois de gerado.', 'warning');
+      var campo = document.getElementById('api-token-display');
+      if (campo) campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    copiarValor(modelo.replace('<TOKEN_DE_API>', encodeURIComponent(tokenAtual)));
   }
 
   function rotacionarTokenApi() {

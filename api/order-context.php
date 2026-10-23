@@ -58,9 +58,30 @@ if (!empty($offer['theme_config'])) {
 // ─────────────────────────────────────────────────────────────────────────────
 // POST: Registrar Compra da Rifa e Gerar Token de Acesso ao Card
 // ─────────────────────────────────────────────────────────────────────────────
+// Token de API do workspace (cabeçalho Authorization / X-Upscale-Token ou ?api_token=).
+// No GET o parâmetro ?token= é o token do card, por isso aqui só valem o cabeçalho e ?api_token=.
+function order_context_api_workspace($wsRepo, $config): ?\App\Tenancy\Workspace
+{
+    $auth = new \App\Security\WebhookAuth($wsRepo, (string)($config['webhook_secret'] ?? ''));
+    $raw = '';
+    $h = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+    if (preg_match('/Bearer\s+(\S+)/i', $h, $m)) $raw = $m[1];
+    foreach (['HTTP_X_UPSCALE_TOKEN', 'HTTP_X_API_TOKEN', 'HTTP_X_WEBHOOK_TOKEN'] as $k) {
+        if ($raw === '' && !empty($_SERVER[$k])) $raw = (string)$_SERVER[$k];
+    }
+    if ($raw === '') $raw = (string)($_GET['api_token'] ?? '');
+    if ($raw === '' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') $raw = (string)($_GET['token'] ?? '');
+    return $raw !== '' ? $auth->workspaceForToken(trim($raw)) : null;
+}
+
 if ($request->method() === 'POST') {
+    // Criar o contexto do pedido exige o token de API: o workspace vem do token, nunca do corpo.
+    $apiWs = order_context_api_workspace($wsRepo, $config);
+    if (!$apiWs) {
+        JsonResponse::error('Token de API ausente ou inválido. Envie o token do workspace em Authorization: Bearer <token>.', 401);
+    }
     $input = $request->all();
-    $wsId = (int)($input['workspace_id'] ?? $targetWsId);
+    $wsId = $apiWs->id;
     $extOrderId = trim((string)($input['order_id'] ?? $input['pedido_id'] ?? uniqid('rifa_')));
     $rawName = trim((string)($input['name'] ?? $input['customer_name'] ?? $input['nome'] ?? ''));
     $phone = trim((string)($input['phone'] ?? $input['customer_phone'] ?? $input['telefone'] ?? ''));
@@ -138,8 +159,11 @@ if ($token !== '') {
     $foundToken = $stmt->fetch();
 }
 
-// 2. Fallback: busca por order_id se não veio token
-if (!$foundToken && $orderId !== '') {
+// 2. Fallback: busca por order_id só com token de API do próprio workspace
+//    (sem isso, qualquer um poderia ver nome e telefone de compradores pelo número do pedido).
+$apiWsGet = (!$foundToken && $orderId !== '') ? order_context_api_workspace($wsRepo, $config) : null;
+if ($apiWsGet) $targetWsId = $apiWsGet->id;
+if (!$foundToken && $orderId !== '' && $apiWsGet) {
     $stmt = $pdo->prepare("SELECT * FROM order_access_tokens WHERE workspace_id = ? AND external_order_id = ? ORDER BY id DESC LIMIT 1");
     $stmt->execute([$targetWsId, $orderId]);
     $foundToken = $stmt->fetch();

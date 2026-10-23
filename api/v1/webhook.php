@@ -21,18 +21,8 @@ if ($request->method() !== 'POST') {
 }
 
 // 1. Autenticação obrigatória: o token de API define o workspace da venda.
-$authHeader = $request->header('Authorization') ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-$token = '';
-if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
-    $token = trim($matches[1]);
-} else {
-    $token = trim((string) (
-        $request->header('X-Upscale-Token')
-        ?? $request->header('X-Api-Token')
-        ?? $request->get('api_token')
-        ?? ''
-    ));
-}
+// Aceita Authorization: Bearer, X-Upscale-Token / X-Api-Token / X-Webhook-Token, ?token= ou ?api_token=.
+$token = \App\Security\WebhookAuth::extractToken();
 
 $tokenWorkspace = $token !== ''
     ? (new \App\Security\WebhookAuth($wsRepo))->workspaceForToken($token)
@@ -47,13 +37,27 @@ $targetWsId = $tokenWorkspace->id;
 // 2. Extração Flexível do Payload de Venda da Rifa
 $input = $request->all();
 
-$extOrderId = trim((string)(
-    $input['order_id'] 
-    ?? $input['pedido_id'] 
-    ?? $input['id'] 
-    ?? $input['data']['id'] 
-    ?? $input['order']['id'] 
-    ?? uniqid('rifa_')
+$extOrderIdRaw = trim((string)(
+    $input['order_id']
+    ?? $input['pedido_id']
+    ?? $input['id']
+    ?? $input['data']['id']
+    ?? $input['order']['id']
+    ?? ''
+));
+$extOrderId = $extOrderIdRaw !== '' ? $extOrderIdRaw : uniqid('rifa_');
+
+// Campanha da venda (opcional): ID da rifa na plataforma ou ID da campanha no upScale.
+$campaignRef = trim((string)(
+    $input['campaign_id']
+    ?? $input['rifa_id']
+    ?? $input['raffle_id']
+    ?? $input['sorteio_id']
+    ?? $input['external_campaign_id']
+    ?? $input['campaign']['id']
+    ?? $input['raffle']['id']
+    ?? $input['rifa']['id']
+    ?? ''
 ));
 
 $customerRaw = $input['customer'] ?? $input['buyer'] ?? $input['cliente'] ?? [];
@@ -121,9 +125,23 @@ $customer = $customerRepo->upsert(
     email: $email ?: null
 );
 
-// 4. Carregar Oferta Booster do Workspace
+// 4. Oferta da campanha informada (ou a oferta padrão do workspace)
 $offerRepo = new OfferRepository($pdo);
-$offer = $offerRepo->defaultActiveForWorkspace($targetWsId);
+$campaignId = null;
+$offer = null;
+if ($campaignRef !== '') {
+    $stc = $pdo->prepare("SELECT id FROM campaigns WHERE workspace_id = ? AND (external_campaign_id = ? OR id = ?) ORDER BY (external_campaign_id = ?) DESC, id DESC LIMIT 1");
+    $stc->execute([$targetWsId, $campaignRef, ctype_digit($campaignRef) ? (int)$campaignRef : 0, $campaignRef]);
+    $campaignId = (int)($stc->fetchColumn() ?: 0) ?: null;
+    if ($campaignId) {
+        $sto = $pdo->prepare("SELECT * FROM upsell_offers WHERE workspace_id = ? AND campaign_id = ? AND offer_role = 'upsell' AND is_active = 1 ORDER BY is_published DESC, id ASC LIMIT 1");
+        $sto->execute([$targetWsId, $campaignId]);
+        $offer = $sto->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+}
+if (!$offer) {
+    $offer = $offerRepo->defaultActiveForWorkspace($targetWsId);
+}
 $theme = [];
 if (!empty($offer['theme_config'])) {
     $theme = is_string($offer['theme_config']) ? json_decode($offer['theme_config'], true) : $offer['theme_config'];
@@ -135,30 +153,42 @@ $extraBonus = (float)($input['extra_bonus'] ?? $theme['extra_bonus'] ?? 50000.00
 $minOrder = (float)($input['min_order'] ?? $theme['min_order'] ?? 30.00);
 $bonusEntitled = ($amount >= $minOrder && $isPaid) ? 1 : 0;
 
-// 5. Gerar Token de Acesso Seguro (24 horas)
-$cardAccessToken = 'tk_' . bin2hex(random_bytes(16));
-$expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
+// 5. Token de acesso ao card (24 horas). A mesma venda reenviada reaproveita o token
+//    (plataformas costumam repetir o webhook), e só atualiza o status de pagamento.
+$duplicate = false;
+$cardAccessToken = null;
+if ($extOrderIdRaw !== '') {
+    $stx = $pdo->prepare("SELECT token FROM order_access_tokens WHERE workspace_id = ? AND external_order_id = ? AND expires_at > CURRENT_TIMESTAMP ORDER BY id DESC LIMIT 1");
+    $stx->execute([$targetWsId, $extOrderIdRaw]);
+    $cardAccessToken = $stx->fetchColumn() ?: null;
+}
+if ($cardAccessToken) {
+    $duplicate = true;
+    $pdo->prepare("UPDATE order_access_tokens SET is_paid = ?, bonus_entitled = ? WHERE token = ?")
+        ->execute([$isPaid ? 1 : 0, $bonusEntitled, $cardAccessToken]);
+} else {
+    $cardAccessToken = 'tk_' . bin2hex(random_bytes(16));
+    $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
+    $stmt = $pdo->prepare("
+        INSERT INTO order_access_tokens
+        (token, workspace_id, external_order_id, customer_name, customer_phone, customer_cpf, base_amount, is_paid, carro_a, carro_b, extra_bonus, min_order, bonus_entitled, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->execute([
+        $cardAccessToken, $targetWsId, $extOrderId, $fullName, $phone, $cpf, $amount, $isPaid ? 1 : 0,
+        $carroA, $carroB, $extraBonus, $minOrder, $bonusEntitled, $expiresAt
+    ]);
+}
 
-$stmt = $pdo->prepare("
-    INSERT INTO order_access_tokens 
-    (token, workspace_id, external_order_id, customer_name, customer_phone, customer_cpf, base_amount, is_paid, carro_a, carro_b, extra_bonus, min_order, bonus_entitled, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-");
-$stmt->execute([
-    $cardAccessToken, $targetWsId, $extOrderId, $fullName, $phone, $cpf, $amount, $isPaid ? 1 : 0,
-    $carroA, $carroB, $extraBonus, $minOrder, $bonusEntitled, $expiresAt
-]);
-
-// 6. Construir URLs Públicas do Card da Raspadinha
-$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
-$scheme = $isHttps ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8000';
+// 6. Link do card no domínio oficial do workspace, já na oferta da campanha quando publicada
+$publicBase = \App\Support\PublicUrl::base($pdo, $targetWsId);
 
 $parts = preg_split('/\s+/', $fullName);
 $firstName = ucfirst(mb_strtolower($parts[0] ?? '', 'UTF-8'));
 
-$cardUrl = $scheme . '://' . $host . '/?token=' . urlencode($cardAccessToken) . '&workspace_id=' . $targetWsId;
+$cardUrl = (!empty($offer['slug']) && !empty($offer['is_published']))
+    ? $publicBase . '/o/' . rawurlencode($offer['slug']) . '?token=' . urlencode($cardAccessToken)
+    : $publicBase . '/?token=' . urlencode($cardAccessToken) . '&workspace_id=' . $targetWsId;
 
 $iframeSnippet = '<iframe id="upscale-frame" src="' . $cardUrl . '" style="width:100%;border:0;height:820px;" scrolling="no"></iframe>' . "\n" .
 '<script>' . "\n" .
@@ -181,7 +211,9 @@ if (!is_dir($logDir)) @mkdir($logDir, 0777, true);
 // 7. Retorno Oficial para a Plataforma de Rifa
 JsonResponse::send([
     'status'         => 'success',
-    'message'        => 'Venda registrada com sucesso na upScale Media Network.',
+    'message'        => $duplicate ? 'Venda já registrada antes: o mesmo card foi reaproveitado.' : 'Venda registrada com sucesso na upScale Media Network.',
+    'duplicate'      => $duplicate,
+    'campaign_id'    => $campaignId,
     'token'          => $cardAccessToken,
     'order_id'       => $extOrderId,
     'card_url'       => $cardUrl,
