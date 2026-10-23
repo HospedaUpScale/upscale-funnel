@@ -822,7 +822,7 @@
               </div>
               <label class="form-label" for="camp-iframe-snippet">Código de iframe para embutir na rifa</label>
               <div class="camp-inline-row camp-inline-top">
-                <textarea id="camp-iframe-snippet" class="form-input camp-code-field" rows="3" readonly onclick="this.select()"></textarea>
+                <textarea id="camp-iframe-snippet" class="form-input camp-code-field" rows="5" readonly onclick="this.select()"></textarea>
                 <button type="button" class="btn-secondary" onclick="copiarIframeOferta()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código</button>
               </div>
             </div>
@@ -4200,7 +4200,13 @@
     var link = document.getElementById('camp-public-link');
     if (link) link.value = url;
     var snippetEl = document.getElementById('camp-iframe-snippet');
-    if (snippetEl) snippetEl.value = '<iframe src="' + url + '" width="100%" height="640" style="border:0" loading="lazy"></iframe>';
+    if (snippetEl) {
+      // O iframe acompanha a altura da oferta (a página manda a altura por mensagem), sem barra de rolagem.
+      var idFrame = 'upscale-oferta-' + camp.id;
+      snippetEl.value = '<iframe id="' + idFrame + '" src="' + url + '" width="100%" height="720" style="border:0;width:100%;display:block;overflow:hidden" scrolling="no" allow="clipboard-write" loading="lazy"></iframe>\n' +
+        '<script>window.addEventListener("message",function(e){var f=document.getElementById("' + idFrame + '");' +
+        'if(f&&e.source===f.contentWindow&&e.data&&e.data.tipo==="dx:altura"){f.style.height=e.data.altura+"px";}});<\/script>';
+    }
   }
 
   function carregarDominiosCampanha(camp) {

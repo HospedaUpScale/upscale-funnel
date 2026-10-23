@@ -190,11 +190,12 @@ $cardUrl = (!empty($offer['slug']) && !empty($offer['is_published']))
     ? $publicBase . '/o/' . rawurlencode($offer['slug']) . '?token=' . urlencode($cardAccessToken)
     : $publicBase . '/?token=' . urlencode($cardAccessToken) . '&workspace_id=' . $targetWsId;
 
-$iframeSnippet = '<iframe id="upscale-frame" src="' . $cardUrl . '" style="width:100%;border:0;height:820px;" scrolling="no"></iframe>' . "\n" .
+$iframeSnippet = '<iframe id="upscale-frame" src="' . $cardUrl . '" style="width:100%;border:0;height:820px;display:block;overflow:hidden" scrolling="no" allow="clipboard-write"></iframe>' . "\n" .
 '<script>' . "\n" .
 'window.addEventListener("message", function(e) {' . "\n" .
-'  if (e.data && e.data.tipo === "dx:altura") {' . "\n" .
-'    document.getElementById("upscale-frame").style.height = e.data.altura + "px";' . "\n" .
+'  var f = document.getElementById("upscale-frame");' . "\n" .
+'  if (f && e.source === f.contentWindow && e.data && e.data.tipo === "dx:altura") {' . "\n" .
+'    f.style.height = e.data.altura + "px";' . "\n" .
 '  }' . "\n" .
 '});' . "\n" .
 '</script>';

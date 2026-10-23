@@ -23,6 +23,8 @@
     color-scheme: dark;
     background-color: var(--page-bg, #06152D);
   }
+  /* Dentro do iframe da rifa a altura acompanha o conteúdo (sem 100vh, que travaria o ajuste) */
+  html.embutido body { min-height: 0; }
   body {
     background-color: var(--page-bg, #06152D);
     color: var(--text-color, #FFFFFF);
@@ -776,6 +778,35 @@
   }
 
   var isEditorPreview = param(['preview']) === '1';
+
+  /* ══ IFRAME NA PÁGINA DA RIFA: avisa a altura para o site ajustar o iframe (sem barra de rolagem) ══ */
+  (function () {
+    var embutido = false;
+    try { embutido = window.self !== window.top; } catch (e) { embutido = true; }
+    if (!embutido || isEditorPreview) return;
+    document.documentElement.classList.add('embutido');
+    var ultima = 0, agendado = false;
+    function medir() {
+      agendado = false;
+      var rp = document.getElementById('rp');
+      var alto = rp ? Math.ceil(rp.getBoundingClientRect().bottom + window.scrollY + 24) : document.documentElement.scrollHeight;
+      var dialogoAberto = document.querySelector('dialog[open]');
+      if (dialogoAberto) alto = Math.max(alto, Math.ceil(dialogoAberto.getBoundingClientRect().height + 48), 640);
+      if (Math.abs(alto - ultima) < 2) return;
+      ultima = alto;
+      // Só a altura vai para a página da rifa; nenhum dado do comprador.
+      window.parent.postMessage({ tipo: 'dx:altura', altura: alto, origem: 'upscale' }, '*');
+    }
+    function agendar() { if (!agendado) { agendado = true; requestAnimationFrame(medir); } }
+    window.addEventListener('load', agendar);
+    window.addEventListener('resize', agendar);
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.ResizeObserver) new ResizeObserver(agendar).observe(document.body);
+      if (window.MutationObserver) new MutationObserver(agendar).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'open'] });
+      agendar();
+    });
+    setInterval(agendar, 1500);
+  })();
   var CONFIG = {
     title: 'Booster 200X Ouro',
     subtitle: 'Kit Bobzão Bitruck + Ford F250',
