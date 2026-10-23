@@ -45,6 +45,19 @@ $base = $scheme . '://' . $host;
 // POST com action=rotate_token: gera um novo token de API e o devolve uma única vez.
 if ($request->method() === 'POST') {
     $action = $request->get('action') ?? ($request->all()['action'] ?? '');
+    // Endereço da plataforma da rifa que recebe o aviso de cotas pagas (upsell.quotas_paid)
+    if ($action === 'save_postback') {
+        $url = trim((string)($request->all()['postback_url'] ?? ''));
+        if ($url !== '' && (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('#^https://#i', $url))) {
+            JsonResponse::error('Informe um endereço completo começando com https://', 422);
+        }
+        try {
+            $pdo->prepare('UPDATE workspaces SET postback_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([$url ?: null, $targetWsId]);
+        } catch (\PDOException $e) {
+            JsonResponse::error('Faça o deploy para liberar este campo (migração 0030).', 503);
+        }
+        JsonResponse::send(['status' => 'success', 'postback_url' => $url ?: null, 'message' => $url ? 'Endereço de retorno da rifa salvo.' : 'Endereço de retorno removido.']);
+    }
     if ($action !== 'rotate_token') {
         JsonResponse::error('Ação inválida.', 400);
     }
@@ -58,9 +71,18 @@ if ($request->method() === 'POST') {
 }
 
 // GET: endpoints de webhook do workspace.
+$postbackUrl = null;
+try {
+    $stPb = $pdo->prepare('SELECT postback_url FROM workspaces WHERE id = ?');
+    $stPb->execute([$targetWsId]);
+    $postbackUrl = $stPb->fetchColumn() ?: null;
+} catch (\PDOException $e) {
+}
 JsonResponse::send([
     'status'       => 'success',
     'workspace_id' => $targetWsId,
+    'postback_url' => $postbackUrl,
+    'postback_signed' => (string)($config['postback_secret'] ?? '') !== '',
     'base_url'     => $base,
     'endpoints'    => [
         [

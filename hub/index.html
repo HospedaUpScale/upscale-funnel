@@ -3139,6 +3139,19 @@
             </div>
           </div>
 
+          <!-- Retorno para a plataforma da rifa (cotas pagas) -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header-clean">
+              <h3 class="card-title-clean">Retorno para a rifa (cotas pagas)</h3>
+              <span class="badge badge-neutral" id="postback-sign-badge" style="font-size:11px;">—</span>
+            </div>
+            <p class="card-subtitle-clean" style="margin-bottom:12px;">Endereço da plataforma da rifa que recebe o aviso <code>upsell.quotas_paid</code> quando o Pix das cotas extras é pago, para creditar as cotas no pedido do comprador. Até 3 tentativas por aviso.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <input type="url" class="form-input" id="postback-url-input" placeholder="https://plataforma-da-rifa.com/webhooks/upscale" style="font-family:var(--font-mono); flex:1; min-width:240px;">
+              <button type="button" class="btn-primary" onclick="salvarPostbackRifa()">Salvar</button>
+            </div>
+          </div>
+
           <!-- Vendas por origem (rastreamento) -->
           <div class="card">
             <div class="card-header-clean">
@@ -6552,6 +6565,10 @@
         box.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Não foi possível carregar os endpoints.</div>';
         return;
       }
+      var pb = document.getElementById('postback-url-input');
+      if (pb) pb.value = data.postback_url || '';
+      var sb = document.getElementById('postback-sign-badge');
+      if (sb) { sb.textContent = data.postback_signed ? 'Assinado (POSTBACK_SECRET)' : 'Sem assinatura: defina POSTBACK_SECRET'; sb.className = 'badge ' + (data.postback_signed ? 'badge-success' : 'badge-warning'); }
       box.innerHTML = (data.endpoints || []).map(function(ep) {
         var queryUrl = ep.auth_query || '';
         var copyQuery = queryUrl ? `<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 10px;" onclick="copiarUrlComToken('${queryUrl.replace(/'/g, "\\'")}')">Copiar URL com ?token=</button>` : '';
@@ -6572,6 +6589,16 @@
     .catch(function() {
       box.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Não foi possível carregar os endpoints.</div>';
     });
+  }
+
+  function salvarPostbackRifa() {
+    var url = (document.getElementById('postback-url-input').value || '').trim();
+    apiFetch('../api/admin/webhook-info.php?workspace_id=' + (currentWsId || 1), {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save_postback', postback_url: url, workspace_id: currentWsId || 1 })
+    })
+    .then(function(d) { showToast(d.message || (d.status === 'success' ? 'Salvo.' : 'Não foi possível salvar.'), d.status === 'success' ? 'success' : 'error'); })
+    .catch(function(e) { showToast('Erro: ' + e.message, 'error'); });
   }
 
   // Copia a URL já com o token real (o token só aparece logo depois de gerado).
