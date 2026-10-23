@@ -231,73 +231,28 @@ if ($isPaid) {
         'webhook_ip'     => $clientIp
     ]);
 
-    // 6.4 Disparo de Webhook de Entrega de Cotas (Postback para a Plataforma da Rifa)
+    // 6.4 Aviso de cotas pagas para a plataforma da rifa (com pedido da rifa, campanha e cotas da oferta)
     $customer = !empty($order['customer_id']) ? $customerRepo->find((int)$order['customer_id']) : null;
     $offer = !empty($order['offer_id']) ? $offerRepo->find((int)$order['offer_id'], $workspaceId) : null;
-    
-    $quotasToAdd = 110;
-    if ($offer && !empty($offer['theme_config'])) {
-        $cfg = is_string($offer['theme_config']) ? json_decode($offer['theme_config'], true) : $offer['theme_config'];
-        if (!empty($cfg['quotas_extra'])) {
-            $quotasToAdd = (int)$cfg['quotas_extra'];
-        }
-    }
-
-    $deliveryPayload = [
-        'event'            => 'upsell.quotas_paid',
-        'order_id'         => (int)$order['id'],
-        'external_order_id'=> $order['external_order_id'],
-        'customer'         => [
-            'name'  => $customer['name'] ?? 'Cliente',
-            'phone' => $customer['phone'] ?? '',
-            'cpf'   => $customer['cpf'] ?? ''
-        ],
-        'quotas_awarded'   => $quotasToAdd,
-        'amount_paid'      => (float)$order['total_amount'],
-        'paid_at'          => date('Y-m-d H:i:s'),
-    ];
-
-    // Assinatura HMAC com segredo configurado no servidor (POSTBACK_SECRET).
-    // Sem segredo configurado, o postback segue sem assinatura em vez de usar uma chave pública.
+    $orderFresh = $orderRepo->find((int)$order['id']) ?: $order;
+    $deliveryPayload = \App\Support\RafflePostback::payload($pdo, $orderFresh, $customer, $offer);
+    $quotasToAdd = $deliveryPayload['quotas_awarded'];
+    // Campo legado: assinatura de "order_id|external_order_id" (mantido para quem já integrou).
     $postbackSecret = (string) ($config['postback_secret'] ?? '');
     if ($postbackSecret !== '') {
-        $deliveryPayload['signature'] = hash_hmac(
-            'sha256',
-            (string)$order['id'] . '|' . $order['external_order_id'],
-            $postbackSecret
-        );
+        $deliveryPayload['signature'] = hash_hmac('sha256', (string)$order['id'] . '|' . $order['external_order_id'], $postbackSecret);
     }
-
-    // Se houver URL de entrega configurada na oferta ou workspace
-    $deliveryUrl = null;
-    if ($offer && !empty($offer['theme_config'])) {
-        $cfg = is_string($offer['theme_config']) ? json_decode($offer['theme_config'], true) : $offer['theme_config'];
-        $deliveryUrl = $cfg['delivery_webhook_url'] ?? $cfg['postback_url'] ?? null;
-    }
-
+    $deliveryUrl = \App\Support\RafflePostback::destination($pdo, $workspaceId, $offer);
     $postbackResult = 'no_url_configured';
-    if (!empty($deliveryUrl) && filter_var($deliveryUrl, FILTER_VALIDATE_URL)) {
-        // Envia requisição HTTP POST para a plataforma da rifa creditar as cotas
-        $postbackHeaders = [
-            'Content-Type: application/json',
-            'X-Source: upScale-Media-Network',
-        ];
-        if (!empty($deliveryPayload['signature'])) {
-            $postbackHeaders[] = 'X-Signature: ' . $deliveryPayload['signature'];
-        }
-
-        $ch = curl_init($deliveryUrl);
-        curl_setopt_array($ch, [
-            CURLOPT_POST           => true,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 5,
-            CURLOPT_POSTFIELDS     => json_encode($deliveryPayload),
-            CURLOPT_HTTPHEADER     => $postbackHeaders,
-        ]);
-        $postbackResponse = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        $postbackResult = ['status_code' => $httpCode, 'response' => substr((string)$postbackResponse, 0, 300)];
+    if ($deliveryUrl) {
+        $postbackResult = \App\Support\RafflePostback::send($deliveryUrl, $deliveryPayload, $postbackSecret);
+    }
+    try {
+        $eventRepo->log($workspaceId, (int)$order['id'], 'postback', [
+            'url'    => $deliveryUrl ? parse_url($deliveryUrl, PHP_URL_HOST) : null,
+            'result' => $postbackResult,
+        ], ['offer_id' => $offer['id'] ?? null]);
+    } catch (\Throwable $e) {
     }
 
     echo json_encode([

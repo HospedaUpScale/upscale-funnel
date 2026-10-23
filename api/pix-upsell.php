@@ -35,9 +35,21 @@ $price = (float)($published['price'] ?? $offer['price']);
 $offerTitle = $published['title'] ?? $offer['title'];
 
 // 2. Resolve Customer
-$customerName = trim($input['name'] ?? $input['customer']['name'] ?? 'Cliente');
+// Card aberto pelo token do webhook de vendas: os dados confiáveis do pedido da rifa vêm do servidor
+// (nome, telefone, CPF e número do pedido), não da URL.
+$cardToken = null;
+if (!empty($input['token'])) {
+    $stTok = $pdo->prepare('SELECT * FROM order_access_tokens WHERE token = ? AND workspace_id = ? AND expires_at > CURRENT_TIMESTAMP LIMIT 1');
+    $stTok->execute([trim((string)$input['token']), $workspace->id]);
+    $cardToken = $stTok->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+$customerName = trim($input['name'] ?? $input['customer']['name'] ?? '');
+if (($customerName === '' || strcasecmp($customerName, 'Cliente') === 0) && !empty($cardToken['customer_name'])) $customerName = $cardToken['customer_name'];
+if ($customerName === '') $customerName = 'Cliente';
 $customerPhone = trim($input['phone'] ?? $input['telefone'] ?? $input['customer']['phone'] ?? '');
+if ($customerPhone === '' && !empty($cardToken['customer_phone'])) $customerPhone = $cardToken['customer_phone'];
 $customerCpf = trim($input['cpf'] ?? $input['customer']['cpf'] ?? '');
+if ($customerCpf === '' && !empty($cardToken['customer_cpf'])) $customerCpf = $cardToken['customer_cpf'];
 $customerEmail = trim($input['email'] ?? $input['customer']['email'] ?? '');
 
 $customerRepo = new CustomerRepository($pdo);
@@ -51,7 +63,7 @@ $customer = $customerRepo->upsert(
 
 // 3. Create Order
 $orderRepo = new OrderRepository($pdo);
-$externalOrderId = $input['order_id'] ?? $input['pedido_id'] ?? uniqid('ord_');
+$externalOrderId = $input['order_id'] ?? $input['pedido_id'] ?? ($cardToken['external_order_id'] ?? null) ?? uniqid('ord_');
 
 // Canal de origem da venda (rastreamento). Valores conhecidos:
 // offer_link (link exclusivo /o/{slug}), card_link (link do card pós-venda),
