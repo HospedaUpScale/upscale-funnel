@@ -1307,6 +1307,20 @@
                 <p class="card-subtitle-clean" style="margin-bottom:16px;">Adicione um vídeo explicativo do Booster para turbinar a conversão.</p>
                 <div style="display:flex; flex-direction:column; gap:14px;">
                   <div>
+                    <label class="form-label" for="camp-video-source">Fonte do vídeo</label>
+                    <select class="form-select" id="camp-video-source" onchange="alternarFonteVideo(); marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
+                      <option value="none">Sem vídeo</option>
+                      <option value="vturb">VTurb</option>
+                      <option value="link">Link de vídeo (MP4, WebM, MOV, YouTube ou Vimeo)</option>
+                    </select>
+                  </div>
+                  <div id="video-source-link" style="display:none;">
+                    <label class="form-label" for="camp-video-url">Link do vídeo</label>
+                    <input type="url" class="form-input" id="camp-video-url" placeholder="https://seusite.com/video.mp4 ou https://youtu.be/..." oninput="validarLinkVideo(); marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
+                    <p id="camp-video-feedback" role="status" style="font-size:12px;line-height:1.5;margin-top:6px;color:var(--text-muted);">Arquivo de vídeo direto (.mp4, .webm, .mov) ou link do YouTube/Vimeo. Vídeos verticais aparecem em pé, sem cortes.</p>
+                  </div>
+                  <div id="video-source-vturb" style="display:none; flex-direction:column; gap:14px;">
+                  <div>
                     <label class="form-label" for="camp-vturb-embed">Código de incorporação VTurb</label>
                     <textarea id="camp-vturb-embed" class="form-input" rows="7" maxlength="32768" spellcheck="false" placeholder="Cole aqui o código completo com vturb-smartplayer e o script player.js" oninput="atualizarEmbedVturb()" style="font-family:monospace;font-size:12px;resize:vertical;"></textarea>
                     <p id="camp-vturb-feedback" role="status" style="font-size:12px;line-height:1.5;margin-top:6px;color:var(--text-muted);">Cole o embed completo do VTurb. Conta, player e versão são identificados automaticamente.</p>
@@ -1319,9 +1333,6 @@
                     <label class="form-label" for="camp-vturb-account">ID da Conta Vturb (se aplicável)</label>
                     <input type="text" class="form-input" id="camp-vturb-account" placeholder="Preenchido automaticamente, ou informe manualmente" oninput="editarVturbManual();">
                   </div>
-                  <div>
-                    <label class="form-label" for="camp-video-url">Ou URL de Vídeo MP4 Direto</label>
-                    <input type="text" class="form-input" id="camp-video-url" placeholder="https://..." oninput="marcarEditorAlterado(); sincronizarPreviewEmTempoReal();">
                   </div>
                 </div>
               </div>
@@ -4654,6 +4665,30 @@
   var publicBaseUrl = '';
   function baseUrlPublica() { return publicBaseUrl || window.location.origin; }
 
+  /* ═══ VÍDEO DA OFERTA: VTurb ou link direto ═══ */
+  function fonteVideoAtual() {
+    var sel = document.getElementById('camp-video-source');
+    return sel ? sel.value : 'none';
+  }
+  function alternarFonteVideo() {
+    var f = fonteVideoAtual();
+    document.getElementById('video-source-link').style.display = f === 'link' ? 'block' : 'none';
+    document.getElementById('video-source-vturb').style.display = f === 'vturb' ? 'flex' : 'none';
+    if (f === 'link') validarLinkVideo();
+  }
+  function validarLinkVideo() {
+    var el = document.getElementById('camp-video-url'), fb = document.getElementById('camp-video-feedback');
+    if (!el || !fb) return;
+    var v = el.value.trim();
+    if (!v) { fb.textContent = 'Arquivo de vídeo direto (.mp4, .webm, .mov) ou link do YouTube/Vimeo. Vídeos verticais aparecem em pé, sem cortes.'; fb.style.color = 'var(--text-muted)'; return; }
+    var tipo = /^https:\/\/(www\.)?(youtube\.com|youtu\.be|m\.youtube\.com)\//i.test(v) ? 'YouTube'
+      : /^https:\/\/(www\.|player\.)?vimeo\.com\//i.test(v) ? 'Vimeo'
+      : /^https:\/\/[^\s]+\.(mp4|webm|mov|m4v)(\?[^\s]*)?$/i.test(v) ? 'arquivo de vídeo' : '';
+    if (!/^https:\/\//i.test(v)) { fb.textContent = 'Use um link que comece com https://'; fb.style.color = 'var(--red-text, #B42318)'; return; }
+    fb.textContent = tipo ? '✓ Reconhecido: ' + tipo + '.' : 'Link aceito, mas sem extensão de vídeo conhecida. Confira na prévia se ele toca.';
+    fb.style.color = tipo ? 'var(--green-text)' : 'var(--amber-text, #B54708)';
+  }
+
   function atualizarPreviewUrlSlug(slug) {
     var baseUrl = baseUrlPublica();
     var full = baseUrl + '/o/' + slug;
@@ -4741,10 +4776,10 @@
     var timerMin = parseFloat(document.getElementById('camp-timer-minutes').value) || 3;
 
     var theme = {
-      vturb_embed: document.getElementById('camp-vturb-embed').value.trim(),
-      vturb_script_url: document.getElementById('camp-vturb-embed').dataset.scriptUrl || '',
+      vturb_embed: fonteVideoAtual() === 'vturb' ? document.getElementById('camp-vturb-embed').value.trim() : '',
+      vturb_script_url: fonteVideoAtual() === 'vturb' ? (document.getElementById('camp-vturb-embed').dataset.scriptUrl || '') : '',
       vturb_aspect_ratio: Number(document.getElementById('camp-vturb-embed').dataset.aspectRatio) || 56.25,
-      video_src: document.getElementById('camp-video-url').value.trim(),
+      video_src: fonteVideoAtual() === 'link' ? document.getElementById('camp-video-url').value.trim() : '',
       page_bg: document.getElementById('hex-page-bg').value,
       card_bg: document.getElementById('hex-card-bg').value,
       primary_color: document.getElementById('hex-primary-color').value,
@@ -4779,9 +4814,9 @@
       subtitle: subtitle,
       price: price,
       quota_count: quotaCount,
-      vturb_player_id: document.getElementById('camp-vturb-player').value.trim(),
-      vturb_account_id: document.getElementById('camp-vturb-account').value.trim(),
-      video_src: document.getElementById('camp-video-url').value.trim(),
+      vturb_player_id: fonteVideoAtual() === 'vturb' ? document.getElementById('camp-vturb-player').value.trim() : '',
+      vturb_account_id: fonteVideoAtual() === 'vturb' ? document.getElementById('camp-vturb-account').value.trim() : '',
+      video_src: fonteVideoAtual() === 'link' ? document.getElementById('camp-video-url').value.trim() : '',
       checkout_mode: checkoutMode,
       legacy_checkout_url: legacyUrl,
       slug: slug,
@@ -4916,6 +4951,8 @@
         document.getElementById('camp-vturb-embed').value = t.vturb_embed || '';
         document.getElementById('camp-video-url').value = t.video_src || '';
         atualizarEmbedVturb(true);
+        document.getElementById('camp-video-source').value = o.vturb_player_id ? 'vturb' : (t.video_src ? 'link' : 'none');
+        alternarFonteVideo();
         document.getElementById('campaign-sound-enabled').checked = t.sound_enabled !== false;
         document.getElementById('campaign-sound-volume').value = Math.round((t.sound_volume === undefined ? .2 : Number(t.sound_volume))*100);
         if (t.mechanic && document.getElementById('mechanic-type')) {
