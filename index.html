@@ -1342,6 +1342,17 @@
   }
   window.upscaleRastrear = rastrearEvento;
 
+  // Nome do comprador enviado pela página da rifa (o código do iframe lê o nome na página de finalização).
+  // Só aceita texto curto vindo da janela que embute a oferta; nunca substitui um nome que já veio do pedido.
+  window.addEventListener('message', function (ev) {
+    var d = ev.data;
+    if (!d || d.tipo !== 'upscale:nome' || ev.source !== window.parent || window.parent === window) return;
+    var nome = String(d.nome || '').replace(/[^\p{L}\s'.-]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (!nome || CONFIG.buyerName) return;
+    CONFIG.buyerName = nome;
+    renderSaudacao();
+  });
+
   // Se houver dados pré-injetados pelo offer-public.php
   if (window.__INITIAL_OFFER_DATA__) {
     aplicarDados(window.__INITIAL_OFFER_DATA__);

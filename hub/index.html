@@ -4203,9 +4203,21 @@
     if (snippetEl) {
       // O iframe acompanha a altura da oferta (a página manda a altura por mensagem), sem barra de rolagem.
       var idFrame = 'upscale-oferta-' + camp.id;
+      // Também lê o nome do comprador na página de finalização da rifa (endereço, atributos ou campo do formulário)
+      // e entrega à oferta, que mostra "Parabéns, Maria!". Nada sai da página além do primeiro nome.
       snippetEl.value = '<iframe id="' + idFrame + '" src="' + url + '" width="100%" height="720" style="border:0;width:100%;display:block;overflow:hidden" scrolling="no" allow="clipboard-write" loading="lazy"></iframe>\n' +
-        '<script>window.addEventListener("message",function(e){var f=document.getElementById("' + idFrame + '");' +
-        'if(f&&e.source===f.contentWindow&&e.data&&e.data.tipo==="dx:altura"){f.style.height=e.data.altura+"px";}});<\/script>';
+        '<script>(function(){var f=document.getElementById("' + idFrame + '");if(!f)return;' +
+        'window.addEventListener("message",function(e){if(e.source===f.contentWindow&&e.data&&e.data.tipo==="dx:altura"){f.style.height=e.data.altura+"px";}});' +
+        'function nome(){var q=new URLSearchParams(location.search),k=["nome","name","cliente","comprador","customer_name","first_name"],i,v;' +
+        'for(i=0;i<k.length;i++){v=q.get(k[i]);if(v&&v.trim())return v;}' +
+        'var el=document.querySelector("[data-upscale-nome],[data-nome],[data-customer-name],[data-buyer-name]");' +
+        'if(el){v=el.getAttribute("data-upscale-nome")||el.getAttribute("data-nome")||el.getAttribute("data-customer-name")||el.getAttribute("data-buyer-name")||el.textContent;if(v&&v.trim())return v;}' +
+        'var c=document.querySelectorAll("input[autocomplete=name],input[name*=nome i],input[id*=nome i],input[name=name],input[id=name],input[name*=fullname i]");' +
+        'for(i=0;i<c.length;i++){v=c[i].value;if(v&&v.trim()&&!/@|\\d{3}/.test(v))return v;}return "";}' +
+        'function primeiro(v){v=String(v||"").trim().split(/\\s+/)[0]||"";return v.slice(0,30);}' +
+        'var n=primeiro(nome());if(n){try{var u=new URL(f.src,location.href);if(!u.searchParams.get("nome")){u.searchParams.set("nome",n);f.src=u.toString();}}catch(x){}}' +
+        'var t=0,iv=setInterval(function(){var m=primeiro(nome());if(m&&f.contentWindow){f.contentWindow.postMessage({tipo:"upscale:nome",nome:m},"*");}if(++t>15)clearInterval(iv);},1000);' +
+        '})();<\/script>';
     }
   }
 
