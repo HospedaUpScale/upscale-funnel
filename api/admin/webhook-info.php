@@ -70,7 +70,7 @@ JsonResponse::send([
             'method'      => 'POST',
             'url'         => $base . '/api/v1/webhook.php',
             'auth'        => 'Authorization: Bearer <TOKEN_DE_API>',
-            'auth_query'  => $base . '/api/v1/webhook.php?api_token=<TOKEN_DE_API>',
+            'auth_query'  => $base . '/api/v1/webhook.php?token=<TOKEN_DE_API>',
         ],
         [
             'key'         => 'payment',
@@ -87,8 +87,8 @@ JsonResponse::send([
             'description' => 'Opcional: pré-carrega os dados do comprador no card do upsell.',
             'method'      => 'POST',
             'url'         => $base . '/api/order-context.php',
-            'auth'        => '—',
-            'auth_query'  => '',
+            'auth'        => 'Authorization: Bearer <TOKEN_DE_API>',
+            'auth_query'  => $base . '/api/order-context.php?token=<TOKEN_DE_API>',
         ],
     ],
     // Canais de origem rastreados nas vendas (ver api/pix-upsell.php).
