@@ -218,42 +218,11 @@ if ($isPaid) {
         exit;
     }
 
-    // 6.2 Marca como pago no Banco de Dados
-    $txRepo->markPaid((int)$transaction['id']);
-    $orderRepo->markPaid((int)$order['id']);
-
-    // 6.3 Registra evento de conversão
-    $eventRepo->log($workspaceId, (int)$order['id'], 'pix_paid', [
-        'transaction_id' => (int)$transaction['id'],
-        'gateway'        => $transaction['gateway'] ?? 'webhook',
-        'amount'         => (float)$transaction['amount'],
-        'source'         => 'webhook',
-        'webhook_ip'     => $clientIp
-    ]);
-
-    // 6.4 Aviso de cotas pagas para a plataforma da rifa (com pedido da rifa, campanha e cotas da oferta)
-    $customer = !empty($order['customer_id']) ? $customerRepo->find((int)$order['customer_id']) : null;
-    $offer = !empty($order['offer_id']) ? $offerRepo->find((int)$order['offer_id'], $workspaceId) : null;
-    $orderFresh = $orderRepo->find((int)$order['id']) ?: $order;
-    $deliveryPayload = \App\Support\RafflePostback::payload($pdo, $orderFresh, $customer, $offer);
-    $quotasToAdd = $deliveryPayload['quotas_awarded'];
-    // Campo legado: assinatura de "order_id|external_order_id" (mantido para quem já integrou).
-    $postbackSecret = (string) ($config['postback_secret'] ?? '');
-    if ($postbackSecret !== '') {
-        $deliveryPayload['signature'] = hash_hmac('sha256', (string)$order['id'] . '|' . $order['external_order_id'], $postbackSecret);
-    }
-    $deliveryUrl = \App\Support\RafflePostback::destination($pdo, $workspaceId, $offer);
-    $postbackResult = 'no_url_configured';
-    if ($deliveryUrl) {
-        $postbackResult = \App\Support\RafflePostback::send($deliveryUrl, $deliveryPayload, $postbackSecret);
-    }
-    try {
-        $eventRepo->log($workspaceId, (int)$order['id'], 'postback', [
-            'url'    => $deliveryUrl ? parse_url($deliveryUrl, PHP_URL_HOST) : null,
-            'result' => $postbackResult,
-        ], ['offer_id' => $offer['id'] ?? null]);
-    } catch (\Throwable $e) {
-    }
+    // 6.2 Liquidação: pago + evento + aviso de cotas pagas para a rifa
+    $settled = \App\Support\PaymentSettlement::settle($pdo, $config, $order, $transaction, 'webhook', ['webhook_ip' => $clientIp]);
+    $quotasToAdd = $settled['quotas_awarded'];
+    $customer = $settled['customer'];
+    $postbackResult = $settled['postback_delivery'];
 
     echo json_encode([
         'status'             => 'success',

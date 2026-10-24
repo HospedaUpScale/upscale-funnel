@@ -138,7 +138,8 @@ $transaction = $txRepo->create([
     'order_id'            => $order['id'],
     'type'                => 'upsell_order',
     'status'              => 'pending',
-    'gateway'             => $workspace->gatewayProvider ?: 'mock',
+    // Enquanto não houver gateway real integrado, toda cobrança sai do gateway de demonstração.
+    'gateway'             => $gateway instanceof MockPixGateway ? 'mock' : ($workspace->gatewayProvider ?: 'mock'),
     'gateway_tx_id'       => $charge->gatewayTxId,
     'pix_copy_paste'      => $charge->copyPaste,
     'pix_qr_base64'       => $charge->qrBase64,
