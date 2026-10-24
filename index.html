@@ -688,7 +688,7 @@
   <!-- ══ VISTA 2: OFERTA REVELADA ══ -->
   <div class="view-offer" id="view-offer">
     <div class="offer-hero">
-      <div class="offer-badge">OFERTA DESBLOQUEADA</div>
+      <div class="offer-badge" id="offer-badge">OFERTA DESBLOQUEADA</div>
       <h1 class="offer-headline"><span id="offer-headline-start">Seu Booster está</span><br><span id="offer-headline-highlight">pronto para ativar.</span></h1>
       <p class="offer-intro" id="offer-intro">Confira os detalhes da sua oferta no vídeo abaixo.</p>
     </div>
@@ -1074,7 +1074,30 @@
     return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
   }
 
+  // Página do upsell com o nome do comprador: selo "OFERTA DESBLOQUEADA PARA MARIA" e título
+  // "Maria, seu Booster está pronto para ativar." O título também aceita {nome} onde a pessoa quiser.
+  function renderNomeOferta() {
+    var nome = CONFIG.greetingEnabled ? primeiroNome(CONFIG.buyerName) : '';
+    var ini = $('offer-headline-start'), dest = $('offer-headline-highlight'), selo = $('offer-badge');
+    if (!ini || !dest) return;
+    var modeloIni = ini.dataset.modelo || ini.textContent, modeloDest = dest.dataset.modelo || dest.textContent;
+    ini.dataset.modelo = modeloIni; dest.dataset.modelo = modeloDest;
+    var temMarcador = /\{nome\}/i.test(modeloIni + modeloDest);
+    var aplicar = function (t) {
+      if (!/\{nome\}/i.test(t)) return t;
+      if (nome) return t.replace(/\{nome\}/gi, nome);
+      var limpo = t.replace(/\s*\{nome\}\s*[,!:]?\s*/gi, ' ').trim();
+      return /^\{nome\}/i.test(t.trim()) ? limpo.replace(/^./, function (c) { return c.toUpperCase(); }) : limpo;
+    };
+    var textoIni = aplicar(modeloIni);
+    if (nome && !temMarcador) textoIni = nome + ', ' + textoIni.charAt(0).toLowerCase() + textoIni.slice(1);
+    ini.textContent = textoIni;
+    dest.textContent = aplicar(modeloDest);
+    if (selo) selo.textContent = nome ? 'OFERTA DESBLOQUEADA PARA ' + nome.toUpperCase() : 'OFERTA DESBLOQUEADA';
+  }
+
   function renderSaudacao() {
+    renderNomeOferta();
     var el = $('greeting');
     if (!el) return;
     var nome = primeiroNome(CONFIG.buyerName);
@@ -1253,8 +1276,9 @@
     $('wheel-title-start').textContent=theme.wheel_heading||'Gire e descubra';
     $('wheel-highlight').textContent=theme.wheel_highlight||'seu Booster';
     $('wheel-subtitle').textContent=theme.wheel_subtitle||'Gire a roleta para liberar sua condição especial.';
-    $('offer-headline-start').textContent = theme.offer_headline_start || 'Seu Booster está';
-    $('offer-headline-highlight').textContent = theme.offer_headline_highlight || 'pronto para ativar.';
+    $('offer-headline-start').dataset.modelo = theme.offer_headline_start || 'Seu Booster está';
+    $('offer-headline-highlight').dataset.modelo = theme.offer_headline_highlight || 'pronto para ativar.';
+    renderNomeOferta();
     if(window.upscaleSounds)upscaleSounds.configure({enabled:theme.sound_enabled!==false,volume:theme.sound_volume===undefined?.2:theme.sound_volume});
     CONFIG.vturbScriptUrl = theme.vturb_script_url || '';
     CONFIG.vturbAspectRatio = Number(theme.vturb_aspect_ratio) || 56.25;
