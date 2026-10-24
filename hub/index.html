@@ -6147,7 +6147,7 @@
     })
     .then(function(data) {
       if (data.status === 'success') {
-        showToast('Pagamento Pix confirmado manualmente!', 'success');
+        showToast(data.message || 'Pagamento Pix confirmado manualmente!', 'success');
         carregarMetricas();
       } else showToast(data.message || 'Erro ao forçar pagamento.', 'error');
     });
