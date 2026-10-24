@@ -39,8 +39,10 @@ $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
     || (!empty($_SERVER['HTTP_CF_VISITOR']) && str_contains($_SERVER['HTTP_CF_VISITOR'], 'https'));
 $scheme = $isHttps ? 'https' : 'http';
-$host = $ws->customDomain ?: ($_SERVER['HTTP_HOST'] ?? 'localhost');
-$base = $scheme . '://' . $host;
+// Endereços para o cliente usam o domínio próprio do workspace; sem ele, o do sistema (com aviso no painel).
+$ownDomain = \App\Support\PublicUrl::officialDomain($pdo, $targetWsId);
+$host = $ownDomain ?: ($_SERVER['HTTP_HOST'] ?? 'localhost');
+$base = ($ownDomain ? 'https' : $scheme) . '://' . $host;
 
 // POST com action=rotate_token: gera um novo token de API e o devolve uma única vez.
 if ($request->method() === 'POST') {
@@ -82,6 +84,7 @@ JsonResponse::send([
     'status'       => 'success',
     'workspace_id' => $targetWsId,
     'postback_url' => $postbackUrl,
+    'has_own_domain' => $ownDomain !== null,
     'postback_signed' => (string)($config['postback_secret'] ?? '') !== '',
     'base_url'     => $base,
     'endpoints'    => [

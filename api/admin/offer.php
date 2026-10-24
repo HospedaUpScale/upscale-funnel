@@ -194,6 +194,7 @@ if ($request->method() === 'GET') {
             'is_published'        => $isPublished,
             'published_at'        => $offer['published_at'] ?? null,
             'public_url'          => $baseUrl . '/o/' . $slug,
+            'has_own_domain'      => \App\Support\PublicUrl::officialDomain($pdo, (int)$targetWsId) !== null,
             'theme'               => $mergedTheme,
             'draft_config'        => $draftConfig,
             'published_config'    => $publishedConfig,
