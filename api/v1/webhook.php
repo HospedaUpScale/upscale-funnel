@@ -16,6 +16,41 @@ use App\Repositories\OfferRepository;
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
+// GET autenticado = verificação da integração (não cria venda): confirma o token, mostra o
+// workspace e o domínio onde os cards serão entregues, e se a campanha informada existe.
+if ($request->method() === 'GET') {
+    $wsCheck = (new \App\Security\WebhookAuth($wsRepo))->workspaceForToken(\App\Security\WebhookAuth::extractToken());
+    if (!$wsCheck) {
+        JsonResponse::error('Token de API ausente ou inválido.', 401);
+    }
+    $ownDomain = \App\Support\PublicUrl::officialDomain($pdo, $wsCheck->id);
+    $ref = trim((string)($request->get('rifa_id') ?? $request->get('campaign_id') ?? ''));
+    $campaignInfo = null;
+    if ($ref !== '') {
+        $stc = $pdo->prepare("SELECT c.id, c.title, (SELECT COUNT(*) FROM upsell_offers o WHERE o.campaign_id = c.id AND o.offer_role = 'upsell' AND o.is_published = 1 AND o.is_active = 1) AS ofertas
+            FROM campaigns c WHERE c.workspace_id = ? AND (c.external_campaign_id = ? OR c.id = ?) ORDER BY (c.external_campaign_id = ?) DESC, c.id DESC LIMIT 1");
+        $stc->execute([$wsCheck->id, $ref, ctype_digit($ref) ? (int)$ref : 0, $ref]);
+        $c = $stc->fetch(PDO::FETCH_ASSOC);
+        $campaignInfo = $c ? ['id' => (int)$c['id'], 'title' => $c['title'], 'published_offer' => (int)$c['ofertas'] > 0] : false;
+    }
+    $postback = null;
+    try {
+        $stp = $pdo->prepare('SELECT postback_url FROM workspaces WHERE id = ?');
+        $stp->execute([$wsCheck->id]);
+        $postback = $stp->fetchColumn() ?: null;
+    } catch (\PDOException $e) {
+    }
+    JsonResponse::send([
+        'status'          => 'success',
+        'message'         => 'Token válido.',
+        'workspace'       => $wsCheck->name,
+        'card_domain'     => $ownDomain,
+        'campaign'        => $campaignInfo,
+        'postback_configured' => $postback !== null,
+        'postback_signed' => (string)($config['postback_secret'] ?? '') !== '',
+    ]);
+}
+
 if ($request->method() !== 'POST') {
     JsonResponse::error('Método não permitido. Utilize POST.', 405);
 }
