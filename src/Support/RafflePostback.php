@@ -19,9 +19,18 @@ class RafflePostback
 
         // Pedido da rifa: vem do card (token do webhook de vendas) ou do order_id enviado pela rifa.
         $raffleOrderId = null;
-        $st = $pdo->prepare('SELECT external_order_id FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? ORDER BY id DESC LIMIT 1');
-        $st->execute([$wsId, (int)$order['id']]);
-        $raffleOrderId = $st->fetchColumn() ?: null;
+        $raffleCampaignRef = null;
+        try {
+            $st = $pdo->prepare('SELECT external_order_id, raffle_campaign_ref FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? ORDER BY id DESC LIMIT 1');
+            $st->execute([$wsId, (int)$order['id']]);
+            $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            $st = $pdo->prepare('SELECT external_order_id FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? ORDER BY id DESC LIMIT 1');
+            $st->execute([$wsId, (int)$order['id']]);
+            $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+        }
+        $raffleOrderId = $row['external_order_id'] ?? null;
+        $raffleCampaignRef = $row['raffle_campaign_ref'] ?? null;
         if (!$raffleOrderId && !empty($order['external_order_id']) && !preg_match('/^ord_[0-9a-f]+$/i', (string)$order['external_order_id'])) {
             $raffleOrderId = (string)$order['external_order_id'];
         }
@@ -36,8 +45,13 @@ class RafflePostback
             $sc = $pdo->prepare('SELECT id, title, external_platform, external_campaign_id FROM campaigns WHERE id = ? AND workspace_id = ?');
             $sc->execute([(int)$offer['campaign_id'], $wsId]);
             if ($c = $sc->fetch(PDO::FETCH_ASSOC)) {
-                $campaign = ['id' => (int)$c['id'], 'title' => $c['title'], 'platform' => $c['external_platform'], 'external_campaign_id' => $c['external_campaign_id']];
+                // external_campaign_id = o ID que a rifa usou na venda (quando houver), para a rifa conferir.
+                $campaign = ['id' => (int)$c['id'], 'title' => $c['title'], 'platform' => $c['external_platform'], 'external_campaign_id' => $raffleCampaignRef ?? $c['external_campaign_id']];
             }
+        }
+
+        if (!$campaign && $raffleCampaignRef) {
+            $campaign = ['id' => null, 'title' => null, 'platform' => null, 'external_campaign_id' => $raffleCampaignRef];
         }
 
         return [
