@@ -179,6 +179,14 @@ if ($cardAccessToken) {
         $carroA, $carroB, $extraBonus, $minOrder, $bonusEntitled, $expiresAt
     ]);
 }
+// ID da campanha como a rifa enviou: volta igual no aviso de cotas pagas (a rifa confere).
+if ($campaignRef !== '') {
+    try {
+        $pdo->prepare("UPDATE order_access_tokens SET raffle_campaign_ref = ? WHERE token = ?")->execute([mb_substr($campaignRef, 0, 120), $cardAccessToken]);
+    } catch (\PDOException $e) {
+        // banco ainda sem a migração 0031
+    }
+}
 
 // 6. Link do card no domínio oficial do workspace, já na oferta da campanha quando publicada
 $publicBase = \App\Support\PublicUrl::base($pdo, $targetWsId);
