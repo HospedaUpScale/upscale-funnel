@@ -60,6 +60,8 @@ if ($request->method() === 'GET') {
 
     // Links e iframes usam o domínio oficial do workspace quando ele está ativo.
     $baseUrl = \App\Support\PublicUrl::base($pdo, $targetWsId);
+    // Sem domínio próprio ativo, links saem no endereço do sistema: o painel avisa.
+    $hasOwnDomain = \App\Support\PublicUrl::officialDomain($pdo, $targetWsId) !== null;
 
     // Busca campanhas com detalhes da oferta vinculada, funil/pressel e volume de vendas
     $stmt = $pdo->prepare("
@@ -104,7 +106,7 @@ if ($request->method() === 'GET') {
     foreach ($stmtDom->fetchAll(PDO::FETCH_ASSOC) as $dRow) $activeDomains[(int)$dRow['id']] = $dRow['domain'];
     $officialBaseUrl = $baseUrl;
 
-    $formatted = array_map(function($c) use ($officialBaseUrl, $activeDomains) {
+    $formatted = array_map(function($c) use ($officialBaseUrl, $activeDomains, $hasOwnDomain) {
         $domainId = (int)($c['public_domain_id'] ?? 0);
         $baseUrl = ($domainId && isset($activeDomains[$domainId])) ? 'https://' . $activeDomains[$domainId] : $officialBaseUrl;
         $offerDraft = json_decode($c['offer_draft'] ?? '', true) ?: [];
@@ -126,6 +128,7 @@ if ($request->method() === 'GET') {
             'ended_at'             => $c['ended_at'],
             'created_at'           => $c['created_at'],
             'public_base_url'      => $baseUrl,
+            'has_own_domain'       => $hasOwnDomain || ($domainId && isset($activeDomains[$domainId])),
             'public_domain_id'     => ($domainId && isset($activeDomains[$domainId])) ? $domainId : null,
             'brand_identity'       => !empty($c['brand_identity']) ? json_decode($c['brand_identity'], true) : null,
             'offer'                => $c['offer_id'] ? [

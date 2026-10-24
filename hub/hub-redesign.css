@@ -2364,3 +2364,8 @@ body:not(.role-owner) .owner-only { display: none !important; }
   .history-who { display: none; }
   .history-details { padding-left: 4px; }
 }
+
+/* Aviso: workspace sem domínio próprio (links saindo no endereço do sistema) */
+.aviso-dominio { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 12px; padding: 10px 14px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; color: var(--amber-text, #B54708); background: var(--amber-subtle, #FFFAEB); border: 1px solid var(--amber-border, #FEDF89); }
+.aviso-dominio[hidden] { display: none; }
+.aviso-dominio .btn-secondary { min-height: 28px; padding: 0 10px; font-size: 12px; margin-left: auto; }

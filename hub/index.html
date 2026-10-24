@@ -25,7 +25,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Exo+2:ital,wght@1,800&family=DM+Serif+Display&family=Unbounded:wght@800&text=%2001236ADEFGKMNORZadegnor%C2%B7&display=swap" rel="stylesheet">
   
   <!-- Novo Design System Oficial -->
-  <link rel="stylesheet" href="hub-redesign.css?v=2.8">
+  <link rel="stylesheet" href="hub-redesign.css?v=2.9">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
   <link rel="stylesheet" href="theme-upscale.css?v=1.5">
 
@@ -809,6 +809,10 @@
 
             <div class="card camp-publish-card">
               <h3 class="card-title-clean">Publicação</h3>
+              <div class="aviso-dominio" id="aviso-dominio-campanha" hidden>
+                <strong>Sem domínio próprio ativo.</strong> Os links e o código estão saindo no endereço do sistema, não no domínio do cliente.
+                <button type="button" class="btn-secondary" onclick="navigate('sites')">Conectar domínio do cliente</button>
+              </div>
               <p class="card-subtitle-clean">Domínio, link público e código para embutir na rifa.</p>
               <label class="form-label" for="camp-domain-select">Domínio próprio</label>
               <div class="camp-inline-row">
@@ -1379,6 +1383,7 @@
                   <div style="background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:14px;">
                     <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">Endereço público completo:</div>
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                      <div class="aviso-dominio" id="aviso-dominio-oferta" hidden style="margin-bottom:8px;"><strong>Sem domínio próprio ativo.</strong> Este link está no endereço do sistema. <button type="button" class="btn-secondary" onclick="navigate('sites')">Conectar domínio</button></div>
                       <a href="javascript:void(0)" id="full-public-url-link" target="_blank" style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--primary); word-break:break-all;">
                         http://localhost:8000/o/kit-bobzao-booster-200x
                       </a>
@@ -3145,6 +3150,10 @@
               <button type="button" class="btn-secondary" onclick="carregarWebhooks()">Atualizar</button>
             </div>
             <p class="card-subtitle-clean" style="margin-bottom:12px;">Cadastre cada URL na plataforma indicada. Envie o token em <code>Authorization: Bearer SEU_TOKEN</code> ou, se a plataforma não permitir cabeçalhos, use a URL com <code>?token=</code> (gere o token acima e o botão já copia a URL com ele). Na venda, mande também o ID da rifa (<code>rifa_id</code> ou <code>campaign_id</code>) para o card abrir a oferta da campanha certa.</p>
+<div class="aviso-dominio" id="aviso-dominio-webhooks" hidden>
+                <strong>Sem domínio próprio ativo.</strong> Os links e o código estão saindo no endereço do sistema, não no domínio do cliente.
+                <button type="button" class="btn-secondary" onclick="navigate('sites')">Conectar domínio do cliente</button>
+              </div>
             <div id="webhooks-list" style="display:flex; flex-direction:column; gap:12px;">
               <div style="color:var(--text-muted); font-size:13px;">Carregando endpoints…</div>
             </div>
@@ -4217,6 +4226,8 @@
 
   // Link principal e iframe no domínio escolhido para a campanha (ou o oficial do workspace)
   function atualizarPublicacaoCampanha(camp) {
+    var aviso = document.getElementById('aviso-dominio-campanha');
+    if (aviso) aviso.hidden = camp.has_own_domain !== false;
     publicBaseUrl = camp.public_base_url || publicBaseUrl;
     var base = camp.public_base_url || publicBaseUrl || window.location.origin;
     var url = camp.offer && camp.offer.slug_url ? camp.offer.slug_url
@@ -4914,6 +4925,8 @@
         if (o.public_url) {
           try { publicBaseUrl = new URL(o.public_url).origin; } catch (e) {}
         }
+        var avisoOf = document.getElementById('aviso-dominio-oferta');
+        if (avisoOf) avisoOf.hidden = o.has_own_domain !== false;
         currentOfferData = o;
 
         if (o.title) {
@@ -6602,6 +6615,8 @@
         box.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Não foi possível carregar os endpoints.</div>';
         return;
       }
+      var avisoWh = document.getElementById('aviso-dominio-webhooks');
+      if (avisoWh) avisoWh.hidden = data.has_own_domain !== false;
       var pb = document.getElementById('postback-url-input');
       if (pb) pb.value = data.postback_url || '';
       var sb = document.getElementById('postback-sign-badge');

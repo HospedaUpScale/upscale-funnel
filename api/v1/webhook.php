@@ -214,6 +214,9 @@ JsonResponse::send([
     'status'         => 'success',
     'message'        => $duplicate ? 'Venda já registrada antes: o mesmo card foi reaproveitado.' : 'Venda registrada com sucesso na upScale Media Network.',
     'duplicate'      => $duplicate,
+    'warning'        => \App\Support\PublicUrl::officialDomain($pdo, $targetWsId) === null
+        ? 'Workspace sem domínio próprio ativo: o card está saindo no endereço do sistema. Conecte o domínio do cliente no painel.'
+        : null,
     'campaign_id'    => $campaignId,
     'token'          => $cardAccessToken,
     'order_id'       => $extOrderId,
