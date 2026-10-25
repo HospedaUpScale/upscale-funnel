@@ -562,6 +562,16 @@
     border-radius: 6px; padding: 8px 14px; font-size: 12px; cursor: pointer;
   }
   .pix-btn-copy.copied { background: var(--accent-color); }
+  .pix-teste { margin-top: 14px; padding: 12px; border: 1px dashed #f5b301; border-radius: 10px; background: rgba(245, 179, 1, 0.08); }
+  .pix-teste[hidden] { display: none; }
+  .pix-teste-aviso { font-size: 12px; color: var(--text-color); margin: 0 0 10px; line-height: 1.4; }
+  .pix-teste-aviso strong { color: #f5b301; }
+  .pix-teste-btn {
+    width: 100%; background: #f5b301; color: #1a1300; border: none; border-radius: 8px;
+    padding: 11px 14px; font-weight: 800; font-size: 13px; cursor: pointer;
+  }
+  .pix-teste-btn:disabled { opacity: .6; cursor: wait; }
+  .pix-teste-msg { font-size: 12px; margin: 8px 0 0; color: var(--text-secondary); min-height: 1em; }
 
   /* Confetes */
   .cf {
@@ -740,6 +750,13 @@
   </div>
 
   <p style="font-size: 12px; color: var(--accent-color); font-weight: 600;" id="pix-status-info">Aguardando confirmação do pagamento...</p>
+
+  <!-- Pix de teste (ligado no painel): simula o pagamento pelo mesmo caminho de um pagamento real -->
+  <div class="pix-teste" id="pix-teste" hidden>
+    <p class="pix-teste-aviso"><strong>PIX DE TESTE.</strong> Não pague este código. Use o botão abaixo para simular o pagamento.</p>
+    <button type="button" class="pix-teste-btn" id="pix-teste-btn">✓ Simular pagamento aprovado</button>
+    <p class="pix-teste-msg" id="pix-teste-msg" role="status"></p>
+  </div>
 </dialog>
 
 <!-- DIALOG MODAL PAGAMENTO CONFIRMADO -->
@@ -1601,6 +1618,9 @@
       avisarRifa('pix_gerado', { transacao: data.transaction_id });
       $('pix-qr-img').src = data.pix.qr_base64;
       $('pix-code-input').value = data.pix.copy_paste;
+      $('pix-teste').hidden = !data.test_mode;
+      $('pix-teste-btn').disabled = false;
+      $('pix-teste-msg').textContent = '';
       $('pix-modal').showModal();
 
       iniciarPolling(data.transaction_id);
@@ -1649,21 +1669,54 @@
 
   function iniciarPolling(txId) {
     if (pollingTimer) clearInterval(pollingTimer);
-    pollingTimer = setInterval(function () {
+    var confirmado = false;
+    function consultar() {
       fetch('api/pix-status.php?tx_id=' + txId)
         .then(function (r) { return r.json(); })
         .then(function (res) {
-          if (res.status === 'success' && res.paid) {
+          if (res.status === 'success' && res.paid && !confirmado && txId === currentTxId) {
+            confirmado = true;
             clearInterval(pollingTimer);
             avisarRifa('pago', { transacao: txId });
-            $('pix-modal').close();
-            soltarConfete();
-            $('pix-paid-modal').showModal();
+            // Pix de teste: a mensagem (rifa avisada ou não) fica visível por um instante.
+            setTimeout(function () {
+              if ($('pix-modal').open) $('pix-modal').close();
+              soltarConfete();
+              $('pix-paid-modal').showModal();
+            }, $('pix-teste').hidden ? 0 : 1800);
           }
         })
         .catch(function () {});
-    }, 3000);
+    }
+    pollingTimer = setInterval(consultar, 3000);
+    iniciarPolling.agora = consultar;
   }
+
+  // Pix de teste: simula o pagamento aprovado (mesmo caminho do pagamento real, inclusive o aviso à rifa).
+  $('pix-teste-btn').addEventListener('click', function () {
+    var btn = this, msg = $('pix-teste-msg');
+    if (!currentTxId) return;
+    btn.disabled = true;
+    msg.textContent = 'Simulando pagamento…';
+    fetch('api/pix-test-pay.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transaction_id: currentTxId })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        msg.textContent = d.message || (d.status === 'success' ? 'Pagamento de teste aprovado.' : 'Não foi possível simular o pagamento.');
+        if (d.status === 'success') {
+          if (iniciarPolling.agora) iniciarPolling.agora();
+        } else {
+          btn.disabled = false;
+        }
+      })
+      .catch(function () {
+        msg.textContent = 'Erro de conexão ao simular o pagamento.';
+        btn.disabled = false;
+      });
+  });
 
   $('pix-paid-close').addEventListener('click', function () {
     $('pix-paid-modal').close();

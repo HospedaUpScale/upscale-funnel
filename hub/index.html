@@ -3172,6 +3172,20 @@
             </div>
           </div>
 
+          <!-- Pix de teste: simular o pagamento na própria oferta -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header-clean">
+              <h3 class="card-title-clean">Pix de teste</h3>
+              <span class="badge badge-neutral" id="pix-test-badge" style="font-size:11px;">Desligado</span>
+            </div>
+            <p class="card-subtitle-clean" style="margin-bottom:12px;">Para testar o fluxo inteiro sem pagar: com o Pix de teste ligado, a janela do Pix da oferta mostra o botão <strong>Simular pagamento aprovado</strong>. Ele confirma o Pix pelo mesmo caminho de um pagamento real, inclusive o aviso de cotas pagas para a rifa. Desliga sozinho em 24 horas. <strong>Desligue antes de vender de verdade</strong>: enquanto ligado, qualquer pessoa com o link consegue simular o pagamento.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button type="button" class="btn-primary" id="pix-test-on" onclick="alternarPixTeste(true)">Ligar por 24 horas</button>
+              <button type="button" class="btn-secondary" id="pix-test-off" onclick="alternarPixTeste(false)" hidden>Desligar agora</button>
+              <span id="pix-test-until" style="font-size:12px; color:var(--text-muted);"></span>
+            </div>
+          </div>
+
           <!-- Vendas por origem (rastreamento) -->
           <div class="card">
             <div class="card-header-clean">
@@ -6621,6 +6635,7 @@
       if (pb) pb.value = data.postback_url || '';
       var sb = document.getElementById('postback-sign-badge');
       if (sb) { sb.textContent = data.postback_signed ? 'Assinado (POSTBACK_SECRET)' : 'Sem assinatura: defina POSTBACK_SECRET'; sb.className = 'badge ' + (data.postback_signed ? 'badge-success' : 'badge-warning'); }
+      mostrarPixTeste(data.pix_test_until || null);
       box.innerHTML = (data.endpoints || []).map(function(ep) {
         var queryUrl = ep.auth_query || '';
         var copyQuery = queryUrl ? `<button type="button" class="btn-secondary" style="font-size:12px; padding:6px 10px;" onclick="copiarUrlComToken('${queryUrl.replace(/'/g, "\\'")}')">Copiar URL com ?token=</button>` : '';
@@ -6650,6 +6665,35 @@
       body: JSON.stringify({ action: 'save_postback', postback_url: url, workspace_id: currentWsId || 1 })
     })
     .then(function(d) { showToast(d.message || (d.status === 'success' ? 'Salvo.' : 'Não foi possível salvar.'), d.status === 'success' ? 'success' : 'error'); })
+    .catch(function(e) { showToast('Erro: ' + e.message, 'error'); });
+  }
+
+  // Pix de teste: liga por 24 horas ou desliga. O estado vem do servidor (webhook-info).
+  function mostrarPixTeste(ate) {
+    var badge = document.getElementById('pix-test-badge');
+    var on = document.getElementById('pix-test-on'), off = document.getElementById('pix-test-off');
+    var info = document.getElementById('pix-test-until');
+    if (!badge) return;
+    var ligado = !!ate;
+    badge.textContent = ligado ? 'LIGADO' : 'Desligado';
+    badge.className = 'badge ' + (ligado ? 'badge-warning' : 'badge-neutral');
+    on.textContent = ligado ? 'Renovar por 24 horas' : 'Ligar por 24 horas';
+    off.hidden = !ligado;
+    var quando = ligado ? new Date(String(ate).replace(' ', 'T')) : null;
+    info.textContent = ligado
+      ? 'Desliga sozinho em ' + (isNaN(quando) ? ate : quando.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })) + '.'
+      : '';
+  }
+
+  function alternarPixTeste(ligar) {
+    apiFetch('../api/admin/webhook-info.php?workspace_id=' + (currentWsId || 1), {
+      method: 'POST',
+      body: JSON.stringify({ action: 'pix_test', enabled: ligar, workspace_id: currentWsId || 1 })
+    })
+    .then(function(d) {
+      showToast(d.message || (d.status === 'success' ? 'Pronto.' : 'Não foi possível alterar o Pix de teste.'), d.status === 'success' ? (ligar ? 'warning' : 'success') : 'error');
+      if (d.status === 'success') mostrarPixTeste(d.pix_test_until || null);
+    })
     .catch(function(e) { showToast('Erro: ' + e.message, 'error'); });
   }
 
