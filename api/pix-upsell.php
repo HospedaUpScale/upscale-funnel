@@ -43,6 +43,34 @@ if (!empty($input['token'])) {
     $stTok->execute([trim((string)$input['token']), $workspace->id]);
     $cardToken = $stTok->fetch(PDO::FETCH_ASSOC) ?: null;
 }
+// Mesmo card com um Pix ainda pendente desta oferta: devolve o mesmo Pix em vez de gerar outro
+// (clicar de novo em "Ativar" não pode gerar uma segunda cobrança para o comprador).
+if ($cardToken && !empty($cardToken['upsell_order_id'])) {
+    $prevOrder = (new OrderRepository($pdo))->find((int)$cardToken['upsell_order_id']);
+    $prevTx = $prevOrder ? (new TransactionRepository($pdo))->findByOrderId((int)$prevOrder['id']) : null;
+    if ($prevOrder && $prevTx
+        && (int)$prevOrder['workspace_id'] === $workspace->id
+        && (int)$prevOrder['offer_id'] === (int)$offer['id']
+        && $prevTx['status'] === 'pending'
+        && !empty($prevTx['expires_at']) && strtotime($prevTx['expires_at']) > time() + 30
+        && abs((float)$prevTx['amount'] - $price) < 0.005) {
+        JsonResponse::send([
+            'status'         => 'success',
+            'reused'         => true,
+            'order_id'       => (int)$prevOrder['id'],
+            'transaction_id' => (int)$prevTx['id'],
+            'pix'            => [
+                'copy_paste' => $prevTx['pix_copy_paste'],
+                'qr_base64'  => $prevTx['pix_qr_base64'],
+                'amount'     => (float)$prevTx['amount'],
+                'expires_at' => $prevTx['expires_at'],
+            ],
+            'test_mode'      => \App\Support\PixTestMode::active($pdo, $workspace->id)
+                && \App\Support\PixTestMode::isTestTransaction($prevTx),
+        ]);
+    }
+}
+
 $customerName = trim($input['name'] ?? $input['customer']['name'] ?? '');
 if (($customerName === '' || strcasecmp($customerName, 'Cliente') === 0) && !empty($cardToken['customer_name'])) $customerName = $cardToken['customer_name'];
 if ($customerName === '') $customerName = 'Cliente';

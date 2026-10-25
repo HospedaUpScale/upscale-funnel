@@ -519,6 +519,19 @@ class SecurityHardeningTest extends TestCase
             $target = \App\Support\RafflePostback::target(self::$pdo, $order, null);
             $this->assertEquals('https://rifa.exemplo.com/api/upscale.php?action=return', $target['url']);
             $this->assertEquals($key, $target['key']);
+
+            // Clicar de novo em "Ativar" com o Pix ainda pendente devolve o mesmo Pix (sem segunda cobrança).
+            [, $again] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'token' => $data['token']], ['Host: sec-a']);
+            $this->assertEquals($pix['transaction_id'], $again['transaction_id']);
+            $this->assertTrue($again['reused']);
+            // Pix expirado → novo Pix; o antigo continua ligado à venda (retorno e pedido da rifa).
+            self::$pdo->prepare('UPDATE transactions SET expires_at = ? WHERE id = ?')->execute([date('Y-m-d H:i:s', time() - 60), $pix['transaction_id']]);
+            [, $novo] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'token' => $data['token']], ['Host: sec-a']);
+            $this->assertTrue((int)$novo['transaction_id'] !== (int)$pix['transaction_id']);
+            $this->assertEquals($key, \App\Support\RafflePostback::target(self::$pdo, $order, null)['key']);
+            $this->assertEquals($data['order_id'], \App\Support\RafflePostback::payload(self::$pdo, $order, null, null)['raffle_order_id']);
+            $novoOrder = (new OrderRepository(self::$pdo))->find((int)$novo['order_id']);
+            $this->assertEquals($key, \App\Support\RafflePostback::target(self::$pdo, $novoOrder, null)['key']);
             // Sem retorno na venda, continua valendo o retorno do workspace (sem chave).
             $plain = $this->pendingOrder('sec-a');
             $this->assertEquals(null, \App\Support\RafflePostback::target(self::$pdo, $plain['order'], null)['key']);
