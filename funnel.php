@@ -97,6 +97,21 @@ if (!empty($funnel['campaign_id'])) {
     if ($offerSlug = $campaignOfferStmt->fetchColumn()) $campaignOfferUrl = '/o/' . rawurlencode($offerSlug) . '?native=1';
 }
 
+// Os dados do link (token do pedido, order_id, nome, UTMs) seguem para a oferta embutida na página.
+// Sem o token, o Pix do upsell não se liga ao pedido da rifa e as cotas extras não voltam para ela.
+if ($campaignOfferUrl !== '') {
+    $forwardParams = [];
+    foreach ($_GET as $key => $value) {
+        if (!is_string($key) || in_array($key, ['slug', 'offer_slug', 'native', 'experience', 'preview'], true)) continue;
+        if (!preg_match('/^[A-Za-z0-9_.-]{1,40}$/', $key) || !is_scalar($value)) continue;
+        $value = (string)$value;
+        if ($value === '' || strlen($value) > 300) continue;
+        $forwardParams[$key] = $value;
+        if (count($forwardParams) >= 20) break;
+    }
+    if ($forwardParams) $campaignOfferUrl .= '&' . http_build_query($forwardParams, '', '&', PHP_QUERY_RFC3986);
+}
+
 $html = strtr($rawHtml, [
     '{{campaign_offer_url}}' => htmlspecialchars($campaignOfferUrl, ENT_QUOTES, 'UTF-8'),
     '{{workspace_id}}' => (string)($funnel['workspace_id'] ?? $workspace->id),
@@ -221,6 +236,85 @@ if (!str_contains($html, 'upscale_campaign_utms')) {
     } else {
         $html .= $universalTrackingScript;
     }
+}
+
+// ═══ PÁGINA DA CAMPANHA EMBUTIDA (ex.: card da rifa) ═══
+// A oferta fica num iframe dentro desta página. Quando esta página também está num iframe,
+// a ponte abaixo repassa a altura da oferta para o site de fora (o card cresce sem cortar),
+// os avisos upscale:evento para cima e o nome do comprador (upscale:nome) para baixo.
+if (str_contains($html, 'data-campaign-offer') && !str_contains($html, 'data-ups-ponte')) {
+    $embedBridge = <<<'HTML'
+<style data-ups-ponte>html.ups-embed,html.ups-embed body{min-height:0!important}html.ups-embed iframe[data-campaign-offer][data-ups-altura]{height:var(--ups-altura)!important;min-height:0!important}</style>
+<script data-ups-ponte>
+(function () {
+  'use strict';
+  var frames = Array.prototype.slice.call(document.querySelectorAll('iframe[data-campaign-offer]'));
+  var embutido = false;
+  try { embutido = window.self !== window.top; } catch (e) { embutido = true; }
+  if (!frames.length || !embutido) return;
+  document.documentElement.classList.add('ups-embed');
+  var ultima = 0, agendado = false, pronto = false, nome = '';
+  // Dentro de um iframe "sandbox" (ex.: card livre da rifa) a origem da página vira "null".
+  var origemOpaca = window.origin === 'null';
+  var origemAceita = origemOpaca ? 'null' : location.origin;
+  function frameDe(win) {
+    for (var i = 0; i < frames.length; i++) if (frames[i].contentWindow === win) return frames[i];
+    return null;
+  }
+  function medir() {
+    agendado = false;
+    if (!pronto) return;
+    var fim = 0, filhos = document.body.children;
+    for (var i = 0; i < filhos.length; i++) {
+      var tag = filhos[i].tagName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'LINK') continue;
+      var r = filhos[i].getBoundingClientRect();
+      if (r.height > 0) fim = Math.max(fim, r.bottom + window.scrollY);
+    }
+    fim = Math.ceil(fim);
+    if (fim > 0 && Math.abs(fim - ultima) >= 2) {
+      ultima = fim;
+      window.parent.postMessage({ tipo: 'dx:altura', altura: fim, origem: 'upscale' }, '*');
+    }
+  }
+  function agendar() { if (!agendado) { agendado = true; requestAnimationFrame(medir); } }
+  function enviarNome(f) {
+    if (nome && f.contentWindow) f.contentWindow.postMessage({ tipo: 'upscale:nome', nome: nome }, origemOpaca ? '*' : location.origin);
+  }
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || typeof d !== 'object') return;
+    var f = frameDe(e.source);
+    if (f) {
+      if (e.origin !== origemAceita) return;
+      if (d.tipo === 'dx:altura') {
+        var h = Number(d.altura);
+        if (!isFinite(h) || h < 120 || h > 20000) return;
+        f.style.setProperty('--ups-altura', Math.ceil(h) + 'px');
+        f.setAttribute('data-ups-altura', '');
+        pronto = true;
+        agendar();
+      } else if (d.tipo === 'upscale:evento') {
+        window.parent.postMessage(d, '*');
+      }
+      return;
+    }
+    if (e.source === window.parent && d.tipo === 'upscale:nome' && typeof d.nome === 'string') {
+      nome = d.nome.slice(0, 80);
+      frames.forEach(enviarNome);
+    }
+  });
+  frames.forEach(function (f) { f.addEventListener('load', function () { enviarNome(f); agendar(); }); });
+  // Oferta antiga que não avisa a altura: depois de alguns segundos mede a página assim mesmo.
+  setTimeout(function () { pronto = true; agendar(); }, 4000);
+  window.addEventListener('load', agendar);
+  if (window.ResizeObserver) new ResizeObserver(agendar).observe(document.body);
+  setInterval(agendar, 1500);
+})();
+</script>
+HTML;
+    $bodyEnd = strripos($html, '</body>');
+    $html = $bodyEnd === false ? $html . $embedBridge : substr_replace($html, $embedBridge . "\n", $bodyEnd, 0);
 }
 
 header('Content-Type: text/html; charset=utf-8');

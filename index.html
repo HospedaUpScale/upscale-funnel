@@ -1613,18 +1613,33 @@
   });
 
   // Copiar código Pix
+  // Dentro de iframes (página da rifa) o navegador pode bloquear a área de transferência:
+  // tenta a API moderna, depois o método antigo e, por último, deixa o código selecionado.
   $('pix-btn-copy').addEventListener('click', function () {
     var input = $('pix-code-input');
-    input.select();
-    navigator.clipboard.writeText(input.value).then(function () {
-      var btn = $('pix-btn-copy');
-      btn.classList.add('copied');
-      btn.textContent = 'COPIADO!';
+    var btn = $('pix-btn-copy');
+    function aviso(texto) {
+      btn.classList.toggle('copied', texto === 'COPIADO!');
+      btn.textContent = texto;
       setTimeout(function () {
         btn.classList.remove('copied');
         btn.textContent = 'COPIAR';
       }, 2500);
-    });
+    }
+    function copiarAntigo() {
+      input.focus();
+      input.select();
+      try { input.setSelectionRange(0, input.value.length); } catch (e) {}
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      aviso(ok ? 'COPIADO!' : 'SELECIONADO');
+    }
+    input.select();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(input.value).then(function () { aviso('COPIADO!'); }, copiarAntigo);
+    } else {
+      copiarAntigo();
+    }
   });
 
   $('pix-close-btn').addEventListener('click', function () {
