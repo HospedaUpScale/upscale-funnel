@@ -138,6 +138,27 @@ class RafflePostback
         return true;
     }
 
+    /**
+     * Números que a rifa reservou, lidos da resposta ao aviso: {"tickets": [...]} (ou numeros/numbers/titulos/cotas).
+     * @return string[]
+     */
+    public static function ticketsFromResponse(string $body): array
+    {
+        $json = json_decode($body, true);
+        if (!is_array($json)) return [];
+        foreach (['tickets', 'numeros', 'numbers', 'titulos', 'cotas', 'reserved_tickets'] as $k) {
+            $list = $json[$k] ?? ($json['data'][$k] ?? null);
+            if (!is_array($list)) continue;
+            $out = [];
+            foreach ($list as $t) {
+                if ((is_string($t) || is_int($t)) && preg_match('/^[A-Za-z0-9-]{1,20}$/', (string)$t)) $out[] = (string)$t;
+                if (count($out) >= 5000) break;
+            }
+            return $out;
+        }
+        return [];
+    }
+
     public static function destination(PDO $pdo, int $workspaceId, ?array $offer): ?string
     {
         $theme = $offer ? (is_string($offer['theme_config'] ?? null) ? (json_decode($offer['theme_config'], true) ?: []) : ($offer['theme_config'] ?? [])) : [];
@@ -180,7 +201,9 @@ class RafflePostback
             $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $err = curl_error($ch);
             curl_close($ch);
-            $last = ['delivered' => $code >= 200 && $code < 300, 'attempts' => $i, 'status_code' => $code, 'response' => mb_substr((string)($resp ?: $err), 0, 300)];
+            $last = ['delivered' => $code >= 200 && $code < 300, 'attempts' => $i, 'status_code' => $code, 'response' => mb_substr((string)($resp ?: $err), 0, 300),
+                // Corpo inteiro (até 200 KB) para ler os números que a rifa reservou; não vai para o log.
+                'body' => is_string($resp) ? substr($resp, 0, 200000) : ''];
             if ($last['delivered'] || ($code >= 400 && $code < 500 && $code !== 408 && $code !== 429)) break;
             if ($i < 3) usleep($i * 1000000);
         }

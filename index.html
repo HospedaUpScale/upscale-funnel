@@ -398,6 +398,23 @@
   .view-offer.on {
     display: block;
   }
+  .view-reserva { display: none; width: 100%; margin-top: 6px; text-align: center; animation: fadeIn 0.4s ease forwards; }
+  .view-reserva.on { display: block; }
+  .reserva-check { width: 64px; height: 64px; margin: 4px auto 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--accent-color) 18%, transparent); color: var(--accent-color); }
+  .reserva-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .22em; color: var(--accent-color); margin-bottom: 8px; }
+  .reserva-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(26px, 7vw, 40px); line-height: 1.15; color: var(--title-color); margin-bottom: 10px; text-wrap: balance; }
+  .reserva-sub { font-size: 15px; color: var(--text-secondary); line-height: 1.5; margin: 0 auto 16px; max-width: 520px; }
+  .reserva-sub b { color: var(--accent-color); }
+  .reserva-numeros { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; max-height: 300px; overflow-y: auto;
+    padding: 12px; margin: 0 auto 12px; border-radius: 12px; background: color-mix(in srgb, var(--page-bg) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-color) 35%, transparent); }
+  .reserva-numeros:empty { display: none; }
+  .reserva-numeros span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; font-weight: 700; letter-spacing: .04em;
+    padding: 7px 4px; border-radius: 8px; color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 12%, transparent); }
+  .reserva-nota { font-size: 12px; color: var(--text-secondary); margin: 0 0 14px; min-height: 1em; }
+  .reserva-btn { margin-top: 6px; }
+  .reserva-btn[hidden] { display: none; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -506,6 +523,8 @@
   .offer-mode .step-label { font-size: clamp(12px, 2.5vw, 21px); }
   .offer-mode #step-1 .step-circle { background: var(--accent-color); border-color: var(--accent-color); color: var(--page-bg); box-shadow: none; }
   .offer-mode #step-1 + .step-line { background: var(--primary-color); }
+  .reserva-mode #step-2 .step-circle { background: var(--accent-color); border-color: var(--accent-color); color: var(--page-bg); box-shadow: none; }
+  .reserva-mode #step-2 + .step-line { background: var(--primary-color); }
   .offer-mode .greeting { display: none; }
   .offer-hero { margin-bottom: 30px; }
   .offer-mode .offer-badge { background: transparent; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 8px 22px; letter-spacing: .18em; font-size: clamp(10px, 2vw, 18px); margin-bottom: 20px; border-radius: 30px; }
@@ -737,6 +756,17 @@
       <p class="cta-subtext"><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8H4v-8a2 2 0 0 1 2-2h1zm2 0h6V7a3 3 0 0 0-6 0v3z"/></svg><span id="cta-subtext">Pagamento via Pix</span></p>
       <a href="#condicoes" class="footer-terms">Consultar condições da oferta</a>
     </div>
+  </div>
+
+  <!-- ══ VISTA 3: RESERVA CONFIRMADA (depois do pagamento, no próprio card) ══ -->
+  <div class="view-reserva" id="view-reserva" aria-live="polite">
+    <div class="reserva-check" aria-hidden="true"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <p class="reserva-eyebrow">RESERVA CONFIRMADA</p>
+    <h1 class="reserva-title" id="reserva-title">Seus números estão reservados!</h1>
+    <p class="reserva-sub" id="reserva-sub"></p>
+    <div class="reserva-numeros" id="reserva-numeros"></div>
+    <p class="reserva-nota" id="reserva-nota"></p>
+    <button type="button" class="btn-cta reserva-btn" id="reserva-ver">VER TODOS OS MEUS NÚMEROS</button>
   </div>
 
 </div>
@@ -1153,16 +1183,20 @@
     }
     renderSaudacao();
 
-    // Sem nome na URL, mas com token do pedido: busca no servidor (fonte canônica).
+    // Com o token do pedido: o servidor diz o nome (se não veio na URL) e se este card já foi pago.
+    // Card já pago abre direto na tela de reserva, com os números reservados.
     var token = param(['token']);
-    if (!CONFIG.buyerName && token) {
+    if (token && !isEditorPreview) {
       fetch('api/v1/winner.php?token=' + encodeURIComponent(token))
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
-          if (d && (d.data || d).customer_name) {
-            CONFIG.buyerName = (d.data || d).customer_name;
+          d = d && (d.data || d);
+          if (!d) return;
+          if (!CONFIG.buyerName && d.customer_name) {
+            CONFIG.buyerName = d.customer_name;
             renderSaudacao();
           }
+          if (d.reserva && d.reserva.pago) mostrarReserva(d.reserva);
         })
         .catch(function () {});
     }
@@ -1716,7 +1750,7 @@
             setTimeout(function () {
               if ($('pix-modal').open) $('pix-modal').close();
               soltarConfete();
-              $('pix-paid-modal').showModal();
+              mostrarReserva({ quotas: res.quotas, tickets: res.tickets });
             }, $('pix-teste').hidden ? 0 : 1800);
           }
         })
@@ -1750,6 +1784,47 @@
         msg.textContent = 'Erro de conexão ao simular o pagamento.';
         btn.disabled = false;
       });
+  });
+
+  // ══ RESERVA CONFIRMADA: mostrada no próprio card depois do pagamento (e ao reabrir um card já pago) ══
+  function mostrarReserva(r) {
+    r = r || {};
+    var qtd = Number(r.quotas) || Number(CONFIG.quotaCount) || 0;
+    var numeros = Array.isArray(r.tickets) ? r.tickets : [];
+    var nome = CONFIG.greetingEnabled ? primeiroNome(CONFIG.buyerName) : '';
+    clearTimeout(revealTransitionTimer);
+    if (pollingTimer) clearInterval(pollingTimer);
+    if (typeof offerTimer !== 'undefined' && offerTimer) clearInterval(offerTimer);
+    if ($('pix-modal').open) $('pix-modal').close();
+    if ($('pix-paid-modal').open) $('pix-paid-modal').close();
+    $('view-scratch').style.display = 'none';
+    var vw = $('view-wheel'); if (vw) vw.classList.remove('on');
+    $('view-offer').classList.remove('on');
+    var gr = $('greeting'); if (gr) gr.classList.remove('on');
+    revelado = true;
+    apresentarOferta(true);
+    root.classList.add('reserva-mode');
+    ['step-1', 'step-2'].forEach(function (id) { var el = $(id); if (!el) return; el.className = 'step-item inactive'; el.querySelector('.step-circle').textContent = '✓'; });
+    var s3 = $('step-3'); if (s3) s3.className = 'step-item active';
+    var video = $('offer-video'); if (video && video.pause) video.pause();
+    $('reserva-title').textContent = nome ? nome + ', sua reserva está confirmada!' : 'Sua reserva está confirmada!';
+    var sub = $('reserva-sub'); sub.replaceChildren();
+    var b = document.createElement('b'); b.textContent = '+' + qtd + (qtd === 1 ? ' número' : ' números');
+    sub.appendChild(b);
+    sub.appendChild(document.createTextNode((CONFIG.title ? ' do ' + CONFIG.title : '') + (qtd === 1 ? ' já está concorrendo no sorteio.' : ' já estão concorrendo no sorteio.')));
+    var box = $('reserva-numeros'); box.replaceChildren();
+    numeros.forEach(function (n) { var sp = document.createElement('span'); sp.textContent = n; box.appendChild(sp); });
+    $('reserva-nota').textContent = numeros.length
+      ? (numeros.length === 1 ? 'Este é o seu novo número.' : 'Estes são os seus novos números.')
+      : 'Os números aparecem na sua área de títulos da rifa.';
+    // Sem página da rifa em volta (link aberto direto), não há para onde levar.
+    $('reserva-ver').hidden = window.parent === window;
+    $('view-reserva').classList.add('on');
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  window.upscaleMostrarReserva = mostrarReserva;
+  $('reserva-ver').addEventListener('click', function () {
+    avisarRifa('ver_numeros', { transacao: currentTxId });
   });
 
   $('pix-paid-close').addEventListener('click', function () {

@@ -210,6 +210,9 @@ class SecurityHardeningTest extends TestCase
             $this->assertEquals('paid', $this->txStatus($pix['transaction_id']));
             [, $status] = $this->http('GET', '/api/pix-status.php?tx_id=' . $pix['transaction_id'], null, ['Host: sec-a']);
             $this->assertTrue($status['paid']);
+            // Reserva para o card: quantidade da oferta (sem rifa avisada, sem números).
+            $this->assertEquals(5, $status['quotas']);
+            $this->assertEquals([], $status['tickets']);
             $ev = self::$pdo->prepare("SELECT COUNT(*) FROM conversion_events WHERE order_id = ? AND event_name = 'pix_paid'");
             $ev->execute([$pix['order_id']]);
             $pagos = (int)$ev->fetchColumn();
@@ -542,6 +545,17 @@ class SecurityHardeningTest extends TestCase
         // Em APP_ENV=local o teste local aceita http/localhost.
         $this->assertTrue(\App\Support\RafflePostback::isAllowedCallback('http://127.0.0.1:8105/api/upscale.php?action=return', true));
         $this->assertFalse(\App\Support\RafflePostback::isAllowedCallback('http://127.0.0.1:8105/api/upscale.php?action=return'));
+    }
+
+    public function testRaffleReservedTicketsAreReadFromTheReturnResponse(): void
+    {
+        $t = \App\Support\RafflePostback::ticketsFromResponse(json_encode(['status' => 'success', 'tickets' => ['0012345', 778, 'bad value!', '9988776']]));
+        $this->assertEquals(['0012345', '778', '9988776'], $t);
+        $this->assertEquals(['A1', 'B2'], \App\Support\RafflePostback::ticketsFromResponse(json_encode(['data' => ['numeros' => ['A1', 'B2']]])));
+        $this->assertEquals([], \App\Support\RafflePostback::ticketsFromResponse('ok'));
+        $paid = ['status' => 'paid', 'reservation' => json_encode(['quotas' => 110, 'tickets' => ['1', '2']])];
+        $this->assertEquals(['quotas' => 110, 'tickets' => ['1', '2']], \App\Support\PaymentSettlement::reservation(self::$pdo, $paid));
+        $this->assertEquals(null, \App\Support\PaymentSettlement::reservation(self::$pdo, ['status' => 'pending', 'reservation' => null]));
     }
 
     public function testWinnerLookupByPhoneRequiresAuth(): void

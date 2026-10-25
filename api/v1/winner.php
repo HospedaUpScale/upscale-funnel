@@ -96,7 +96,28 @@ if ($isEntitled && $hasConverted) {
     $veredicto = 'NÃO ELEGÍVEL: O valor da compra (R$ ' . number_format((float)$found['base_amount'], 2, ',', '.') . ') foi inferior ao mínimo exigido (R$ ' . number_format((float)$found['min_order'], 2, ',', '.') . ') para o bônus extra.';
 }
 
+// Reserva do upsell deste card (se já foi pago): o card abre direto na tela de reserva.
+$reserva = null;
+if ($token !== '' && !empty($found['upsell_order_id'])) {
+    $orderRepo = new \App\Repositories\OrderRepository($pdo);
+    $paid = null;
+    try {
+        // Qualquer Pix pago deste card (o comprador pode ter gerado mais de um).
+        $stp = $pdo->prepare("SELECT * FROM orders WHERE workspace_id = ? AND status = 'paid' AND (id = ? OR external_order_id = ?) ORDER BY paid_at DESC, id DESC LIMIT 1");
+        $stp->execute([(int)$found['workspace_id'], (int)$found['upsell_order_id'], (string)$found['external_order_id']]);
+        $paid = $stp->fetch() ?: null;
+    } catch (\PDOException $e) {
+        $paid = null;
+    }
+    if ($paid) {
+        $offerRow = !empty($paid['offer_id']) ? (new \App\Repositories\OfferRepository($pdo))->find((int)$paid['offer_id'], (int)$paid['workspace_id']) : null;
+        $r = \App\Support\PaymentSettlement::reservation($pdo, $paid, $offerRow);
+        if ($r) $reserva = ['pago' => true, 'quotas' => $r['quotas'], 'tickets' => $r['tickets'], 'valor' => (float)($paid['upsell_amount'] ?? $paid['total_amount'] ?? 0), 'oferta_id' => (int)($paid['offer_id'] ?? 0)];
+    }
+}
+
 JsonResponse::success([
+    'reserva' => $reserva,
     'order_id' => $found['external_order_id'],
     'customer_name' => $found['customer_name'],
     'customer_phone' => $found['customer_phone'],
