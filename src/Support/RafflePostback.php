@@ -76,6 +76,56 @@ class RafflePostback
         ];
     }
 
+    /**
+     * Para onde vai o aviso deste pedido e com qual chave.
+     * 1º retorno automático: endereço e chave que a rifa mandou na própria venda (callback_url/callback_key).
+     * 2º retorno do workspace (painel) ou da oferta antiga, assinado com POSTBACK_SECRET.
+     * @return array{url: ?string, key: ?string}
+     */
+    public static function target(PDO $pdo, array $order, ?array $offer): array
+    {
+        try {
+            $st = $pdo->prepare('SELECT callback_url, callback_key FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? AND callback_url IS NOT NULL ORDER BY id DESC LIMIT 1');
+            $st->execute([(int)$order['workspace_id'], (int)$order['id']]);
+            $row = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (\PDOException $e) {
+            $row = null; // banco ainda sem a migração 0033
+        }
+        if ($row && !empty($row['callback_url']) && !empty($row['callback_key'])) {
+            return ['url' => (string)$row['callback_url'], 'key' => (string)$row['callback_key']];
+        }
+        return ['url' => self::destination($pdo, (int)$order['workspace_id'], $offer), 'key' => null];
+    }
+
+    /** Endereço de retorno aceito na venda: https público (http/localhost só com APP_ENV=local). */
+    public static function isAllowedCallback(string $url, bool $local = false): bool
+    {
+        if (strlen($url) > 500 || !filter_var($url, FILTER_VALIDATE_URL)) return false;
+        $p = parse_url($url);
+        $scheme = strtolower($p['scheme'] ?? '');
+        $host = strtolower($p['host'] ?? '');
+        if ($host === '' || isset($p['user']) || isset($p['pass'])) return false;
+        if ($local) return in_array($scheme, ['http', 'https'], true);
+        if ($scheme !== 'https' || $host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.internal')) return false;
+        $ip = trim($host, '[]');
+        if (filter_var($ip, FILTER_VALIDATE_IP)) {
+            return (bool)filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+        }
+        return true;
+    }
+
+    /** O host do retorno automático resolve só para IPs públicos (evita apontar para a rede interna). */
+    public static function resolvesPublic(string $url): bool
+    {
+        $host = trim((string)parse_url($url, PHP_URL_HOST), '[]');
+        $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
+        if (!$ips) return false;
+        foreach ($ips as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return false;
+        }
+        return true;
+    }
+
     public static function destination(PDO $pdo, int $workspaceId, ?array $offer): ?string
     {
         $theme = $offer ? (is_string($offer['theme_config'] ?? null) ? (json_decode($offer['theme_config'], true) ?: []) : ($offer['theme_config'] ?? [])) : [];
@@ -92,11 +142,18 @@ class RafflePostback
         return ($url && filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url)) ? $url : null;
     }
 
-    /** Envia com até 3 tentativas. Devolve o resultado para registro. */
-    public static function send(string $url, array $payload, string $secret): array
+    /**
+     * Envia com até 3 tentativas. Devolve o resultado para registro.
+     * Com $bearer (chave do retorno automático): Authorization: Bearer <chave> e assinatura HMAC com a mesma chave.
+     */
+    public static function send(string $url, array $payload, string $secret, ?string $bearer = null): array
     {
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $headers = ['Content-Type: application/json', 'User-Agent: upScale-Postback/1.0', 'X-Upscale-Event: ' . $payload['event']];
+        if ($bearer !== null && $bearer !== '') {
+            $headers[] = 'Authorization: Bearer ' . $bearer;
+            $secret = $bearer;
+        }
         if ($secret !== '') {
             $headers[] = 'X-Upscale-Signature: sha256=' . hash_hmac('sha256', $body, $secret);
         }

@@ -3162,10 +3162,10 @@
           <!-- Retorno para a plataforma da rifa (cotas pagas) -->
           <div class="card" style="margin-bottom:16px;">
             <div class="card-header-clean">
-              <h3 class="card-title-clean">Retorno para a rifa (cotas pagas)</h3>
+              <h3 class="card-title-clean">Retorno para a rifa (cotas pagas) · opcional</h3>
               <span class="badge badge-neutral" id="postback-sign-badge" style="font-size:11px;">—</span>
             </div>
-            <p class="card-subtitle-clean" style="margin-bottom:12px;">Endereço da plataforma da rifa que recebe o aviso <code>upsell.quotas_paid</code> quando o Pix das cotas extras é pago, para creditar as cotas no pedido do comprador. Até 3 tentativas por aviso.</p>
+            <p class="card-subtitle-clean" style="margin-bottom:12px;"><strong>Normalmente não precisa:</strong> a rifa manda o endereço de retorno e uma chave dela em cada venda (<code>callback_url</code> + <code>callback_key</code>), e o aviso <code>upsell.quotas_paid</code> volta para lá sozinho. Preencha aqui só para plataformas que não enviam o retorno na venda; nesse caso o aviso é assinado com o POSTBACK_SECRET do servidor. Até 3 tentativas por aviso.</p>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <input type="url" class="form-input" id="postback-url-input" placeholder="https://plataforma-da-rifa.com/webhooks/upscale" style="font-family:var(--font-mono); flex:1; min-width:240px;">
               <button type="button" class="btn-primary" onclick="salvarPostbackRifa()">Salvar</button>
@@ -6640,7 +6640,7 @@
       if (pb) pb.value = data.postback_url || '';
       webhooksCarregadosWs = data.workspace_id;
       var sb = document.getElementById('postback-sign-badge');
-      if (sb) { sb.textContent = data.postback_signed ? 'Assinado (POSTBACK_SECRET)' : 'Sem assinatura: defina POSTBACK_SECRET'; sb.className = 'badge ' + (data.postback_signed ? 'badge-success' : 'badge-warning'); }
+      if (sb) { sb.textContent = data.postback_signed ? 'Assinado (POSTBACK_SECRET)' : 'Retorno automático pela venda'; sb.className = 'badge ' + (data.postback_signed ? 'badge-success' : 'badge-neutral'); }
       mostrarPixTeste(data.pix_test_until || null);
       box.innerHTML = (data.endpoints || []).map(function(ep) {
         var queryUrl = ep.auth_query || '';

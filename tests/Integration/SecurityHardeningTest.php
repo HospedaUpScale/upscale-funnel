@@ -490,6 +490,47 @@ class SecurityHardeningTest extends TestCase
         $this->assertFalse(str_contains($raw, self::POSTBACK_SECRET), 'O segredo nunca aparece na resposta.');
     }
 
+    public function testSaleCanCarryAutomaticReturnAddressAndKey(): void
+    {
+        $auth = ['Authorization: Bearer ' . self::$ws['sec-a']['api_token']];
+        $sale = fn(array $extra) => $this->http('POST', '/api/v1/webhook.php', array_merge(['order_id' => 'cb_' . bin2hex(random_bytes(4)), 'amount' => 19.9, 'status' => 'paid', 'customer' => ['name' => 'Ana Retorno']], $extra), $auth);
+
+        // Endereço precisa ser https público e vir com chave.
+        foreach (['http://rifa.exemplo.com/r', 'https://localhost/r', 'https://10.0.0.5/r', 'https://user:pw@rifa.exemplo.com/r'] as $bad) {
+            [$status] = $sale(['callback_url' => $bad, 'callback_key' => str_repeat('k', 32)]);
+            $this->assertEquals(422, $status, 'Retorno recusado: ' . $bad);
+        }
+        [$noKey] = $sale(['callback_url' => 'https://rifa.exemplo.com/api/upscale.php?action=return']);
+        $this->assertEquals(422, $noKey);
+
+        $key = 'chave_' . bin2hex(random_bytes(12));
+        [$ok, $data] = $sale(['callback_url' => 'https://rifa.exemplo.com/api/upscale.php?action=return', 'callback_key' => $key]);
+        $this->assertEquals(200, $ok);
+        $this->assertEquals('automatic', $data['callback']);
+
+        // O Pix do upsell aberto pelo card usa o retorno da própria venda, com a chave da rifa.
+        self::$pdo->prepare("INSERT INTO upsell_offers (workspace_id, title, price, quota_count, slug, is_active, is_published, published_config) VALUES (?, 'Oferta retorno', 5, 3, ?, 1, 1, ?)")
+            ->execute([self::$ws['sec-a']['id'], 'retorno-' . bin2hex(random_bytes(4)), json_encode(['title' => 'Oferta retorno', 'price' => 5, 'quota_count' => 3])]);
+        $offerId = (int)self::$pdo->lastInsertId();
+        try {
+            [$pixStatus, $pix] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'token' => $data['token']], ['Host: sec-a']);
+            $this->assertEquals(201, $pixStatus);
+            $order = (new OrderRepository(self::$pdo))->find((int)$pix['order_id']);
+            $target = \App\Support\RafflePostback::target(self::$pdo, $order, null);
+            $this->assertEquals('https://rifa.exemplo.com/api/upscale.php?action=return', $target['url']);
+            $this->assertEquals($key, $target['key']);
+            // Sem retorno na venda, continua valendo o retorno do workspace (sem chave).
+            $plain = $this->pendingOrder('sec-a');
+            $this->assertEquals(null, \App\Support\RafflePostback::target(self::$pdo, $plain['order'], null)['key']);
+        } finally {
+            self::$pdo->prepare('DELETE FROM upsell_offers WHERE id = ?')->execute([$offerId]);
+        }
+
+        // Em APP_ENV=local o teste local aceita http/localhost.
+        $this->assertTrue(\App\Support\RafflePostback::isAllowedCallback('http://127.0.0.1:8105/api/upscale.php?action=return', true));
+        $this->assertFalse(\App\Support\RafflePostback::isAllowedCallback('http://127.0.0.1:8105/api/upscale.php?action=return'));
+    }
+
     public function testWinnerLookupByPhoneRequiresAuth(): void
     {
         [$status] = $this->http('GET', '/api/v1/winner.php?phone=11999999999');
