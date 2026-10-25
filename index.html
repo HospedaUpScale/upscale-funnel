@@ -176,6 +176,7 @@
     letter-spacing: -0.5px;
     color: var(--title-color);
     margin-bottom: 8px;
+    text-wrap: balance;
   }
   .main-title .highlight-booster {
     color: var(--primary-color);
@@ -462,6 +463,13 @@
   }
   .media-box.hidden { display: none; }
   .media-box video { width: 100%; height: 100%; object-fit: cover; }
+  .video-unmute {
+    position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 2;
+    background: rgba(0, 0, 0, 0.72); color: #fff; border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px; padding: 9px 16px; font: 700 13px/1 var(--font-body, Inter, sans-serif);
+    cursor: pointer; backdrop-filter: blur(4px); white-space: nowrap;
+  }
+  .video-unmute:hover { background: rgba(0, 0, 0, 0.85); }
 
   /* Botão CTA Principal */
   .btn-cta {
@@ -501,7 +509,7 @@
   .offer-mode .greeting { display: none; }
   .offer-hero { margin-bottom: 30px; }
   .offer-mode .offer-badge { background: transparent; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 8px 22px; letter-spacing: .18em; font-size: clamp(10px, 2vw, 18px); margin-bottom: 20px; border-radius: 30px; }
-  .offer-headline { font-family: var(--font-heading); font-weight: 900; font-size: clamp(30px, 7.6vw, 72px); line-height: 1.12; letter-spacing: -.045em; margin: 0 0 16px; overflow-wrap: anywhere; }
+  .offer-headline { font-family: var(--font-heading); font-weight: 900; font-size: clamp(30px, 7.6vw, 72px); line-height: 1.12; letter-spacing: -.045em; margin: 0 0 16px; overflow-wrap: anywhere; text-wrap: balance; }
   #offer-headline-highlight { color: var(--primary-color); }
   .offer-intro { font-size: clamp(15px, 3.2vw, 28px); line-height: 1.4; color: var(--text-secondary); }
   .offer-mode .media-box { border: 0; border-radius: 14px; margin-bottom: 48px; }
@@ -844,6 +852,7 @@
     mechanic: 'scratch',
     buyerName: '',
     greetingEnabled: true,
+    videoAutoplay: true,
     greetingTemplate: 'Parabéns, {nome}!',
     wheelSpinLabel: 'GIRAR A ROLETA',
     wheelResultLabel: 'VOCÊ GANHOU!',
@@ -1091,25 +1100,34 @@
     return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
   }
 
-  // Página do upsell com o nome do comprador: selo "OFERTA DESBLOQUEADA PARA MARIA" e título
-  // "Maria, seu Booster está pronto para ativar." O título também aceita {nome} onde a pessoa quiser.
+  // Nome do comprador nas headlines de todas as telas:
+  // "Maria, raspe e descubra seu Booster", "Maria, gire e descubra...", "Maria, seu Booster está pronto para ativar."
+  // e selo "OFERTA DESBLOQUEADA PARA MARIA". Os títulos também aceitam {nome} onde a pessoa quiser.
+  var TITULOS_COM_NOME = [
+    ['scratch-title-start', 'highlight-booster'],
+    ['wheel-title-start', 'wheel-highlight'],
+    ['offer-headline-start', 'offer-headline-highlight']
+  ];
+  function aplicarNome(t, nome) {
+    if (!/\{nome\}/i.test(t)) return t;
+    if (nome) return t.replace(/\{nome\}/gi, nome);
+    var limpo = t.replace(/\s*,?\s*\{nome\}\s*[,!:]?\s*/gi, ' ').replace(/\s+([!?.])/g, '$1').trim();
+    return /^\{nome\}/i.test(t.trim()) ? limpo.replace(/^./, function (c) { return c.toUpperCase(); }) : limpo;
+  }
   function renderNomeOferta() {
     var nome = CONFIG.greetingEnabled ? primeiroNome(CONFIG.buyerName) : '';
-    var ini = $('offer-headline-start'), dest = $('offer-headline-highlight'), selo = $('offer-badge');
-    if (!ini || !dest) return;
-    var modeloIni = ini.dataset.modelo || ini.textContent, modeloDest = dest.dataset.modelo || dest.textContent;
-    ini.dataset.modelo = modeloIni; dest.dataset.modelo = modeloDest;
-    var temMarcador = /\{nome\}/i.test(modeloIni + modeloDest);
-    var aplicar = function (t) {
-      if (!/\{nome\}/i.test(t)) return t;
-      if (nome) return t.replace(/\{nome\}/gi, nome);
-      var limpo = t.replace(/\s*\{nome\}\s*[,!:]?\s*/gi, ' ').trim();
-      return /^\{nome\}/i.test(t.trim()) ? limpo.replace(/^./, function (c) { return c.toUpperCase(); }) : limpo;
-    };
-    var textoIni = aplicar(modeloIni);
-    if (nome && !temMarcador) textoIni = nome + ', ' + textoIni.charAt(0).toLowerCase() + textoIni.slice(1);
-    ini.textContent = textoIni;
-    dest.textContent = aplicar(modeloDest);
+    TITULOS_COM_NOME.forEach(function (par) {
+      var ini = $(par[0]), dest = $(par[1]);
+      if (!ini || !dest) return;
+      var modeloIni = ini.dataset.modelo || ini.textContent, modeloDest = dest.dataset.modelo || dest.textContent;
+      ini.dataset.modelo = modeloIni; dest.dataset.modelo = modeloDest;
+      var temMarcador = /\{nome\}/i.test(modeloIni + modeloDest);
+      var textoIni = aplicarNome(modeloIni, nome);
+      if (nome && !temMarcador && textoIni) textoIni = nome + ', ' + textoIni.charAt(0).toLowerCase() + textoIni.slice(1);
+      ini.textContent = textoIni;
+      dest.textContent = aplicarNome(modeloDest, nome);
+    });
+    var selo = $('offer-badge');
     if (selo) selo.textContent = nome ? 'OFERTA DESBLOQUEADA PARA ' + nome.toUpperCase() : 'OFERTA DESBLOQUEADA';
   }
 
@@ -1122,7 +1140,9 @@
       el.classList.remove('on');
       return;
     }
-    el.textContent = (CONFIG.greetingTemplate || 'Parabéns, {nome}!').replace(/\{nome\}/gi, nome);
+    // O nome já está na headline da tela: o selo fica sem ele ("Parabéns!") para não repetir.
+    var semNome = (CONFIG.greetingTemplate || 'Parabéns, {nome}!').replace(/\s*,?\s*\{nome\}/gi, '').replace(/^[\s,!:.-]+/, '').trim();
+    el.textContent = semNome ? semNome.charAt(0).toUpperCase() + semNome.slice(1) : 'Parabéns!';
     el.classList.add('on');
   }
 
@@ -1287,11 +1307,11 @@
     if (d.vturb_account_id !== undefined) CONFIG.vturbAccount = d.vturb_account_id || '';
 
     var theme = d.theme || {};
-    $('scratch-title-start').textContent=theme.headline_start||'Raspe e descubra seu';
-    $('highlight-booster').textContent=theme.headline_highlight||'Booster';
+    $('scratch-title-start').dataset.modelo=theme.headline_start||'Raspe e descubra seu';
+    $('highlight-booster').dataset.modelo=theme.headline_highlight||'Booster';
     $('main-subtitle').textContent=theme.subtitle_text||'Uma condição especial para esta campanha.';
-    $('wheel-title-start').textContent=theme.wheel_heading||'Gire e descubra';
-    $('wheel-highlight').textContent=theme.wheel_highlight||'seu Booster';
+    $('wheel-title-start').dataset.modelo=theme.wheel_heading||'Gire e descubra';
+    $('wheel-highlight').dataset.modelo=theme.wheel_highlight||'seu Booster';
     $('wheel-subtitle').textContent=theme.wheel_subtitle||'Gire a roleta para liberar sua condição especial.';
     $('offer-headline-start').dataset.modelo = theme.offer_headline_start || 'Seu Booster está';
     $('offer-headline-highlight').dataset.modelo = theme.offer_headline_highlight || 'pronto para ativar.';
@@ -1354,6 +1374,7 @@
       CONFIG.buyerName = d.buyer_name || d.customer_name || d.name;
     }
     if (theme.greeting_enabled !== undefined) CONFIG.greetingEnabled = !!theme.greeting_enabled;
+    if (theme.video_autoplay !== undefined) CONFIG.videoAutoplay = theme.video_autoplay !== false;
     if (theme.greeting_template) CONFIG.greetingTemplate = theme.greeting_template;
     renderSaudacao();
 
@@ -1524,7 +1545,9 @@
       var vm=src.match(/^https:\/\/(?:www\.|player\.)?vimeo\.com\/(?:video\/)?([0-9]{5,12})/);
       if(yt||vm){
         var frame=document.createElement('iframe');
-        frame.src=yt?'https://www.youtube-nocookie.com/embed/'+yt[1]+'?playsinline=1&rel=0':'https://player.vimeo.com/video/'+vm[1]+'?playsinline=1';
+        // Começa sozinho quando a oferta aparece (sem som: regra dos navegadores; o player mostra o botão de som).
+        var auto=CONFIG.videoAutoplay&&!isEditorPreview;
+        frame.src=yt?'https://www.youtube-nocookie.com/embed/'+yt[1]+'?playsinline=1&rel=0'+(auto?'&autoplay=1&mute=1':''):'https://player.vimeo.com/video/'+vm[1]+'?playsinline=1'+(auto?'&autoplay=1&muted=1':'');
         frame.title='Vídeo da oferta';frame.setAttribute('allow','autoplay; fullscreen; picture-in-picture; encrypted-media');frame.setAttribute('allowfullscreen','');
         frame.style.cssText='width:100%;height:100%;border:0;display:block;';
         if(yt&&/\/shorts\//.test(src))mediaBox.style.aspectRatio='9 / 16';
@@ -1536,6 +1559,16 @@
         video.addEventListener('loadedmetadata',function(){if(video.videoWidth&&video.videoHeight){mediaBox.style.aspectRatio=video.videoWidth+' / '+video.videoHeight;if(video.videoHeight>video.videoWidth){mediaBox.style.maxWidth='420px';mediaBox.style.marginLeft='auto';mediaBox.style.marginRight='auto';}}});
         video.addEventListener('error',function(){if(mediaBox.dataset.mediaSignature!==signature)return;var m=document.createElement('p');m.textContent='Não foi possível carregar o vídeo.';m.setAttribute('role','status');mediaBox.appendChild(m);});
         mediaBox.appendChild(video);
+        // Autoplay: o vídeo começa sozinho e sem som quando a oferta aparece; um toque liga o som.
+        if(CONFIG.videoAutoplay&&!isEditorPreview){
+          video.autoplay=true;video.loop=false;
+          var som=document.createElement('button');som.type='button';som.className='video-unmute';som.textContent='🔊 Toque para ouvir';
+          som.addEventListener('click',function(){video.muted=false;video.volume=1;var p=video.play();if(p&&p.catch)p.catch(function(){});som.remove();});
+          video.addEventListener('volumechange',function(){if(!video.muted&&som.parentNode)som.remove();});
+          video.addEventListener('ended',function(){if(som.parentNode)som.remove();});
+          mediaBox.appendChild(som);
+          var tocar=video.play();if(tocar&&tocar.catch)tocar.catch(function(){if(som.parentNode)som.textContent='▶ Toque para assistir';});
+        }
       }
     }
   }
