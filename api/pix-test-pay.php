@@ -44,11 +44,12 @@ $result = PaymentSettlement::settle($pdo, $config, $order, $tx, 'pix_test', ['si
 $entrega = $result['postback_delivery'];
 if (is_array($entrega)) {
     if ($entrega['delivered']) {
-        $avisoRifa = 'Rifa avisada: ' . $result['quotas_awarded'] . ' cotas extras enviadas.';
+        $q = (int)$result['quotas_awarded'];
+        $avisoRifa = 'Rifa avisada: ' . $q . ($q === 1 ? ' cota extra enviada.' : ' cotas extras enviadas.');
     } elseif ((int)$entrega['status_code'] === 0) {
         $avisoRifa = 'Não foi possível conectar ao endereço de retorno da rifa. Confira o endereço em Webhooks → Retorno para a rifa.';
     } elseif ((int)$entrega['status_code'] === 401) {
-        $avisoRifa = 'A rifa recusou a assinatura (HTTP 401): o POSTBACK_SECRET do upScale e o segredo do retorno na rifa precisam ser iguais.';
+        $avisoRifa = 'A rifa recusou o aviso (HTTP 401): a chave não confere. No retorno automático, faça uma venda nova; no modo antigo, o POSTBACK_SECRET do upScale e o segredo da rifa precisam ser iguais.';
     } else {
         $avisoRifa = 'O aviso para a rifa falhou (HTTP ' . $entrega['status_code'] . '): ' . mb_substr((string)$entrega['response'], 0, 140);
     }
