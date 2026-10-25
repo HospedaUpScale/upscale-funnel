@@ -13,6 +13,9 @@ use PDO;
  */
 class RafflePostback
 {
+    /** Texto fixo assinado na verificação da integração, para a rifa conferir se o segredo é o mesmo. */
+    public const PROBE = 'upscale:postback-probe';
+
     public static function payload(PDO $pdo, array $order, ?array $customer, ?array $offer): array
     {
         $wsId = (int)$order['workspace_id'];

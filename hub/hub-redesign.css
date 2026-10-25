@@ -586,6 +586,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   background: var(--bg-hover);
   border-color: #D5DBE5;
 }
+/* O atributo hidden precisa vencer o display:inline-flex dos botões. */
+.btn-primary[hidden],
+.btn-secondary[hidden] {
+  display: none !important;
+}
 .btn-secondary svg {
   width: 15px;
   height: 15px;

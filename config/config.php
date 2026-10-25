@@ -23,7 +23,8 @@ return [
     'webhook_secret' => (string) Env::get('WEBHOOK_SECRET', ''),
 
     // Chave usada para assinar (HMAC-SHA256) o postback de entrega de cotas.
-    'postback_secret' => (string) Env::get('POSTBACK_SECRET', ''),
+    // Espaços e aspas colados por engano no Ambiente não fazem parte do segredo.
+    'postback_secret' => trim((string) Env::get('POSTBACK_SECRET', ''), " \t\n\r\0\x0B\"'"),
 
     'db' => [
         'driver' => Env::get('DB_DRIVER', 'sqlite'), // 'sqlite' or 'mysql'

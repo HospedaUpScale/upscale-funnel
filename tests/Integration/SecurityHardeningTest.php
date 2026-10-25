@@ -479,6 +479,15 @@ class SecurityHardeningTest extends TestCase
             ['Authorization: Bearer ' . self::$ws['sec-b']['api_token']]);
         $this->assertEquals(200, $status2, 'Webhook de vendas com token válido deve funcionar.');
         $this->assertEquals('success', $data['status'] ?? null);
+
+        // Verificação (GET): a rifa confere o segredo do retorno pelo HMAC de um texto fixo, sem ver o segredo.
+        [$anon] = $this->http('GET', '/api/v1/webhook.php');
+        $this->assertEquals(401, $anon);
+        [$check, $info, $raw] = $this->http('GET', '/api/v1/webhook.php?token=' . urlencode(self::$ws['sec-b']['api_token']));
+        $this->assertEquals(200, $check);
+        $this->assertTrue($info['postback_signed']);
+        $this->assertEquals(hash_hmac('sha256', \App\Support\RafflePostback::PROBE, self::POSTBACK_SECRET), $info['postback_probe']);
+        $this->assertFalse(str_contains($raw, self::POSTBACK_SECRET), 'O segredo nunca aparece na resposta.');
     }
 
     public function testWinnerLookupByPhoneRequiresAuth(): void
