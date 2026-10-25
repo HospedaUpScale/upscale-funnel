@@ -16,22 +16,40 @@ class RafflePostback
     /** Texto fixo assinado na verificação da integração, para a rifa conferir se o segredo é o mesmo. */
     public const PROBE = 'upscale:postback-probe';
 
+    /**
+     * Venda da rifa (order_access_tokens) de onde saiu este Pix do upsell.
+     * 1º pelo upsell_order_id; 2º pelo pedido da rifa (external_order_id): o comprador pode gerar mais
+     * de um Pix no mesmo card, e o upsell_order_id fica só com o último.
+     */
+    public static function saleRow(PDO $pdo, array $order): array
+    {
+        $wsId = (int)$order['workspace_id'];
+        $ext = (string)($order['external_order_id'] ?? '');
+        $byExt = $ext !== '' && !preg_match('/^ord_[0-9a-f]+$/i', $ext);
+        foreach (['callback_url, callback_key, raffle_campaign_ref, external_order_id', 'raffle_campaign_ref, external_order_id', 'external_order_id'] as $cols) {
+            try {
+                $st = $pdo->prepare("SELECT {$cols} FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? ORDER BY id DESC LIMIT 1");
+                $st->execute([$wsId, (int)$order['id']]);
+                $row = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+                if (!$row && $byExt) {
+                    $st = $pdo->prepare("SELECT {$cols} FROM order_access_tokens WHERE workspace_id = ? AND external_order_id = ? ORDER BY id DESC LIMIT 1");
+                    $st->execute([$wsId, $ext]);
+                    $row = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+                }
+                return $row ?: [];
+            } catch (\PDOException $e) {
+                // banco sem as migrações 0031/0033: tenta com menos colunas
+            }
+        }
+        return [];
+    }
+
     public static function payload(PDO $pdo, array $order, ?array $customer, ?array $offer): array
     {
         $wsId = (int)$order['workspace_id'];
 
         // Pedido da rifa: vem do card (token do webhook de vendas) ou do order_id enviado pela rifa.
-        $raffleOrderId = null;
-        $raffleCampaignRef = null;
-        try {
-            $st = $pdo->prepare('SELECT external_order_id, raffle_campaign_ref FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? ORDER BY id DESC LIMIT 1');
-            $st->execute([$wsId, (int)$order['id']]);
-            $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
-        } catch (\PDOException $e) {
-            $st = $pdo->prepare('SELECT external_order_id FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? ORDER BY id DESC LIMIT 1');
-            $st->execute([$wsId, (int)$order['id']]);
-            $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
-        }
+        $row = self::saleRow($pdo, $order);
         $raffleOrderId = $row['external_order_id'] ?? null;
         $raffleCampaignRef = $row['raffle_campaign_ref'] ?? null;
         if (!$raffleOrderId && !empty($order['external_order_id']) && !preg_match('/^ord_[0-9a-f]+$/i', (string)$order['external_order_id'])) {
@@ -84,13 +102,7 @@ class RafflePostback
      */
     public static function target(PDO $pdo, array $order, ?array $offer): array
     {
-        try {
-            $st = $pdo->prepare('SELECT callback_url, callback_key FROM order_access_tokens WHERE workspace_id = ? AND upsell_order_id = ? AND callback_url IS NOT NULL ORDER BY id DESC LIMIT 1');
-            $st->execute([(int)$order['workspace_id'], (int)$order['id']]);
-            $row = $st->fetch(PDO::FETCH_ASSOC) ?: null;
-        } catch (\PDOException $e) {
-            $row = null; // banco ainda sem a migração 0033
-        }
+        $row = self::saleRow($pdo, $order);
         if ($row && !empty($row['callback_url']) && !empty($row['callback_key'])) {
             return ['url' => (string)$row['callback_url'], 'key' => (string)$row['callback_key']];
         }
