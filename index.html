@@ -1398,7 +1398,8 @@
 
   // Avisos para a página da rifa que embute a oferta (window.postMessage):
   // { tipo: 'upscale:evento', evento, pedido, oferta, valor }. Eventos: oferta_exibida, oferta_revelada,
-  // pix_gerado, pago, recusada. Não leva dados pessoais do comprador.
+  // pix_gerado, pago, recusada, ver_numeros (comprador clicou em "Concluir e ver meus números").
+  // Não leva dados pessoais do comprador.
   function avisarRifa(evento, extra) {
     try {
       if (window.parent === window || isEditorPreview) return;
@@ -1720,6 +1721,8 @@
 
   $('pix-paid-close').addEventListener('click', function () {
     $('pix-paid-modal').close();
+    // A rifa mostra a tela de compra aprovada com os números (inclusive os das cotas extras).
+    avisarRifa('ver_numeros', { transacao: currentTxId });
   });
 
   /* ══ CONFETES ══ */
