@@ -29,6 +29,13 @@ class PixTestMode
         return (string)$until;
     }
 
+    /** O mesmo horário com fuso (ISO 8601), para o painel mostrar na hora local de quem vê. */
+    public static function untilIso(PDO $pdo, int $workspaceId): ?string
+    {
+        $until = self::until($pdo, $workspaceId);
+        return $until === null ? null : date('c', strtotime($until));
+    }
+
     public static function active(PDO $pdo, int $workspaceId): bool
     {
         return self::until($pdo, $workspaceId) !== null;

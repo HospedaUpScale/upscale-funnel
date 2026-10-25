@@ -65,7 +65,7 @@ if ($request->method() === 'POST') {
         $enabled = filter_var($request->all()['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
         try {
             if ($enabled) {
-                $until = \App\Support\PixTestMode::enable($pdo, $targetWsId);
+                $until = date('c', strtotime(\App\Support\PixTestMode::enable($pdo, $targetWsId)));
             } else {
                 \App\Support\PixTestMode::disable($pdo, $targetWsId);
                 $until = null;
@@ -107,7 +107,7 @@ JsonResponse::send([
     'postback_url' => $postbackUrl,
     'has_own_domain' => $ownDomain !== null,
     'postback_signed' => (string)($config['postback_secret'] ?? '') !== '',
-    'pix_test_until' => \App\Support\PixTestMode::until($pdo, $targetWsId),
+    'pix_test_until' => \App\Support\PixTestMode::untilIso($pdo, $targetWsId),
     'base_url'     => $base,
     'endpoints'    => [
         [

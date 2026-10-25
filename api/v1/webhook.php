@@ -40,6 +40,7 @@ if ($request->method() === 'GET') {
         $postback = $stp->fetchColumn() ?: null;
     } catch (\PDOException $e) {
     }
+    $postbackSecret = (string)($config['postback_secret'] ?? '');
     JsonResponse::send([
         'status'          => 'success',
         'message'         => 'Token válido.',
@@ -47,7 +48,10 @@ if ($request->method() === 'GET') {
         'card_domain'     => $ownDomain,
         'campaign'        => $campaignInfo,
         'postback_configured' => $postback !== null,
-        'postback_signed' => (string)($config['postback_secret'] ?? '') !== '',
+        'postback_url'    => $postback,
+        'postback_signed' => $postbackSecret !== '',
+        // Prova do segredo sem revelá-lo: a rifa calcula o mesmo HMAC com o segredo dela e compara.
+        'postback_probe'  => $postbackSecret !== '' ? hash_hmac('sha256', \App\Support\RafflePostback::PROBE, $postbackSecret) : null,
     ]);
 }
 

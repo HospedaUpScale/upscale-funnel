@@ -25,7 +25,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Exo+2:ital,wght@1,800&family=DM+Serif+Display&family=Unbounded:wght@800&text=%2001236ADEFGKMNORZadegnor%C2%B7&display=swap" rel="stylesheet">
   
   <!-- Novo Design System Oficial -->
-  <link rel="stylesheet" href="hub-redesign.css?v=2.9">
+  <link rel="stylesheet" href="hub-redesign.css?v=2.10">
   <link rel="stylesheet" href="elementor-builder.css?v=4.3">
   <link rel="stylesheet" href="theme-upscale.css?v=1.5">
 
@@ -4166,6 +4166,11 @@
     if (viewId === 'page-editor') { document.body.classList.add('in-editor'); if (!options.skipEditorLoad) carregarFunis(); }
     if (viewId === 'funnels') carregarGerenciadorPaginas();
     if (viewId === 'integrations') verificarIntegracoes();
+    // Configurações abre direto na aba Credenciais: carrega os dados do workspace (webhooks, retorno, Pix de teste).
+    if (viewId === 'settings') {
+      var abaCred = document.getElementById('config-subtab-credenciais');
+      if (abaCred && abaCred.classList.contains('active')) { carregarWebhooks(); carregarVendasPorOrigem(); }
+    }
   }
 
   /* ═══ DETALHES DA CAMPANHA ═══ */
@@ -6633,6 +6638,7 @@
       if (avisoWh) avisoWh.hidden = data.has_own_domain !== false;
       var pb = document.getElementById('postback-url-input');
       if (pb) pb.value = data.postback_url || '';
+      webhooksCarregadosWs = data.workspace_id;
       var sb = document.getElementById('postback-sign-badge');
       if (sb) { sb.textContent = data.postback_signed ? 'Assinado (POSTBACK_SECRET)' : 'Sem assinatura: defina POSTBACK_SECRET'; sb.className = 'badge ' + (data.postback_signed ? 'badge-success' : 'badge-warning'); }
       mostrarPixTeste(data.pix_test_until || null);
@@ -6658,7 +6664,14 @@
     });
   }
 
+  var webhooksCarregadosWs = null;
   function salvarPostbackRifa() {
+    // Sem os dados deste workspace carregados, o campo pode estar vazio e apagaria o endereço salvo.
+    if (webhooksCarregadosWs !== (currentWsId || 1)) {
+      carregarWebhooks();
+      showToast('Carregando os dados deste workspace. Confira o endereço e clique em Salvar de novo.', 'error');
+      return;
+    }
     var url = (document.getElementById('postback-url-input').value || '').trim();
     apiFetch('../api/admin/webhook-info.php?workspace_id=' + (currentWsId || 1), {
       method: 'POST',
