@@ -562,6 +562,15 @@ class SecurityHardeningTest extends TestCase
             $this->assertEquals(200, $publicStatus);
             $this->assertStringContains('Minha página da campanha', $html);
             $this->assertStringContains($publicPath . '?native=1', $html);
+            // Link vindo do webhook da rifa: o token do pedido segue para a oferta embutida
+            // e a página ganha a ponte de altura/eventos para funcionar dentro do iframe da rifa.
+            [$embedStatus, , $embedHtml] = $this->http('GET', $publicPath . '?token=tok_abc123&order_id=77&preview=1&nome=Ana%20Lima');
+            $this->assertEquals(200, $embedStatus);
+            $this->assertStringContains($publicPath . '?native=1&amp;token=tok_abc123&amp;order_id=77&amp;nome=Ana%20Lima', $embedHtml);
+            $this->assertFalse(str_contains($embedHtml, 'preview=1'));
+            $this->assertStringContains('data-ups-ponte', $embedHtml);
+            $this->assertStringContains("tipo: 'dx:altura'", $embedHtml);
+            $this->assertEquals(2, substr_count($embedHtml, 'data-ups-ponte>'));
             [, , $native] = $this->http('GET', $publicPath . '?native=1');
             $this->assertStringContains('Oferta exclusiva A', $native);
             $this->assertStringContains('"mechanic":"direct"', $native);
