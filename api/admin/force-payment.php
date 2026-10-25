@@ -47,10 +47,7 @@ if ($transaction['status'] === 'paid') {
     JsonResponse::success(['message' => 'Este Pix já estava pago.', 'order_id' => (int)$order['id']]);
 }
 // Pix de teste = gerado pelo gateway de demonstração (cobrança "UPSCALE SANDBOX") ou marcado como mock.
-$gateway = strtolower((string)($transaction['gateway'] ?? ''));
-$ehTeste = in_array($gateway, ['', 'mock', 'sandbox', 'teste'], true)
-    || stripos((string)($transaction['pix_copy_paste'] ?? ''), 'UPSCALE SANDBOX') !== false;
-if (!$ehTeste) {
+if (!\App\Support\PixTestMode::isTestTransaction($transaction)) {
     JsonResponse::error('Este Pix é de um gateway real: a confirmação vem do próprio gateway.', 409);
 }
 

@@ -183,6 +183,9 @@ JsonResponse::send([
         'amount'     => $price,
         'expires_at' => $charge->expiresAt,
     ],
+    // Pix de teste ligado no workspace: a janela do Pix mostra "Simular pagamento aprovado".
+    'test_mode'      => \App\Support\PixTestMode::active($pdo, $workspace->id)
+        && \App\Support\PixTestMode::isTestTransaction($transaction),
     'split_preview'  => [
         'saas_amount'     => $saasAmount,
         'partner_amount'  => $partnerAmount,

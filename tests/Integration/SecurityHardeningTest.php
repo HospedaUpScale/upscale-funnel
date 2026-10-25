@@ -163,6 +163,85 @@ class SecurityHardeningTest extends TestCase
         $this->assertEquals($id, (int)$q->fetchColumn());
     }
 
+    public function testPixTestModeSimulatesPaymentOnlyWhileEnabled(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $adminA = ['Authorization: Bearer adm_' . self::$ws['sec-a']['api_token']];
+        $adminB = ['Authorization: Bearer adm_' . self::$ws['sec-b']['api_token']];
+        $hook = '/api/admin/webhook-info.php?workspace_id=' . $wsId;
+        self::$pdo->prepare("INSERT INTO upsell_offers (workspace_id, title, price, quota_count, slug, is_active, is_published, published_config) VALUES (?, 'Oferta teste Pix', 9, 5, ?, 1, 1, ?)")
+            ->execute([$wsId, 'pix-teste-' . bin2hex(random_bytes(4)), json_encode(['title' => 'Oferta teste Pix', 'price' => 9, 'quota_count' => 5])]);
+        $offerId = (int)self::$pdo->lastInsertId();
+        $novoPix = function () use ($offerId) {
+            [$status, $data] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'name' => 'Comprador Teste'], ['Host: sec-a']);
+            $this->assertEquals(201, $status);
+            return $data;
+        };
+
+        try {
+            // Desligado (padrão): nada de simular.
+            $pix = $novoPix();
+            $this->assertFalse($pix['test_mode']);
+            [$off] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            $this->assertEquals(403, $off);
+            $this->assertEquals('pending', $this->txStatus($pix['transaction_id']));
+
+            // Só quem administra o workspace liga.
+            [$foreign] = $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => true], $adminB);
+            $this->assertEquals(403, $foreign);
+            [$anon] = $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => true]);
+            $this->assertEquals(401, $anon);
+            [$on, $onData] = $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => true, 'workspace_id' => $wsId], $adminA);
+            $this->assertEquals(200, $on);
+            $this->assertTrue(strtotime($onData['pix_test_until']) > time() + 23 * 3600);
+            [, $info] = $this->http('GET', $hook, null, $adminA);
+            $this->assertEquals($onData['pix_test_until'], $info['pix_test_until']);
+
+            // Ligado: a janela do Pix recebe test_mode e o botão confirma pelo caminho real.
+            $pix = $novoPix();
+            $this->assertTrue($pix['test_mode']);
+            [$other] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-b']);
+            $this->assertEquals(404, $other);
+            [$paid, $paidData] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            $this->assertEquals(200, $paid);
+            $this->assertTrue($paidData['paid']);
+            $this->assertEquals(5, $paidData['quotas_awarded']);
+            $this->assertStringContains('Pagamento de teste aprovado', $paidData['message']);
+            $this->assertEquals('paid', $this->txStatus($pix['transaction_id']));
+            [, $status] = $this->http('GET', '/api/pix-status.php?tx_id=' . $pix['transaction_id'], null, ['Host: sec-a']);
+            $this->assertTrue($status['paid']);
+            $ev = self::$pdo->prepare("SELECT COUNT(*) FROM conversion_events WHERE order_id = ? AND event_name = 'pix_paid'");
+            $ev->execute([$pix['order_id']]);
+            $pagos = (int)$ev->fetchColumn();
+            $ev->closeCursor();
+            $this->assertEquals(1, $pagos);
+            [$again, $againData] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            $this->assertEquals(200, $again);
+            $this->assertStringContains('já estava pago', $againData['message']);
+
+            // Pix de gateway real nunca é simulado.
+            $real = $this->pendingOrder('sec-a');
+            self::$pdo->prepare("UPDATE transactions SET gateway = 'efi' WHERE id = ?")->execute([$real['tx']['id']]);
+            [$realStatus] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $real['tx']['id']], ['Host: sec-a']);
+            $this->assertEquals(409, $realStatus);
+
+            // Desliga sozinho depois do prazo e desliga na hora pelo painel.
+            $pix = $novoPix();
+            self::$pdo->prepare('UPDATE workspaces SET pix_test_until = ? WHERE id = ?')->execute([date('Y-m-d H:i:s', time() - 60), $wsId]);
+            [$expired] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            $this->assertEquals(403, $expired);
+            $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => true, 'workspace_id' => $wsId], $adminA);
+            [$offStatus, $offData] = $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => false, 'workspace_id' => $wsId], $adminA);
+            $this->assertEquals(200, $offStatus);
+            $this->assertEquals(null, $offData['pix_test_until']);
+            [$afterOff] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            $this->assertEquals(403, $afterOff);
+        } finally {
+            self::$pdo->prepare('UPDATE workspaces SET pix_test_until = NULL WHERE id = ?')->execute([$wsId]);
+            self::$pdo->prepare('DELETE FROM upsell_offers WHERE id = ?')->execute([$offerId]);
+        }
+    }
+
     public function testCampaignSupportsMultipleIndependentPagesAndExplicitPrimary(): void
     {
         $wsId = self::$ws['sec-a']['id'];

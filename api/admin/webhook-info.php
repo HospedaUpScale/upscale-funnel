@@ -60,6 +60,27 @@ if ($request->method() === 'POST') {
         }
         JsonResponse::send(['status' => 'success', 'postback_url' => $url ?: null, 'message' => $url ? 'Endereço de retorno da rifa salvo.' : 'Endereço de retorno removido.']);
     }
+    // Pix de teste: liga por 24 horas (desliga sozinho) ou desliga na hora.
+    if ($action === 'pix_test') {
+        $enabled = filter_var($request->all()['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        try {
+            if ($enabled) {
+                $until = \App\Support\PixTestMode::enable($pdo, $targetWsId);
+            } else {
+                \App\Support\PixTestMode::disable($pdo, $targetWsId);
+                $until = null;
+            }
+        } catch (\PDOException $e) {
+            JsonResponse::error('Faça o deploy para liberar o Pix de teste (migração 0032).', 503);
+        }
+        JsonResponse::send([
+            'status'         => 'success',
+            'pix_test_until' => $until,
+            'message'        => $enabled
+                ? 'Pix de teste ligado por ' . \App\Support\PixTestMode::HOURS . ' horas. A janela do Pix da oferta mostra "Simular pagamento aprovado".'
+                : 'Pix de teste desligado.',
+        ]);
+    }
     if ($action !== 'rotate_token') {
         JsonResponse::error('Ação inválida.', 400);
     }
@@ -86,6 +107,7 @@ JsonResponse::send([
     'postback_url' => $postbackUrl,
     'has_own_domain' => $ownDomain !== null,
     'postback_signed' => (string)($config['postback_secret'] ?? '') !== '',
+    'pix_test_until' => \App\Support\PixTestMode::until($pdo, $targetWsId),
     'base_url'     => $base,
     'endpoints'    => [
         [
