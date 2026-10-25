@@ -49,6 +49,8 @@ if ($request->method() === 'GET') {
         'campaign'        => $campaignInfo,
         'postback_configured' => $postback !== null,
         'postback_url'    => $postback,
+        // A rifa pode mandar callback_url + callback_key na venda (retorno automático, sem segredo no servidor).
+        'automatic_callback' => true,
         'postback_signed' => $postbackSecret !== '',
         // Prova do segredo sem revelá-lo: a rifa calcula o mesmo HMAC com o segredo dela e compara.
         'postback_probe'  => $postbackSecret !== '' ? hash_hmac('sha256', \App\Support\RafflePostback::PROBE, $postbackSecret) : null,
@@ -98,6 +100,20 @@ $campaignRef = trim((string)(
     ?? $input['rifa']['id']
     ?? ''
 ));
+
+// Retorno automático (opcional): onde a rifa quer receber o aviso de cotas pagas e a chave que ela confere
+// (vai em Authorization: Bearer <chave>). Com isso não é preciso cadastrar retorno nem POSTBACK_SECRET.
+$callbackUrl = trim((string)($input['callback_url'] ?? $input['return_url'] ?? $input['url_retorno'] ?? ''));
+$callbackKey = trim((string)($input['callback_key'] ?? $input['return_key'] ?? $input['chave_retorno'] ?? ''));
+if ($callbackUrl !== '') {
+    $localEnv = ($config['app_env'] ?? 'production') === 'local';
+    if (!\App\Support\RafflePostback::isAllowedCallback($callbackUrl, $localEnv)) {
+        JsonResponse::error('callback_url inválido: use um endereço https público.', 422);
+    }
+    if (strlen($callbackKey) < 16 || strlen($callbackKey) > 200 || preg_match('/[\r\n\s]/', $callbackKey)) {
+        JsonResponse::error('Envie callback_key (16 a 200 caracteres, sem espaços) junto com callback_url.', 422);
+    }
+}
 
 $customerRaw = $input['customer'] ?? $input['buyer'] ?? $input['cliente'] ?? [];
 if (!is_array($customerRaw)) $customerRaw = [];
@@ -226,6 +242,13 @@ if ($campaignRef !== '') {
         // banco ainda sem a migração 0031
     }
 }
+if ($callbackUrl !== '') {
+    try {
+        $pdo->prepare("UPDATE order_access_tokens SET callback_url = ?, callback_key = ? WHERE token = ?")->execute([$callbackUrl, $callbackKey, $cardAccessToken]);
+    } catch (\PDOException $e) {
+        JsonResponse::error('Faça o deploy para liberar o retorno automático (migração 0033).', 503);
+    }
+}
 
 // 6. Link do card no domínio oficial do workspace, já na oferta da campanha quando publicada
 $publicBase = \App\Support\PublicUrl::base($pdo, $targetWsId);
@@ -265,6 +288,7 @@ JsonResponse::send([
         ? 'Workspace sem domínio próprio ativo: o card está saindo no endereço do sistema. Conecte o domínio do cliente no painel.'
         : null,
     'campaign_id'    => $campaignId,
+    'callback'       => $callbackUrl !== '' ? 'automatic' : 'workspace',
     'token'          => $cardAccessToken,
     'order_id'       => $extOrderId,
     'card_url'       => $cardUrl,

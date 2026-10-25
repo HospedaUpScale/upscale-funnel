@@ -40,8 +40,17 @@ class PaymentSettlement
         if ($secret !== '') {
             $payload['signature'] = hash_hmac('sha256', (string)$order['id'] . '|' . $order['external_order_id'], $secret);
         }
-        $url = RafflePostback::destination($pdo, $workspaceId, $offer);
-        $result = $url ? RafflePostback::send($url, $payload, $secret) : 'no_url_configured';
+        // Retorno automático (endereço e chave enviados pela rifa na venda) ou retorno do workspace.
+        $target = RafflePostback::target($pdo, $orderFresh, $offer);
+        $url = $target['url'];
+        $local = ($config['app_env'] ?? 'production') === 'local';
+        if (!$url) {
+            $result = 'no_url_configured';
+        } elseif ($target['key'] !== null && !$local && !RafflePostback::resolvesPublic($url)) {
+            $result = ['delivered' => false, 'attempts' => 0, 'status_code' => 0, 'response' => 'Endereço de retorno não é público.'];
+        } else {
+            $result = RafflePostback::send($url, $payload, $secret, $target['key']);
+        }
         try {
             $eventRepo->log($workspaceId, (int)$order['id'], 'postback', [
                 'url'    => $url ? parse_url($url, PHP_URL_HOST) : null,
