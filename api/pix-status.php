@@ -32,12 +32,16 @@ $now = time();
 
 // 1. If already paid
 if ($currentStatus === 'paid') {
+    // Reserva das cotas extras para o card mostrar (quantidade e números que a rifa reservou).
+    $offerRow = !empty($order['offer_id']) ? (new \App\Repositories\OfferRepository($pdo))->find((int)$order['offer_id'], $workspace->id) : null;
+    $reserva = \App\Support\PaymentSettlement::reservation($pdo, $orderRepo->find((int)$order['id']) ?: $order, $offerRow);
     JsonResponse::send([
         'status'             => 'success',
         'transaction_status' => 'paid',
         'paid'               => true,
         'paid_at'            => $tx['paid_at'] ?? date('Y-m-d H:i:s'),
-        'quotas'             => 110,
+        'quotas'             => $reserva['quotas'] ?? null,
+        'tickets'            => $reserva['tickets'] ?? [],
     ]);
 }
 

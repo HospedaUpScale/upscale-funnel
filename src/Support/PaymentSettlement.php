@@ -51,6 +51,12 @@ class PaymentSettlement
         } else {
             $result = RafflePostback::send($url, $payload, $secret, $target['key']);
         }
+        // Reserva mostrada no card: quantidade de cotas e os números que a rifa reservou (se ela devolveu).
+        $tickets = is_array($result) && $result['delivered'] ? RafflePostback::ticketsFromResponse((string)($result['body'] ?? '')) : [];
+        $reservation = ['quotas' => (int)$payload['quotas_awarded'], 'tickets' => $tickets, 'raffle_notified' => is_array($result) && $result['delivered']];
+        self::saveReservation($pdo, (int)$order['id'], $reservation);
+        if (is_array($result)) unset($result['body']);
+
         try {
             $eventRepo->log($workspaceId, (int)$order['id'], 'postback', [
                 'url'    => $url ? parse_url($url, PHP_URL_HOST) : null,
@@ -63,6 +69,30 @@ class PaymentSettlement
             'quotas_awarded'    => $payload['quotas_awarded'],
             'customer'          => ['name' => $customer['name'] ?? null, 'phone' => $customer['phone'] ?? null],
             'postback_delivery' => $result,
+            'reservation'       => $reservation,
         ];
+    }
+
+    public static function saveReservation(PDO $pdo, int $orderId, array $reservation): void
+    {
+        try {
+            $pdo->prepare('UPDATE orders SET reservation = ? WHERE id = ?')->execute([json_encode($reservation, JSON_UNESCAPED_UNICODE), $orderId]);
+        } catch (\PDOException $e) {
+            // banco ainda sem a migração 0034
+        }
+    }
+
+    /** Reserva de um pedido pago (para o card): {quotas, tickets} ou null. */
+    public static function reservation(PDO $pdo, array $order, ?array $offer = null): ?array
+    {
+        if (($order['status'] ?? '') !== 'paid') return null;
+        $r = json_decode((string)($order['reservation'] ?? ''), true);
+        if (is_array($r) && isset($r['quotas'])) {
+            return ['quotas' => (int)$r['quotas'], 'tickets' => array_values(array_filter((array)($r['tickets'] ?? []), 'is_string'))];
+        }
+        // Pago antes da migração 0034: só a quantidade, pela oferta.
+        $published = $offer ? (json_decode($offer['published_config'] ?? '', true) ?: []) : [];
+        $q = (int)($published['quota_count'] ?? $offer['quota_count'] ?? 0);
+        return $q > 0 ? ['quotas' => $q, 'tickets' => []] : null;
     }
 }

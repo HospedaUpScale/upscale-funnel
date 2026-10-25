@@ -62,5 +62,6 @@ JsonResponse::success([
     'quotas_awarded'   => $result['quotas_awarded'],
     'raffle_notified'  => is_array($entrega) && $entrega['delivered'],
     'raffle_http'      => is_array($entrega) ? $entrega['status_code'] : null,
+    'tickets'          => $result['reservation']['tickets'] ?? [],
     'message'          => 'Pagamento de teste aprovado. ' . $avisoRifa,
 ]);
