@@ -36,9 +36,10 @@ WORKDIR /var/www/html
 # Permissões
 # uploads/ recebe as imagens enviadas pelo painel (api/admin/upload.php).
 # Monte um volume persistente nesse caminho no painel de deploy, senão as imagens somem a cada novo deploy.
-RUN mkdir -p /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads \
-    && chmod -R 775 /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
+# Logs ficam em storage/logs (o Nginx nunca entrega storage/).
+RUN mkdir -p /var/www/html/storage/logs /var/www/html/uploads \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/uploads \
+    && chmod -R 775 /var/www/html/storage /var/www/html/uploads
 
 # Script de inicialização (limpa quebras de linha CRLF do Windows)
 COPY deploy/start.sh /start.sh

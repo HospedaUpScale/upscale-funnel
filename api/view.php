@@ -25,12 +25,8 @@ try {
 }
 
 // 2. Grava log local de auditoria
-$logDir = __DIR__ . '/logs';
-if (!is_dir($logDir)) {
-    @mkdir($logDir, 0755, true);
-}
 $linha = sprintf("[%s] EVENTO: %s | WS: %s | SID: %s | PID: %s | INTERAGIU: %s | IP: %s\n", $data, $evento, $workspace->slug, $sid, $pid, $interagiu, $ip);
-@file_put_contents($logDir . '/' . $workspace->id . '.metricas.log', $linha, FILE_APPEND);
+@file_put_contents(\App\Support\LogPath::file($workspace->id . '.metricas.log'), \App\Support\LogPath::oneLine(rtrim($linha, "\n")) . "\n", FILE_APPEND | LOCK_EX);
 
 echo json_encode([
     'status'     => 'ok',

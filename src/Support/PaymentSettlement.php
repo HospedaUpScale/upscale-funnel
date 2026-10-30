@@ -24,6 +24,7 @@ class PaymentSettlement
 
         $txRepo->markPaid((int)$transaction['id']);
         $orderRepo->markPaid((int)$order['id']);
+        UpsellConversion::markPaid($pdo, $order);
         $eventRepo->log($workspaceId, (int)$order['id'], 'pix_paid', array_merge([
             'transaction_id' => (int)$transaction['id'],
             'gateway'        => $transaction['gateway'] ?? 'webhook',
@@ -46,7 +47,8 @@ class PaymentSettlement
         $local = ($config['app_env'] ?? 'production') === 'local';
         if (!$url) {
             $result = 'no_url_configured';
-        } elseif ($target['key'] !== null && !$local && !RafflePostback::resolvesPublic($url)) {
+        } elseif (!$local && !RafflePostback::resolvesPublic($url)) {
+            // Retorno automático ou cadastrado no painel: só para endereço público (nunca a rede interna do servidor).
             $result = ['delivered' => false, 'attempts' => 0, 'status_code' => 0, 'response' => 'Endereço de retorno não é público.'];
         } else {
             $result = RafflePostback::send($url, $payload, $secret, $target['key']);

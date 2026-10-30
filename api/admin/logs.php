@@ -26,7 +26,7 @@ if ($auth && $auth['role'] !== 'super_admin') {
     }
 }
 
-$logFile = dirname(__DIR__) . '/logs/' . $targetWsId . '.pedidos.log';
+$logFile = \App\Support\LogPath::file($targetWsId . '.pedidos.log');
 $logs = [];
 
 if (file_exists($logFile)) {

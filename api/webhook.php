@@ -74,7 +74,7 @@ if (!is_array($payload)) {
     $payload = !empty($_POST) ? $_POST : [];
 }
 
-$clientIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+$clientIp = \App\Security\ClientIp::get();
 
 // 3. Auditoria em arquivo de logs (sem tokens e com CPF mascarado)
 function webhook_redact(mixed $data): mixed
@@ -109,11 +109,6 @@ $logEntry = [
     'payload'   => webhook_redact($payload)
 ];
 
-$logsDir = __DIR__ . '/logs';
-if (!is_dir($logsDir)) {
-    @mkdir($logsDir, 0777, true);
-}
-@file_put_contents($logsDir . '/webhooks.log', json_encode($logEntry, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND | LOCK_EX);
 
 // 3.1 Token precisa ser o segredo global ou o token de API de algum workspace ativo.
 if (!$webhookAuth->isGlobalSecret($webhookToken) && !$webhookAuth->workspaceForToken($webhookToken)) {
@@ -121,6 +116,9 @@ if (!$webhookAuth->isGlobalSecret($webhookToken) && !$webhookAuth->workspaceForT
     echo json_encode(['status' => 'error', 'message' => 'Token de webhook inválido.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+// 3.2 Só chamadas autenticadas entram no log (fora do webroot): sem token válido, nada é gravado em disco.
+@file_put_contents(\App\Support\LogPath::file('webhooks.log'), json_encode($logEntry, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND | LOCK_EX);
 
 // 4. Extração Inteligente de Identificadores e Status
 $txid = $payload['txid'] 

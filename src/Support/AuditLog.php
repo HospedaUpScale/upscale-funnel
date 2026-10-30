@@ -229,7 +229,7 @@ class AuditLog
 
     private static function ip(): ?string
     {
-        $ip = (string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '');
+        $ip = \App\Security\ClientIp::get();
         $ip = trim(explode(',', $ip)[0]);
         return $ip !== '' ? mb_substr($ip, 0, 64) : null;
     }

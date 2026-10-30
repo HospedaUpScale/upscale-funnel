@@ -52,6 +52,11 @@ class AdminAuth
         } catch (\Throwable $e) {
             $session = null;
         }
+        // A sessão só vale enquanto o usuário existir e mantiver o acesso que a criou
+        // (usuário excluído ou sem o vínculo perde o acesso na hora, não só quando a sessão expira).
+        if ($session && !$this->sessionStillAllowed($session)) {
+            $session = null;
+        }
         if ($session) {
             // Sessão master (login por usuário/senha): não depende de workspace.
             if (($session['role'] ?? '') === 'super_admin') {
@@ -75,6 +80,41 @@ class AdminAuth
         return null;
     }
 
+    /** Confere no banco se o dono da sessão ainda tem o acesso registrado nela. */
+    private function sessionStillAllowed(array $session): bool
+    {
+        $userId = (int) ($session['user_id'] ?? 0);
+        $role = (string) ($session['role'] ?? '');
+        // Login master do ambiente (ADMIN_USER/ADMIN_PASSWORD) não tem usuário no banco.
+        if ($role === 'super_admin' && $userId === 0) {
+            return true;
+        }
+        if ($userId <= 0) {
+            return false;
+        }
+        try {
+            $users = new \App\Repositories\UserRepository(Connection::make());
+            $memberships = $users->activeMemberships($userId);
+            if ($role === 'super_admin') {
+                $hasAdminWorkspace = (bool) $users->adminWorkspaceId();
+                foreach ($memberships as $m) {
+                    if ($m['membership_role'] === 'super_admin' && (($m['workspace_type'] ?? '') === 'super_admin' || !$hasAdminWorkspace)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            foreach ($memberships as $m) {
+                if ((int) $m['workspace_id'] === (int) $session['workspace_id'] && $m['membership_role'] !== 'super_admin') {
+                    return true;
+                }
+            }
+        } catch (\Throwable $e) {
+            return false;
+        }
+        return false;
+    }
+
     public static function extractBearerToken(): ?string
     {
         $headers = function_exists('getallheaders') ? getallheaders() : [];
@@ -87,10 +127,10 @@ class AdminAuth
             return trim($matches[1]);
         }
 
-        return $headers['X-Admin-Token'] 
-            ?? $headers['x-admin-token'] 
-            ?? $_GET['admin_token'] 
-            ?? $_GET['token'] 
+        // Só cabeçalho: token na URL fica em logs de acesso, histórico e Referer.
+        return $headers['X-Admin-Token']
+            ?? $headers['x-admin-token']
+            ?? $_SERVER['HTTP_X_ADMIN_TOKEN']
             ?? null;
     }
 }

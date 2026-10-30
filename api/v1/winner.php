@@ -84,7 +84,9 @@ if (!$found) {
 }
 
 $isEntitled = (bool)$found['bonus_entitled'];
-$hasConverted = (bool)$found['upsell_converted'];
+// Convertido = existe Pix do upsell PAGO para este card (gerar o Pix não basta).
+$paidUpsell = \App\Support\UpsellConversion::paidOrder($pdo, $found);
+$hasConverted = $paidUpsell !== null;
 $extraBonus = (float)$found['extra_bonus'];
 
 $veredicto = '';
@@ -98,17 +100,9 @@ if ($isEntitled && $hasConverted) {
 
 // Reserva do upsell deste card (se já foi pago): o card abre direto na tela de reserva.
 $reserva = null;
-if ($token !== '' && !empty($found['upsell_order_id'])) {
-    $orderRepo = new \App\Repositories\OrderRepository($pdo);
-    $paid = null;
-    try {
-        // Qualquer Pix pago deste card (o comprador pode ter gerado mais de um).
-        $stp = $pdo->prepare("SELECT * FROM orders WHERE workspace_id = ? AND status = 'paid' AND (id = ? OR external_order_id = ?) ORDER BY paid_at DESC, id DESC LIMIT 1");
-        $stp->execute([(int)$found['workspace_id'], (int)$found['upsell_order_id'], (string)$found['external_order_id']]);
-        $paid = $stp->fetch() ?: null;
-    } catch (\PDOException $e) {
-        $paid = null;
-    }
+if ($token !== '') {
+    // Qualquer Pix pago deste card (o comprador pode ter gerado mais de um).
+    $paid = $paidUpsell;
     if ($paid) {
         $offerRow = !empty($paid['offer_id']) ? (new \App\Repositories\OfferRepository($pdo))->find((int)$paid['offer_id'], (int)$paid['workspace_id']) : null;
         $r = \App\Support\PaymentSettlement::reservation($pdo, $paid, $offerRow);
@@ -120,7 +114,8 @@ JsonResponse::success([
     'reserva' => $reserva,
     'order_id' => $found['external_order_id'],
     'customer_name' => $found['customer_name'],
-    'customer_phone' => $found['customer_phone'],
+    // Pelo token do card (consulta pública) o telefone vai mascarado; pedido/telefone exigem token de API ou admin.
+    'customer_phone' => $token !== '' ? \App\Support\LogPath::maskPhone($found['customer_phone']) : $found['customer_phone'],
     'base_amount_paid' => (float)$found['base_amount'],
     'min_order_required' => (float)$found['min_order'],
     'bonus_entitled' => $isEntitled,

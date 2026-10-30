@@ -20,6 +20,7 @@ class SecurityHardeningTest extends TestCase
     private static ?array $server = null;
     private static string $baseUrl = '';
     private static string $dbPath = '';
+    private static string $logDir = '';
     private static ?PDO $pdo = null;
     private static array $ws = [];
 
@@ -31,6 +32,8 @@ class SecurityHardeningTest extends TestCase
 
         $root = realpath(__DIR__ . '/../..');
         self::$dbPath = sys_get_temp_dir() . '/upscale_sec_' . getmypid() . '.sqlite';
+        self::$logDir = sys_get_temp_dir() . '/upscale_sec_logs_' . getmypid();
+        @mkdir(self::$logDir, 0700, true);
         @unlink(self::$dbPath);
 
         $env = $this->serverEnv();
@@ -93,6 +96,7 @@ class SecurityHardeningTest extends TestCase
             'ADMIN_USER'       => 'admin',
             'ADMIN_PASSWORD'   => self::ADMIN_PASSWORD,
             'POSTBACK_SECRET'  => self::POSTBACK_SECRET,
+            'LOG_DIR'          => self::$logDir,
         ]);
     }
 
@@ -172,17 +176,23 @@ class SecurityHardeningTest extends TestCase
         self::$pdo->prepare("INSERT INTO upsell_offers (workspace_id, title, price, quota_count, slug, is_active, is_published, published_config) VALUES (?, 'Oferta teste Pix', 9, 5, ?, 1, 1, ?)")
             ->execute([$wsId, 'pix-teste-' . bin2hex(random_bytes(4)), json_encode(['title' => 'Oferta teste Pix', 'price' => 9, 'quota_count' => 5])]);
         $offerId = (int)self::$pdo->lastInsertId();
+        // Cada Pix sai de um card (venda da rifa com token), como no fluxo real.
         $novoPix = function () use ($offerId) {
-            [$status, $data] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'name' => 'Comprador Teste'], ['Host: sec-a']);
+            [, $sale] = $this->http('POST', '/api/v1/webhook.php', ['order_id' => 'pt_' . bin2hex(random_bytes(4)), 'amount' => 20, 'status' => 'paid', 'customer' => ['name' => 'Comprador Teste']],
+                ['Authorization: Bearer ' . self::$ws['sec-a']['api_token']]);
+            [$status, $data] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'token' => $sale['token']], ['Host: sec-a']);
             $this->assertEquals(201, $status);
+            $data['card'] = $sale['token'];
             return $data;
         };
+        $simular = fn(array $pix, string $host = 'sec-a', array $extra = [], array $headers = []) =>
+            $this->http('POST', '/api/pix-test-pay.php', array_merge(['transaction_id' => $pix['transaction_id'], 'token' => $pix['card']], $extra), array_merge(['Host: ' . $host], $headers));
 
         try {
             // Desligado (padrão): nada de simular.
             $pix = $novoPix();
             $this->assertFalse($pix['test_mode']);
-            [$off] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$off] = $simular($pix);
             $this->assertEquals(403, $off);
             $this->assertEquals('pending', $this->txStatus($pix['transaction_id']));
 
@@ -200,9 +210,20 @@ class SecurityHardeningTest extends TestCase
             // Ligado: a janela do Pix recebe test_mode e o botão confirma pelo caminho real.
             $pix = $novoPix();
             $this->assertTrue($pix['test_mode']);
-            [$other] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-b']);
+            [$other] = $simular($pix, 'sec-b');
             $this->assertEquals(404, $other);
-            [$paid, $paidData] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            // Sem o token do card dono (ou com o card de outra pessoa), ninguém liquida o Pix pelo ID.
+            [$noCard] = $simular($pix, 'sec-a', ['token' => '']);
+            $this->assertEquals(403, $noCard, 'Sem token do card, não simula.');
+            $outro = $novoPix();
+            [$wrongCard] = $simular($pix, 'sec-a', ['token' => $outro['card']]);
+            $this->assertEquals(403, $wrongCard, 'Card de outro pedido não simula este Pix.');
+            [$foreignAdmin] = $simular($outro, 'sec-a', ['token' => ''], $adminB);
+            $this->assertEquals(403, $foreignAdmin, 'Admin de outro workspace não simula.');
+            [$byAdmin] = $simular($outro, 'sec-a', ['token' => ''], $adminA);
+            $this->assertEquals(200, $byAdmin, 'Admin do workspace simula pelo painel.');
+            $this->assertEquals('pending', $this->txStatus($pix['transaction_id']));
+            [$paid, $paidData] = $simular($pix);
             $this->assertEquals(200, $paid);
             $this->assertTrue($paidData['paid']);
             $this->assertEquals(5, $paidData['quotas_awarded']);
@@ -218,7 +239,7 @@ class SecurityHardeningTest extends TestCase
             $pagos = (int)$ev->fetchColumn();
             $ev->closeCursor();
             $this->assertEquals(1, $pagos);
-            [$again, $againData] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$again, $againData] = $simular($pix);
             $this->assertEquals(200, $again);
             $this->assertStringContains('já estava pago', $againData['message']);
 
@@ -231,13 +252,13 @@ class SecurityHardeningTest extends TestCase
             // Desliga sozinho depois do prazo e desliga na hora pelo painel.
             $pix = $novoPix();
             self::$pdo->prepare('UPDATE workspaces SET pix_test_until = ? WHERE id = ?')->execute([date('Y-m-d H:i:s', time() - 60), $wsId]);
-            [$expired] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$expired] = $simular($pix);
             $this->assertEquals(403, $expired);
             $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => true, 'workspace_id' => $wsId], $adminA);
             [$offStatus, $offData] = $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => false, 'workspace_id' => $wsId], $adminA);
             $this->assertEquals(200, $offStatus);
             $this->assertEquals(null, $offData['pix_test_until']);
-            [$afterOff] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$afterOff] = $simular($pix);
             $this->assertEquals(403, $afterOff);
         } finally {
             self::$pdo->prepare('UPDATE workspaces SET pix_test_until = NULL WHERE id = ?')->execute([$wsId]);
@@ -438,6 +459,42 @@ class SecurityHardeningTest extends TestCase
         $this->assertTrue(!str_contains($body, 'recent_webhooks'), 'GET ?action=logs não pode expor os webhooks recebidos.');
     }
 
+    public function testLogsLeaveTheWebrootAndNeverKeepTheCardToken(): void
+    {
+        $root = realpath(__DIR__ . '/../..');
+        $oldSales = $root . '/api/logs/upscale-sales-webhooks.log';
+        $before = is_file($oldSales) ? [filesize($oldSales), filemtime($oldSales)] : null;
+
+        // Venda válida: o log vai para a pasta de logs (fora do webroot) sem o token completo do card.
+        $orderId = 'log_' . bin2hex(random_bytes(4));
+        [$ok, $sale] = $this->http('POST', '/api/v1/webhook.php',
+            ['order_id' => $orderId, 'amount' => 25, 'status' => 'paid', 'customer' => ['name' => 'Bruna Sigilo Total', 'phone' => '11912345678']],
+            ['Authorization: Bearer ' . self::$ws['sec-a']['api_token']]);
+        $this->assertEquals(200, $ok);
+        $token = (string)$sale['token'];
+        $this->assertTrue(str_starts_with($token, 'tk_') && strlen($token) > 20);
+        clearstatcache();
+        $log = (string)@file_get_contents(self::$logDir . '/upscale-sales-webhooks.log');
+        $this->assertStringContains($orderId, $log, 'A venda entra no log da pasta de logs.');
+        $this->assertFalse(str_contains($log, $token), 'O token completo do card não pode ir para o log.');
+        $this->assertFalse(str_contains($log, 'Sigilo Total'), 'Só o primeiro nome do comprador vai para o log.');
+        $this->assertEquals($before, is_file($oldSales) ? [filesize($oldSales), filemtime($oldSales)] : null, 'Nada é gravado em api/logs.');
+
+        // Webhook de pagamento com token inválido: 401 e nada gravado em disco.
+        $wh = self::$logDir . '/webhooks.log';
+        $size = is_file($wh) ? filesize($wh) : 0;
+        [$denied] = $this->http('POST', '/api/webhook.php', ['txid' => 'x', 'status' => 'paid', 'lixo' => str_repeat('A', 500)], ['Authorization: Bearer token-invalido']);
+        $this->assertEquals(401, $denied);
+        clearstatcache();
+        $this->assertEquals($size, is_file($wh) ? filesize($wh) : 0, 'Requisição sem token válido não escreve no log.');
+
+        // O Nginx do deploy recusa api/logs e arquivos .log/.sqlite.
+        $conf = (string)file_get_contents($root . '/deploy/nginx.conf');
+        $this->assertStringContains('location ^~ /api/logs/ { return 404; }', $conf);
+        $this->assertStringContains('location ~* \\.(log|sqlite|sqlite3|db)$ { return 404; }', $conf);
+        $this->assertTrue(strpos($conf, '/api/logs/') < strpos($conf, 'location /api/ {'), 'O bloqueio vem antes da rota da API.');
+    }
+
     public function testHardcodedMasterPasswordsNoLongerWork(): void
     {
         foreach (['admin123', 'Master@2026'] as $pass) {
@@ -460,6 +517,55 @@ class SecurityHardeningTest extends TestCase
         [$st, $auth] = $this->http('GET', '/api/admin/auth-status.php', null, ['Authorization: Bearer ' . $data['token']]);
         $this->assertEquals(200, $st);
         $this->assertEquals('super_admin', $auth['auth']['role'] ?? null, 'A sessão master deve ser reconhecida como super_admin.');
+    }
+
+    public function testRemovingOrEditingAUserEndsTheirAccessRightAway(): void
+    {
+        $master = ['Authorization: Bearer ' . self::SUPER_TOKEN];
+        $wsId = self::$ws['sec-a']['id'];
+        $makeUser = function (string $email) use ($wsId): int {
+            self::$pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)")
+                ->execute(['Pessoa ' . $email, $email, password_hash('senha-do-cliente-123', PASSWORD_DEFAULT)]);
+            $id = (int)self::$pdo->lastInsertId();
+            self::$pdo->prepare("INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, 'merchant_admin')")->execute([$wsId, $id]);
+            return $id;
+        };
+        $login = function (string $email): string {
+            [$st, $d] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => $email, 'password' => 'senha-do-cliente-123'],
+                ['X-Forwarded-For: 10.2.0.' . random_int(1, 250)]);
+            $this->assertEquals(200, $st, 'Login do cliente deve funcionar.');
+            return (string)$d['token'];
+        };
+        $status = fn(string $tok) => $this->http('GET', '/api/admin/auth-status.php', null, ['Authorization: Bearer ' . $tok])[0];
+
+        // Editar só nome/telefone não derruba a sessão.
+        $u1 = $makeUser('edita.' . bin2hex(random_bytes(3)) . '@example.test');
+        $t1 = $login((string)self::$pdo->query("SELECT email FROM users WHERE id = {$u1}")->fetchColumn());
+        $this->assertEquals(200, $status($t1));
+        [$st] = $this->http('POST', '/api/admin/users.php', ['action' => 'update_global', 'user_id' => $u1, 'name' => 'Nome Novo'], $master);
+        $this->assertEquals(200, $st);
+        $this->assertEquals(200, $status($t1), 'Trocar só o nome mantém a sessão.');
+
+        // Tirar os vínculos encerra a sessão aberta.
+        [$st] = $this->http('POST', '/api/admin/users.php', ['action' => 'update_global', 'user_id' => $u1, 'memberships' => []], $master);
+        $this->assertEquals(200, $st, 'Editar vínculos responde 200 (antes dava 500).');
+        $this->assertEquals(401, $status($t1), 'Sem vínculo, a sessão antiga deixa de valer.');
+
+        // Excluir remove o usuário e a sessão.
+        $email2 = 'exclui.' . bin2hex(random_bytes(3)) . '@example.test';
+        $u2 = $makeUser($email2);
+        $t2 = $login($email2);
+        [$st] = $this->http('POST', '/api/admin/users.php', ['action' => 'delete_global', 'user_id' => $u2], $master);
+        $this->assertEquals(200, $st, 'Excluir usuário responde 200 (antes dava 500).');
+        $this->assertEquals(0, (int)self::$pdo->query("SELECT COUNT(*) FROM users WHERE id = {$u2}")->fetchColumn(), 'O usuário some do banco.');
+        $this->assertEquals(401, $status($t2), 'A sessão do usuário excluído deixa de valer.');
+
+        // Vínculo apagado direto no banco também derruba a sessão (a checagem é a cada requisição).
+        $email3 = 'direto.' . bin2hex(random_bytes(3)) . '@example.test';
+        $u3 = $makeUser($email3);
+        $t3 = $login($email3);
+        self::$pdo->prepare('DELETE FROM workspace_memberships WHERE user_id = ?')->execute([$u3]);
+        $this->assertEquals(401, $status($t3));
     }
 
     public function testAdminEndpointsRequireTokenByDefault(): void
@@ -556,6 +662,170 @@ class SecurityHardeningTest extends TestCase
         $paid = ['status' => 'paid', 'reservation' => json_encode(['quotas' => 110, 'tickets' => ['1', '2']])];
         $this->assertEquals(['quotas' => 110, 'tickets' => ['1', '2']], \App\Support\PaymentSettlement::reservation(self::$pdo, $paid));
         $this->assertEquals(null, \App\Support\PaymentSettlement::reservation(self::$pdo, ['status' => 'pending', 'reservation' => null]));
+    }
+
+    public function testBonusIsOnlyReleasedAfterTheUpsellIsPaid(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $apiToken = self::$ws['sec-a']['api_token'];
+        self::$pdo->prepare("INSERT INTO upsell_offers (workspace_id, title, price, quota_count, slug, is_active, is_published, published_config) VALUES (?, 'Oferta bonus', 7, 5, ?, 1, 1, ?)")
+            ->execute([$wsId, 'bonus-' . bin2hex(random_bytes(4)), json_encode(['title' => 'Oferta bonus', 'price' => 7, 'quota_count' => 5])]);
+        $offerId = (int)self::$pdo->lastInsertId();
+        $orderId = 'bonus_' . bin2hex(random_bytes(4));
+        [$ok, $sale] = $this->http('POST', '/api/v1/webhook.php', ['order_id' => $orderId, 'amount' => 100, 'status' => 'paid', 'customer' => ['name' => 'Gil Ganhador']],
+            ['Authorization: Bearer ' . $apiToken]);
+        $this->assertEquals(200, $ok);
+        $card = (string)$sale['token'];
+        $cardRow = fn() => self::$pdo->query('SELECT upsell_order_id, upsell_converted FROM order_access_tokens WHERE token = ' . self::$pdo->quote($card))->fetch();
+
+        // Outra pessoa gera um Pix com o número do pedido, sem o token do card: o card não muda.
+        [$st0] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'order_id' => $orderId, 'name' => 'Intruso'], ['Host: sec-a']);
+        $this->assertEquals(201, $st0);
+        $row = $cardRow();
+        $this->assertTrue(empty($row['upsell_order_id']) && !(int)$row['upsell_converted'], 'Pix sem o token do card não se liga ao card.');
+
+        // O comprador gera o Pix e não paga: auditoria NÃO libera o bônus.
+        [$st1, $pix] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'token' => $card], ['Host: sec-a']);
+        $this->assertEquals(201, $st1);
+        $this->assertEquals((int)$pix['order_id'], (int)$cardRow()['upsell_order_id'], 'O Pix do card fica ligado ao card.');
+        [, $w1] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($card));
+        $this->assertFalse($w1['upsell_converted'], 'Gerar o Pix não é converter.');
+        $this->assertFalse(str_contains((string)$w1['veredicto'], 'LIBERADO'), 'Sem pagamento, nada de bônus liberado.');
+        $this->assertEquals(0, (int)$cardRow()['upsell_converted']);
+
+        // Pix pago: agora sim.
+        $gw = (string)self::$pdo->query('SELECT gateway_tx_id FROM transactions WHERE id = ' . (int)$pix['transaction_id'])->fetchColumn();
+        [$paid] = $this->http('POST', '/api/webhook.php?token=' . urlencode($apiToken), ['txid' => $gw, 'status' => 'paid']);
+        $this->assertEquals(200, $paid);
+        [, $w2] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($card));
+        $this->assertTrue($w2['upsell_converted'], 'Pix pago conta como convertido.');
+        $this->assertStringContains('LIBERADO', (string)$w2['veredicto']);
+        $this->assertEquals(1, (int)$cardRow()['upsell_converted']);
+        $this->assertTrue(($w2['reserva']['pago'] ?? false) === true, 'O card reabre na reserva.');
+    }
+
+    public function testPartnerOnlyCreatesClientsInsideItsOwnTree(): void
+    {
+        $mk = function (string $slug, string $type): array {
+            $admin = 'adm_' . $slug . '_' . bin2hex(random_bytes(6));
+            self::$pdo->prepare("INSERT INTO workspaces (type, name, slug, api_token_hash, admin_token_hash, status) VALUES (?, ?, ?, ?, ?, 'active')")
+                ->execute([$type, $slug, $slug, hash('sha256', 'api_' . $admin), hash('sha256', $admin)]);
+            return ['id' => (int)self::$pdo->lastInsertId(), 'admin' => $admin, 'slug' => $slug];
+        };
+        $p1 = $mk('parceiro-um-' . bin2hex(random_bytes(3)), 'partner_whitelabel');
+        $p2 = $mk('parceiro-dois-' . bin2hex(random_bytes(3)), 'partner_whitelabel');
+        $auth = ['Authorization: Bearer ' . $p1['admin']];
+
+        $tentativas = [
+            ['name' => 'Cliente sob outro', 'partner_option' => 'new', 'new_partner_name' => 'Dois', 'new_partner_slug' => $p2['slug']],
+            ['name' => 'Parceiro novo', 'partner_option' => 'new', 'new_partner_name' => 'Parceiro Fantasma ' . bin2hex(random_bytes(3))],
+            ['name' => 'Via sorteamos', 'partner_option' => 'sorteamos'],
+            ['name' => 'Topo', 'account_type' => 'partner_whitelabel'],
+            ['name' => 'Pai escolhido', 'parent_id' => $p2['id'], 'partner_id' => $p2['id']],
+        ];
+        foreach ($tentativas as $body) {
+            [$st, $data] = $this->http('POST', '/api/admin/workspaces.php', $body, $auth);
+            $this->assertEquals(201, $st, 'Criação de cliente pelo parceiro continua funcionando: ' . $body['name']);
+            $this->assertEquals('merchant', $data['workspace']['type'], 'Parceiro não cria parceiro: ' . $body['name']);
+            $this->assertEquals($p1['id'], (int)$data['workspace']['parent_id'], 'Cliente fica sob o próprio parceiro: ' . $body['name']);
+            $this->assertTrue(empty($data['partner']['admin_token']) && empty($data['partner']['api_token']), 'Nenhum token de outro parceiro é devolvido.');
+        }
+        $this->assertEquals(0, (int)self::$pdo->query("SELECT COUNT(*) FROM workspaces WHERE name LIKE 'Parceiro Fantasma%'")->fetchColumn());
+        $this->assertEquals(0, (int)self::$pdo->query('SELECT COUNT(*) FROM workspaces WHERE parent_id = ' . $p2['id'])->fetchColumn(), 'Nada foi criado na árvore do outro parceiro.');
+    }
+
+    public function testTokensStayOutOfUrlsAndReturnAddressesStayPublic(): void
+    {
+        // Token de admin na URL não autentica (fica em logs e no Referer); no cabeçalho, sim.
+        [$inUrl] = $this->http('GET', '/api/admin/auth-status.php?token=' . urlencode(self::SUPER_TOKEN));
+        $this->assertEquals(401, $inUrl);
+        [$inUrl2] = $this->http('GET', '/api/admin/auth-status.php?admin_token=' . urlencode(self::SUPER_TOKEN));
+        $this->assertEquals(401, $inUrl2);
+        [$inHeader] = $this->http('GET', '/api/admin/auth-status.php', null, ['Authorization: Bearer ' . self::SUPER_TOKEN]);
+        $this->assertEquals(200, $inHeader);
+
+        // Retorno da rifa cadastrado no painel: só endereço público.
+        $wsId = self::$ws['sec-b']['id'];
+        $admin = ['Authorization: Bearer adm_' . self::$ws['sec-b']['api_token']];
+        foreach (['https://127.0.0.1/r', 'https://localhost/r', 'https://10.1.2.3/r', 'https://192.168.0.10/r', 'http://rifa.exemplo.com/r'] as $bad) {
+            [$st] = $this->http('POST', '/api/admin/webhook-info.php?workspace_id=' . $wsId, ['action' => 'save_postback', 'postback_url' => $bad], $admin);
+            $this->assertEquals(422, $st, 'Retorno recusado: ' . $bad);
+        }
+        [$ok] = $this->http('POST', '/api/admin/webhook-info.php?workspace_id=' . $wsId, ['action' => 'save_postback', 'postback_url' => 'https://rifa.exemplo.com/api/upscale.php?action=return'], $admin);
+        $this->assertEquals(200, $ok);
+        $this->http('POST', '/api/admin/webhook-info.php?workspace_id=' . $wsId, ['action' => 'save_postback', 'postback_url' => ''], $admin);
+
+        // Consulta pública pelo token do card: nome para a saudação, telefone mascarado.
+        [, $sale] = $this->http('POST', '/api/v1/webhook.php', ['order_id' => 'tel_' . bin2hex(random_bytes(4)), 'amount' => 10, 'status' => 'paid', 'customer' => ['name' => 'Rita Telefone', 'phone' => '11987654321']],
+            ['Authorization: Bearer ' . self::$ws['sec-b']['api_token']]);
+        [$wst, $w] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($sale['token']));
+        $this->assertEquals(200, $wst);
+        $this->assertEquals('Rita Telefone', $w['customer_name']);
+        $this->assertEquals('*******4321', $w['customer_phone']);
+    }
+
+    public function testLoginPausesAnAccountAfterTooManyWrongPasswords(): void
+    {
+        $email = 'forca.' . bin2hex(random_bytes(3)) . '@example.test';
+        self::$pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES ('Alvo', ?, ?)")->execute([$email, password_hash('senha-certa-123', PASSWORD_DEFAULT)]);
+        $uid = (int)self::$pdo->lastInsertId();
+        self::$pdo->prepare("INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, 'merchant_admin')")->execute([self::$ws['sec-a']['id'], $uid]);
+        // Trocar o IP a cada tentativa não ajuda: o limite é da conta.
+        for ($i = 1; $i <= 10; $i++) {
+            [$st] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => $email, 'password' => 'errada-' . $i],
+                ['X-Forwarded-For: 45.67.89.' . $i]);
+            $this->assertEquals(401, $st);
+        }
+        [$blocked, $data] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => strtoupper($email), 'password' => 'senha-certa-123'],
+            ['X-Forwarded-For: 45.67.90.1']);
+        $this->assertEquals(429, $blocked, 'Depois de 10 erros a conta pausa, mesmo com a senha certa.');
+        $this->assertStringContains('Tente de novo', (string)$data['message']);
+
+        // Outra conta não é afetada.
+        $other = 'livre.' . bin2hex(random_bytes(3)) . '@example.test';
+        self::$pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES ('Livre', ?, ?)")->execute([$other, password_hash('senha-certa-123', PASSWORD_DEFAULT)]);
+        $oid = (int)self::$pdo->lastInsertId();
+        self::$pdo->prepare("INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, 'merchant_admin')")->execute([self::$ws['sec-a']['id'], $oid]);
+        [$ok] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => $other, 'password' => 'senha-certa-123']);
+        $this->assertEquals(200, $ok);
+    }
+
+    public function testMediaLibraryIsPerWorkspaceAndChecksTheContent(): void
+    {
+        $upload = function (string $name, string $bytes, string $adminToken, int $wsId): array {
+            $boundary = '----ups' . bin2hex(random_bytes(6));
+            $body = "--{$boundary}\r\nContent-Disposition: form-data; name=\"workspace_id\"\r\n\r\n{$wsId}\r\n"
+                . "--{$boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{$name}\"\r\nContent-Type: application/octet-stream\r\n\r\n{$bytes}\r\n--{$boundary}--\r\n";
+            $ctx = stream_context_create(['http' => ['method' => 'POST', 'ignore_errors' => true, 'content' => $body,
+                'header' => "Content-Type: multipart/form-data; boundary={$boundary}\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {$adminToken}"]]);
+            $raw = (string)@file_get_contents(self::$baseUrl . '/api/admin/upload.php', false, $ctx);
+            preg_match('#HTTP/\S+\s+(\d+)#', $http_response_header[0] ?? '', $m);
+            return [(int)($m[1] ?? 0), json_decode($raw, true) ?: []];
+        };
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        $a = self::$ws['sec-a']; $b = self::$ws['sec-b'];
+        $root = realpath(__DIR__ . '/../..');
+        $created = [];
+        try {
+            [$st, $up] = $upload('capa.png', $png, 'adm_' . $a['api_token'], $a['id']);
+            $this->assertEquals(200, $st, 'Upload de imagem válida continua funcionando.');
+            $created[] = $up['filename'];
+            $this->assertTrue(str_starts_with($up['filename'], 'w' . $a['id'] . '_'), 'Arquivo novo leva o dono no nome.');
+
+            [$fake] = $upload('pagina.png', '<html><script>alert(1)</script></html>', 'adm_' . $a['api_token'], $a['id']);
+            $this->assertEquals(415, $fake, 'HTML com extensão de imagem é recusado.');
+            [$foreign] = $upload('capa.png', $png, 'adm_' . $a['api_token'], $b['id']);
+            $this->assertEquals(403, $foreign, 'Cliente não envia para outro workspace.');
+
+            [, $listA] = $this->http('GET', '/api/admin/upload.php?workspace_id=' . $a['id'], null, ['Authorization: Bearer adm_' . $a['api_token']]);
+            [, $listB] = $this->http('GET', '/api/admin/upload.php?workspace_id=' . $b['id'], null, ['Authorization: Bearer adm_' . $b['api_token']]);
+            $namesA = array_column($listA['files'] ?? [], 'filename');
+            $namesB = array_column($listB['files'] ?? [], 'filename');
+            $this->assertTrue(in_array($up['filename'], $namesA, true), 'O dono vê o próprio arquivo.');
+            $this->assertFalse(in_array($up['filename'], $namesB, true), 'Outro cliente não vê o arquivo.');
+        } finally {
+            foreach ($created as $f) @unlink($root . '/uploads/' . basename((string)$f));
+        }
     }
 
     public function testWinnerLookupByPhoneRequiresAuth(): void

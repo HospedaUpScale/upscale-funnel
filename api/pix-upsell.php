@@ -185,19 +185,12 @@ $eventRepo->log($workspace->id, $order['id'], 'pix_generated', [
     'offer_id'       => $offer['id']
 ], ['offer_id' => (int)$offer['id']]);
 
-// 8. Atualizar token de acesso pós-compra se fornecido (Auditoria de Ganhadores & Bônus Extra)
-if (!empty($input['token'])) {
-    $pdo->prepare("
-        UPDATE order_access_tokens 
-        SET upsell_converted = 1, upsell_order_id = ? 
-        WHERE token = ?
-    ")->execute([(int)$order['id'], trim($input['token'])]);
-} elseif (!empty($externalOrderId)) {
-    $pdo->prepare("
-        UPDATE order_access_tokens 
-        SET upsell_converted = 1, upsell_order_id = ? 
-        WHERE workspace_id = ? AND external_order_id = ?
-    ")->execute([(int)$order['id'], $workspace->id, $externalOrderId]);
+// 8. Liga este Pix ao card do comprador. Só com o token válido do card deste workspace: o número do pedido
+//    vem do corpo da requisição pública e não prova nada. "Convertido" é marcado só quando o Pix é PAGO
+//    (PaymentSettlement), nunca aqui na geração.
+if ($cardToken) {
+    $pdo->prepare("UPDATE order_access_tokens SET upsell_order_id = ? WHERE token = ? AND workspace_id = ?")
+        ->execute([(int)$order['id'], $cardToken['token'], $workspace->id]);
 }
 
 // 9. Return Response

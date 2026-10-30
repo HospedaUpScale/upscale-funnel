@@ -113,23 +113,20 @@ if (!empty($queryParams)) {
 }
 
 // 6. Registro de Auditoria / Log seguro por Workspace
-$logDir = __DIR__ . '/logs';
-if (!is_dir($logDir)) {
-    @mkdir($logDir, 0755, true);
-}
-$logFile = $logDir . '/' . $workspace->id . '.pedidos.log';
+$logFile = \App\Support\LogPath::file($workspace->id . '.pedidos.log');
 
 $logData = [
     'timestamp'    => date('Y-m-d H:i:s'),
     'ip'           => $_SERVER['REMOTE_ADDR'] ?? '',
     'method'       => $_SERVER['REQUEST_METHOD'] ?? 'GET',
-    'uri'          => $_SERVER['REQUEST_URI'] ?? '',
+    // Só o caminho: a query pode trazer o token de API (?token=).
+    'uri'          => (string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? ''),
     'token'        => $token ? substr($token, 0, 6) . '...' : 'sem-token',
     'token_valid'  => $tokenValid,
     'workspace_id' => $workspace->id,
     'workspace'    => $workspace->slug,
     'comprador'    => $primeiroNome ?: 'nao-informado',
-    'telefone'     => $telefone ?: '-',
+    'telefone'     => \App\Support\LogPath::maskPhone(is_string($telefone) ? $telefone : ''),
     'order_id'     => $orderId
 ];
 @file_put_contents($logFile, json_encode($logData) . PHP_EOL, FILE_APPEND);

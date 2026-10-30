@@ -4,7 +4,9 @@
  * Só funciona com o "Pix de teste" ligado no workspace (painel → Webhooks) e apenas para Pix do
  * gateway de demonstração. Segue o mesmo caminho de um pagamento real: cotas, eventos e o aviso
  * upsell.quotas_paid para a rifa.
- * POST {transaction_id}
+ * POST {transaction_id, token}
+ * Só o card dono do Pix (token do card) ou um admin do workspace simulam: o ID da transação é sequencial
+ * e, sozinho, deixaria qualquer pessoa liquidar os Pix pendentes do workspace enquanto o modo estiver ligado.
  */
 
 require_once __DIR__ . '/bootstrap.php';
@@ -32,6 +34,30 @@ if (!PixTestMode::active($pdo, $workspace->id)) {
 if (!PixTestMode::isTestTransaction($tx)) {
     JsonResponse::error('Este Pix é de um gateway real: só o gateway confirma o pagamento.', 409);
 }
+// Quem pode simular: o card do comprador dono deste Pix ou um admin do workspace.
+$cardToken = trim((string)($request->all()['token'] ?? ''));
+$allowed = false;
+if ($cardToken !== '') {
+    $stc = $pdo->prepare('SELECT upsell_order_id, external_order_id FROM order_access_tokens WHERE token = ? AND workspace_id = ? LIMIT 1');
+    $stc->execute([$cardToken, $workspace->id]);
+    $card = $stc->fetch(PDO::FETCH_ASSOC) ?: null;
+    $ext = (string)($order['external_order_id'] ?? '');
+    $allowed = $card && ((int)$card['upsell_order_id'] === (int)$order['id']
+        || ($ext !== '' && (string)$card['external_order_id'] === $ext));
+}
+if (!$allowed) {
+    $h = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+    $adminToken = preg_match('/Bearer\s+(\S+)/i', $h, $m) ? $m[1] : null;
+    $admin = $adminToken ? (new \App\Auth\AdminAuth($wsRepo, $config['super_admin_token'] ?? ''))->authenticate($adminToken) : null;
+    if ($admin) {
+        $ids = $admin['role'] === 'super_admin' ? null : array_merge([$admin['workspace']->id], array_map(fn($w) => $w->id, $wsRepo->findDescendants($admin['workspace']->id)));
+        $allowed = $ids === null || in_array((int)$order['workspace_id'], $ids, true);
+    }
+}
+if (!$allowed) {
+    JsonResponse::error('Simule pelo card do próprio pedido (link com token) ou confirme o Pix pelo painel.', 403);
+}
+
 if ($tx['status'] === 'paid') {
     JsonResponse::success(['paid' => true, 'message' => 'Este Pix já estava pago.']);
 }
