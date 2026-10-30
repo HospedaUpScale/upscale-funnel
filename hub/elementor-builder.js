@@ -153,14 +153,57 @@
     document.getElementById('builder-offer-fields').disabled=false;
     document.getElementById('builder-offer-status').textContent='Edite aqui e acompanhe a prévia. As alterações são publicadas junto à página.';
   }
+  // ══ ISOLAMENTO DA PRÉVIA ══
+  // Master e parceiro abrem páginas de OUTROS workspaces. Nesse caso o HTML/JS da página roda numa origem
+  // opaca (sandbox sem allow-same-origin): os scripts da página continuam funcionando na prévia, mas não
+  // alcançam o painel (token de acesso, DOM, chamadas à API em nome de quem está logado).
+  // O cliente editando a própria página segue com a prévia de antes.
+  var SANDBOX_PREVIA_ISOLADA = 'allow-scripts allow-forms allow-popups';
+  function previaIsolada() {
+    var role = window.currentRole;
+    return role === 'super_admin' || role === 'partner_admin';
+  }
+  function prepararIframePrevia(iframe, sandboxNormal) {
+    if (!iframe) return;
+    var alvo = previaIsolada() ? SANDBOX_PREVIA_ISOLADA : sandboxNormal;
+    // Vale a partir da próxima carga (o srcdoc é definido logo depois).
+    if (iframe.getAttribute('sandbox') !== alvo) iframe.setAttribute('sandbox', alvo);
+  }
+  function documentoDaPrevia(iframe) {
+    try { return iframe && iframe.contentDocument ? iframe.contentDocument : null; } catch (e) { return null; }
+  }
+  // Mensagens para os frames da experiência (oferta) dentro da prévia.
+  function enviarParaFramesDaOferta(outer, mensagens) {
+    if (!outer || !outer.contentWindow) return;
+    var doc = documentoDaPrevia(outer);
+    if (doc) {
+      doc.querySelectorAll('iframe[data-campaign-offer]').forEach(function (frame) {
+        mensagens.forEach(function (m) { if (frame.contentWindow) frame.contentWindow.postMessage(m, window.location.origin); });
+      });
+      return;
+    }
+    // Prévia isolada: sem acesso ao DOM; fala com os frames filhos pela janela (origem opaca → '*').
+    // O conteúdo é só a configuração da oferta que está sendo editada.
+    var filhos = outer.contentWindow.frames;
+    for (var i = 0; i < filhos.length; i++) {
+      mensagens.forEach(function (m) { try { filhos[i].postMessage(m, '*'); } catch (e) {} });
+    }
+  }
+  // Na prévia isolada não dá para ouvir o load dos frames filhos: reenvia algumas vezes enquanto carregam.
+  function enviarParaFramesComRepeticao(outer, montarMensagens) {
+    [0, 400, 1200, 2500].forEach(function (ms) {
+      setTimeout(function () { enviarParaFramesDaOferta(outer, montarMensagens()); }, ms);
+    });
+  }
+
   function enviarOfertaInline(){
     if(!state.flowOffer)return;
-    ['builder-iframe','builder-iframe-mobile'].forEach(function(id){var outer=document.getElementById(id);if(!outer||!outer.contentDocument)return;
-      outer.contentDocument.querySelectorAll('iframe[data-campaign-offer]').forEach(function(frame){
-        var offer=Object.assign({},state.flowOffer,{theme:Object.assign({},state.flowOffer.theme||{},{mechanic:state.mechanic})});
-        frame.contentWindow.postMessage({tipo:'upscale:preview-config',offer:offer},window.location.origin);
-        frame.contentWindow.postMessage({tipo:'upscale:preview-screen',screen:state.inlinePreviewScreen},window.location.origin);
-      });
+    var offer=Object.assign({},state.flowOffer,{theme:Object.assign({},state.flowOffer.theme||{},{mechanic:state.mechanic})});
+    ['builder-iframe','builder-iframe-mobile'].forEach(function(id){
+      enviarParaFramesDaOferta(document.getElementById(id), [
+        {tipo:'upscale:preview-config',offer:offer},
+        {tipo:'upscale:preview-screen',screen:state.inlinePreviewScreen}
+      ]);
     });
   }
   function atualizarOfertaInline(changed){
@@ -832,12 +875,14 @@
         }
 
         if (event.data.action === 'resetTimer') {
-          for (var i = 0; i < localStorage.length; i++) {
-            var k = localStorage.key(i);
-            if (k && k.indexOf('upscale_timer_') === 0) {
-              localStorage.removeItem(k);
+          try {
+            for (var i = localStorage.length - 1; i >= 0; i--) {
+              var k = localStorage.key(i);
+              if (k && k.indexOf('upscale_timer_') === 0) {
+                localStorage.removeItem(k);
+              }
             }
-          }
+          } catch (e) {} // prévia isolada (origem opaca) não tem localStorage
           window.location.reload();
         }
       });
@@ -1017,8 +1062,15 @@
     // Notifica modo atual para o iframe logo que carregar
     iframe.onload = function () {
       iframe.contentWindow.postMessage({ action: 'setMode', mode: state.canvasMode }, '*');
-      if(state.flowOffer){
-        var nativeFrames=iframe.contentDocument.querySelectorAll('iframe[data-campaign-offer]');
+      var docPrevia = documentoDaPrevia(iframe);
+      if(state.flowOffer && !docPrevia){
+        enviarParaFramesComRepeticao(iframe, function(){
+          var data=Object.assign({},state.flowOffer,{theme:Object.assign({},state.flowOffer.theme||{},{mechanic:state.mechanic})});
+          return [{tipo:'upscale:preview-config',offer:data},{tipo:'upscale:preview-screen',screen:state.inlinePreviewScreen}];
+        });
+      }
+      if(state.flowOffer && docPrevia){
+        var nativeFrames=docPrevia.querySelectorAll('iframe[data-campaign-offer]');
         nativeFrames.forEach(function(frame){
           function previewOffer(){
             var data=Object.assign({},state.flowOffer,{theme:Object.assign({},state.flowOffer.theme||{},{mechanic:state.mechanic})});
@@ -1033,6 +1085,7 @@
         iframe.contentWindow.postMessage({ action: 'selectBlock', blockId: state.selectedBlockId }, '*');
       }
     };
+    prepararIframePrevia(iframe, 'allow-scripts allow-forms allow-same-origin allow-popups');
     iframe.srcdoc = htmlToInject;
   }
 
@@ -3151,9 +3204,12 @@
       if (iframe) {
         iframe.onload = function() {
           if(requestGeneration!==previewRequestGeneration)return;
-          if(offer){iframe.contentDocument.querySelectorAll('iframe[data-campaign-offer]').forEach(function(frame){function apply(){frame.contentWindow.postMessage({tipo:'upscale:preview-config',offer:offer},window.location.origin);frame.contentWindow.postMessage({tipo:'upscale:preview-screen',screen:def.mechanic==='direct'?'offer':'scratch'},window.location.origin);}frame.addEventListener('load',apply);if(frame.contentDocument&&frame.contentDocument.readyState==='complete')apply();});}
+          var docModelo=documentoDaPrevia(iframe);
+          if(offer&&!docModelo){enviarParaFramesComRepeticao(iframe,function(){return [{tipo:'upscale:preview-config',offer:offer},{tipo:'upscale:preview-screen',screen:def.mechanic==='direct'?'offer':'scratch'}];});}
+          if(offer&&docModelo){docModelo.querySelectorAll('iframe[data-campaign-offer]').forEach(function(frame){function apply(){frame.contentWindow.postMessage({tipo:'upscale:preview-config',offer:offer},window.location.origin);frame.contentWindow.postMessage({tipo:'upscale:preview-screen',screen:def.mechanic==='direct'?'offer':'scratch'},window.location.origin);}frame.addEventListener('load',apply);if(frame.contentDocument&&frame.contentDocument.readyState==='complete')apply();});}
           if (loadingEl) loadingEl.style.display = 'none';
         };
+        prepararIframePrevia(iframe, 'allow-scripts allow-same-origin');
         iframe.srcdoc = html;
       }
     } catch (err) {
