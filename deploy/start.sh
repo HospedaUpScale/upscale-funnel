@@ -1,9 +1,11 @@
 #!/bin/sh
 
 # Cria diretórios necessários (uploads/ = imagens enviadas pelo painel; monte um volume nele)
-mkdir -p /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
-chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
-chmod -R 775 /var/www/html/storage /var/www/html/api/logs /var/www/html/uploads
+# Logs ficam em storage/logs. Cópias antigas em api/logs não são apagadas aqui (podem servir de
+# evidência); o Nginx bloqueia esse caminho.
+mkdir -p /var/www/html/storage/logs /var/www/html/uploads
+chown -R www-data:www-data /var/www/html/storage /var/www/html/uploads
+chmod -R 775 /var/www/html/storage /var/www/html/uploads
 
 # Roda migrations a cada start.
 # IMPORTANTE: NÃO esconder o erro. Em deploys anteriores o `|| echo ...` mascarava
@@ -28,8 +30,8 @@ fi
 # O banco SQLite e a pasta storage/ precisam ser gravaveis pelo PHP-FPM (www-data).
 # As migrations rodam como root e criam o arquivo com dono root; sem este chown as leituras
 # funcionam mas criar/publicar/salvar falha com "attempt to write a readonly database".
-chown -R www-data:www-data /var/www/html/storage /var/www/html/api/logs
-chmod -R 775 /var/www/html/storage /var/www/html/api/logs
+chown -R www-data:www-data /var/www/html/storage
+chmod -R 775 /var/www/html/storage
 find /var/www/html/storage -type f -exec chmod 664 {} \;
 
 # Inicia PHP-FPM em background

@@ -15,9 +15,9 @@ ob_start();
 
 function api_log_error(string $line): void
 {
-    $dir = __DIR__ . '/logs';
+    $dir = \App\Support\LogPath::dir();
     if (is_dir($dir) && is_writable($dir)) {
-        @error_log('[' . date('c') . '] ' . $line . "\n", 3, $dir . '/api-errors.log');
+        @error_log('[' . date('c') . '] ' . \App\Support\LogPath::oneLine($line) . "\n", 3, $dir . '/api-errors.log');
     } else {
         error_log($line);
     }
@@ -60,7 +60,7 @@ register_shutdown_function(function (): void {
             http_response_code(500);
             header('Content-Type: application/json; charset=utf-8');
         }
-        echo json_encode(['status' => 'error', 'message' => 'Erro fatal no servidor. Consulte api/logs/api-errors.log.'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Erro fatal no servidor. Tente novamente em instantes.'], JSON_UNESCAPED_UNICODE);
     }
 });
 

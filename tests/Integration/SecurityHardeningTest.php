@@ -20,6 +20,7 @@ class SecurityHardeningTest extends TestCase
     private static ?array $server = null;
     private static string $baseUrl = '';
     private static string $dbPath = '';
+    private static string $logDir = '';
     private static ?PDO $pdo = null;
     private static array $ws = [];
 
@@ -31,6 +32,8 @@ class SecurityHardeningTest extends TestCase
 
         $root = realpath(__DIR__ . '/../..');
         self::$dbPath = sys_get_temp_dir() . '/upscale_sec_' . getmypid() . '.sqlite';
+        self::$logDir = sys_get_temp_dir() . '/upscale_sec_logs_' . getmypid();
+        @mkdir(self::$logDir, 0700, true);
         @unlink(self::$dbPath);
 
         $env = $this->serverEnv();
@@ -93,6 +96,7 @@ class SecurityHardeningTest extends TestCase
             'ADMIN_USER'       => 'admin',
             'ADMIN_PASSWORD'   => self::ADMIN_PASSWORD,
             'POSTBACK_SECRET'  => self::POSTBACK_SECRET,
+            'LOG_DIR'          => self::$logDir,
         ]);
     }
 
@@ -436,6 +440,42 @@ class SecurityHardeningTest extends TestCase
     {
         [, , $body] = $this->http('GET', '/api/webhook.php?action=logs');
         $this->assertTrue(!str_contains($body, 'recent_webhooks'), 'GET ?action=logs não pode expor os webhooks recebidos.');
+    }
+
+    public function testLogsLeaveTheWebrootAndNeverKeepTheCardToken(): void
+    {
+        $root = realpath(__DIR__ . '/../..');
+        $oldSales = $root . '/api/logs/upscale-sales-webhooks.log';
+        $before = is_file($oldSales) ? [filesize($oldSales), filemtime($oldSales)] : null;
+
+        // Venda válida: o log vai para a pasta de logs (fora do webroot) sem o token completo do card.
+        $orderId = 'log_' . bin2hex(random_bytes(4));
+        [$ok, $sale] = $this->http('POST', '/api/v1/webhook.php',
+            ['order_id' => $orderId, 'amount' => 25, 'status' => 'paid', 'customer' => ['name' => 'Bruna Sigilo Total', 'phone' => '11912345678']],
+            ['Authorization: Bearer ' . self::$ws['sec-a']['api_token']]);
+        $this->assertEquals(200, $ok);
+        $token = (string)$sale['token'];
+        $this->assertTrue(str_starts_with($token, 'tk_') && strlen($token) > 20);
+        clearstatcache();
+        $log = (string)@file_get_contents(self::$logDir . '/upscale-sales-webhooks.log');
+        $this->assertStringContains($orderId, $log, 'A venda entra no log da pasta de logs.');
+        $this->assertFalse(str_contains($log, $token), 'O token completo do card não pode ir para o log.');
+        $this->assertFalse(str_contains($log, 'Sigilo Total'), 'Só o primeiro nome do comprador vai para o log.');
+        $this->assertEquals($before, is_file($oldSales) ? [filesize($oldSales), filemtime($oldSales)] : null, 'Nada é gravado em api/logs.');
+
+        // Webhook de pagamento com token inválido: 401 e nada gravado em disco.
+        $wh = self::$logDir . '/webhooks.log';
+        $size = is_file($wh) ? filesize($wh) : 0;
+        [$denied] = $this->http('POST', '/api/webhook.php', ['txid' => 'x', 'status' => 'paid', 'lixo' => str_repeat('A', 500)], ['Authorization: Bearer token-invalido']);
+        $this->assertEquals(401, $denied);
+        clearstatcache();
+        $this->assertEquals($size, is_file($wh) ? filesize($wh) : 0, 'Requisição sem token válido não escreve no log.');
+
+        // O Nginx do deploy recusa api/logs e arquivos .log/.sqlite.
+        $conf = (string)file_get_contents($root . '/deploy/nginx.conf');
+        $this->assertStringContains('location ^~ /api/logs/ { return 404; }', $conf);
+        $this->assertStringContains('location ~* \\.(log|sqlite|sqlite3|db)$ { return 404; }', $conf);
+        $this->assertTrue(strpos($conf, '/api/logs/') < strpos($conf, 'location /api/ {'), 'O bloqueio vem antes da rota da API.');
     }
 
     public function testHardcodedMasterPasswordsNoLongerWork(): void

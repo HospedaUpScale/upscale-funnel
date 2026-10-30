@@ -270,12 +270,10 @@ $iframeSnippet = '<iframe id="upscale-frame" src="' . $cardUrl . '" style="width
 '});' . "\n" .
 '</script>';
 
-// Log de Auditoria
-$logDir = __DIR__ . '/../logs';
-if (!is_dir($logDir)) @mkdir($logDir, 0777, true);
+// Log de Auditoria (fora do webroot; sem o token completo do card nem o nome inteiro do comprador)
 @file_put_contents(
-    $logDir . '/upscale-sales-webhooks.log',
-    date('c') . " | WS: {$targetWsId} | PED: {$extOrderId} | CLI: {$fullName} | VALOR: R$ {$amount} | TOKEN: {$cardAccessToken}\n",
+    \App\Support\LogPath::file('upscale-sales-webhooks.log'),
+    \App\Support\LogPath::oneLine(date('c') . " | WS: {$targetWsId} | PED: {$extOrderId} | CLI: {$firstName} | VALOR: R$ {$amount} | TOKEN: " . substr($cardAccessToken, 0, 8) . '…') . "\n",
     FILE_APPEND | LOCK_EX
 );
 
