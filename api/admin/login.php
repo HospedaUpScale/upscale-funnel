@@ -12,8 +12,8 @@ if ($request->method() !== 'POST') {
     JsonResponse::error('Method not allowed. Use POST.', 405);
 }
 
-$ip = (string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
-$ip = trim(explode(',', $ip)[0]);
+// IP sem confiar em cabeçalho escolhido pelo cliente (antes bastava trocar X-Forwarded-For a cada tentativa).
+$ip = \App\Security\ClientIp::get();
 $rateLimiter = new RateLimiter();
 $rateKey = 'login_ip_' . $ip;
 
@@ -107,6 +107,14 @@ if ($username === '' || $password === '') {
     JsonResponse::error('Informe usuário e senha.', 400);
 }
 
+// Limite por conta (independe do IP): 10 senhas erradas em 15 minutos pausam aquele acesso até a janela
+// fechar. O master do ambiente ainda entra pelo SUPER_ADMIN_TOKEN, se precisar.
+$accountKey = 'login_acct_' . sha1(strtolower($username));
+if ($rateLimiter->isTooManyAttempts($accountKey, 10, 900)) {
+    $mins = max(1, (int) ceil($rateLimiter->availableIn($accountKey, 900) / 60));
+    JsonResponse::error("Muitas tentativas com este acesso. Tente de novo em {$mins} min.", 429);
+}
+
 // 2. Login MASTER (administração global da upScale)
 // Credenciais vêm somente das variáveis ADMIN_USER / ADMIN_EMAIL / ADMIN_PASSWORD.
 // Sem ADMIN_PASSWORD configurado, o login master por senha fica desativado.
@@ -123,6 +131,7 @@ if ($type === '' || $type === 'master') {
 
     if ($isMaster) {
         $rateLimiter->clear($rateKey);
+        $rateLimiter->clear($accountKey);
         login_master_success($pdo, 0, 'upScale Master', $username);
     }
 
@@ -134,6 +143,7 @@ $users = new UserRepository($pdo);
 $user = $users->findByEmail($username);
 
 if (!$user || empty($user['password_hash']) || !password_verify($password, $user['password_hash'])) {
+    $rateLimiter->hit($accountKey);
     login_fail($type === 'client'
         ? 'E-mail ou senha incorretos. Confira os dados enviados pela sua agência.'
         : 'Usuário ou senha incorretos. Verifique suas credenciais.', $rateLimiter, $rateKey);
@@ -159,6 +169,7 @@ foreach ($memberships as $m) {
 
 if ($hasSuperAdmin) {
     $rateLimiter->clear($rateKey);
+    $rateLimiter->clear($accountKey);
     login_master_success($pdo, (int) $user['id'], $user['name'] ?: 'upScale Master', $user['email']);
 }
 
@@ -181,6 +192,7 @@ $role = $chosen['membership_role'] === 'partner_admin' ? 'partner_admin' : 'merc
 $session = (new AuthSessionRepository($pdo))->create((int) $user['id'], (int) $chosen['workspace_id'], $role);
 
 $rateLimiter->clear($rateKey);
+$rateLimiter->clear($accountKey);
 
 
 JsonResponse::send([

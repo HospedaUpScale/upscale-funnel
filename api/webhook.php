@@ -74,7 +74,7 @@ if (!is_array($payload)) {
     $payload = !empty($_POST) ? $_POST : [];
 }
 
-$clientIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+$clientIp = \App\Security\ClientIp::get();
 
 // 3. Auditoria em arquivo de logs (sem tokens e com CPF mascarado)
 function webhook_redact(mixed $data): mixed

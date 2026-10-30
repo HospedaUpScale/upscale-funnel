@@ -10,7 +10,7 @@ class RateLimiter
     {
         $this->storageDir = $storageDir ?: (__DIR__ . '/../../storage/cache/rate_limits');
         if (!is_dir($this->storageDir)) {
-            @mkdir($this->storageDir, 0777, true);
+            @mkdir($this->storageDir, 0770, true);
         }
     }
 
@@ -43,17 +43,32 @@ class RateLimiter
 
     public function hit(string $key): int
     {
-        $data = $this->read($key);
-        $now = time();
-
-        if ($data['first_hit'] === 0) {
-            $data['first_hit'] = $now;
+        // Ler e gravar sob trava: requisições em paralelo não podem perder contagens.
+        $fh = @fopen($this->getFilePath($key), 'c+');
+        if ($fh === false) {
+            return 0;
         }
-        $data['last_hit'] = $now;
-        $data['attempts']++;
-
-        $this->write($key, $data);
-        return $data['attempts'];
+        try {
+            flock($fh, LOCK_EX);
+            $data = json_decode((string) stream_get_contents($fh), true);
+            if (!is_array($data)) {
+                $data = ['attempts' => 0, 'first_hit' => 0, 'last_hit' => 0];
+            }
+            $now = time();
+            if ((int) $data['first_hit'] === 0) {
+                $data['first_hit'] = $now;
+            }
+            $data['last_hit'] = $now;
+            $data['attempts'] = (int) $data['attempts'] + 1;
+            ftruncate($fh, 0);
+            rewind($fh);
+            fwrite($fh, json_encode($data));
+            fflush($fh);
+            return $data['attempts'];
+        } finally {
+            flock($fh, LOCK_UN);
+            fclose($fh);
+        }
     }
 
     public function attempts(string $key): int

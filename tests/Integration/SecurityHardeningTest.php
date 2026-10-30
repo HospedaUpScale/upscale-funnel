@@ -764,6 +764,32 @@ class SecurityHardeningTest extends TestCase
         $this->assertEquals('*******4321', $w['customer_phone']);
     }
 
+    public function testLoginPausesAnAccountAfterTooManyWrongPasswords(): void
+    {
+        $email = 'forca.' . bin2hex(random_bytes(3)) . '@example.test';
+        self::$pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES ('Alvo', ?, ?)")->execute([$email, password_hash('senha-certa-123', PASSWORD_DEFAULT)]);
+        $uid = (int)self::$pdo->lastInsertId();
+        self::$pdo->prepare("INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, 'merchant_admin')")->execute([self::$ws['sec-a']['id'], $uid]);
+        // Trocar o IP a cada tentativa não ajuda: o limite é da conta.
+        for ($i = 1; $i <= 10; $i++) {
+            [$st] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => $email, 'password' => 'errada-' . $i],
+                ['X-Forwarded-For: 45.67.89.' . $i]);
+            $this->assertEquals(401, $st);
+        }
+        [$blocked, $data] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => strtoupper($email), 'password' => 'senha-certa-123'],
+            ['X-Forwarded-For: 45.67.90.1']);
+        $this->assertEquals(429, $blocked, 'Depois de 10 erros a conta pausa, mesmo com a senha certa.');
+        $this->assertStringContains('Tente de novo', (string)$data['message']);
+
+        // Outra conta não é afetada.
+        $other = 'livre.' . bin2hex(random_bytes(3)) . '@example.test';
+        self::$pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES ('Livre', ?, ?)")->execute([$other, password_hash('senha-certa-123', PASSWORD_DEFAULT)]);
+        $oid = (int)self::$pdo->lastInsertId();
+        self::$pdo->prepare("INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, 'merchant_admin')")->execute([self::$ws['sec-a']['id'], $oid]);
+        [$ok] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => $other, 'password' => 'senha-certa-123']);
+        $this->assertEquals(200, $ok);
+    }
+
     public function testWinnerLookupByPhoneRequiresAuth(): void
     {
         [$status] = $this->http('GET', '/api/v1/winner.php?phone=11999999999');
