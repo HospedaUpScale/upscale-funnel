@@ -20,6 +20,16 @@ if ($targetWsId <= 0) {
     $targetWsId = $auth['workspace']->id ?? 1;
 }
 
+// Biblioteca de mídia por workspace: cada cliente vê só os próprios arquivos (e os antigos, sem dono).
+$allowedWsIds = null; // null = todos (master)
+if ($auth && $auth['role'] !== 'super_admin') {
+    $allowedWsIds = array_merge([$auth['workspace']->id], array_map(fn($w) => $w->id, $wsRepo->findDescendants($auth['workspace']->id)));
+    if (!in_array($targetWsId, $allowedWsIds, true)) {
+        JsonResponse::error('Acesso negado para este workspace.', 403);
+    }
+}
+$filePrefix = 'w' . $targetWsId . '_';
+
 $uploadDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'uploads';
 if (!is_dir($uploadDir)) {
     @mkdir($uploadDir, 0755, true);
@@ -33,6 +43,10 @@ if ($request->method() === 'GET') {
         if ($scanned) {
             foreach ($scanned as $item) {
                 if ($item === '.' || $item === '..' || str_starts_with($item, '.')) continue;
+                // Arquivo de outro workspace (prefixo wN_): só aparece para quem administra aquele workspace.
+                if (preg_match('/^w(\d+)_/', $item, $own)) {
+                    if ((int)$own[1] !== $targetWsId) continue;
+                }
                 $filePath = $uploadDir . DIRECTORY_SEPARATOR . $item;
                 if (!is_file($filePath)) continue;
 
@@ -95,8 +109,10 @@ if ($request->method() === 'POST') {
     $mime = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
 
-    $isImage = str_starts_with((string)$mime, 'image/') || in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true);
-    $isVideo = str_starts_with((string)$mime, 'video/') || in_array($ext, ['mp4', 'webm', 'mov'], true);
+    // Extensão E conteúdo precisam bater (antes bastava um dos dois).
+    $extIsVideo = in_array($ext, ['mp4', 'webm', 'mov'], true);
+    $isImage = !$extIsVideo && str_starts_with((string)$mime, 'image/') && $mime !== 'image/svg+xml';
+    $isVideo = $extIsVideo && (str_starts_with((string)$mime, 'video/') || $mime === 'application/octet-stream');
 
     if (!$isImage && !$isVideo) {
         JsonResponse::error('Tipo MIME inválido: ' . htmlspecialchars((string)$mime), 415);
@@ -110,7 +126,7 @@ if ($request->method() === 'POST') {
 
     $safeBaseName = preg_replace('/[^a-zA-Z0-9_-]/', '', pathinfo($origName, PATHINFO_FILENAME));
     if ($safeBaseName === '') $safeBaseName = 'media';
-    $targetFileName = $safeBaseName . '_' . substr(md5(uniqid('', true)), 0, 8) . '.' . $ext;
+    $targetFileName = $filePrefix . $safeBaseName . '_' . substr(md5(uniqid('', true)), 0, 8) . '.' . $ext;
     $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $targetFileName;
 
     if (!move_uploaded_file($file['tmp_name'], $targetPath)) {

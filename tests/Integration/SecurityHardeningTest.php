@@ -790,6 +790,44 @@ class SecurityHardeningTest extends TestCase
         $this->assertEquals(200, $ok);
     }
 
+    public function testMediaLibraryIsPerWorkspaceAndChecksTheContent(): void
+    {
+        $upload = function (string $name, string $bytes, string $adminToken, int $wsId): array {
+            $boundary = '----ups' . bin2hex(random_bytes(6));
+            $body = "--{$boundary}\r\nContent-Disposition: form-data; name=\"workspace_id\"\r\n\r\n{$wsId}\r\n"
+                . "--{$boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{$name}\"\r\nContent-Type: application/octet-stream\r\n\r\n{$bytes}\r\n--{$boundary}--\r\n";
+            $ctx = stream_context_create(['http' => ['method' => 'POST', 'ignore_errors' => true, 'content' => $body,
+                'header' => "Content-Type: multipart/form-data; boundary={$boundary}\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {$adminToken}"]]);
+            $raw = (string)@file_get_contents(self::$baseUrl . '/api/admin/upload.php', false, $ctx);
+            preg_match('#HTTP/\S+\s+(\d+)#', $http_response_header[0] ?? '', $m);
+            return [(int)($m[1] ?? 0), json_decode($raw, true) ?: []];
+        };
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        $a = self::$ws['sec-a']; $b = self::$ws['sec-b'];
+        $root = realpath(__DIR__ . '/../..');
+        $created = [];
+        try {
+            [$st, $up] = $upload('capa.png', $png, 'adm_' . $a['api_token'], $a['id']);
+            $this->assertEquals(200, $st, 'Upload de imagem válida continua funcionando.');
+            $created[] = $up['filename'];
+            $this->assertTrue(str_starts_with($up['filename'], 'w' . $a['id'] . '_'), 'Arquivo novo leva o dono no nome.');
+
+            [$fake] = $upload('pagina.png', '<html><script>alert(1)</script></html>', 'adm_' . $a['api_token'], $a['id']);
+            $this->assertEquals(415, $fake, 'HTML com extensão de imagem é recusado.');
+            [$foreign] = $upload('capa.png', $png, 'adm_' . $a['api_token'], $b['id']);
+            $this->assertEquals(403, $foreign, 'Cliente não envia para outro workspace.');
+
+            [, $listA] = $this->http('GET', '/api/admin/upload.php?workspace_id=' . $a['id'], null, ['Authorization: Bearer adm_' . $a['api_token']]);
+            [, $listB] = $this->http('GET', '/api/admin/upload.php?workspace_id=' . $b['id'], null, ['Authorization: Bearer adm_' . $b['api_token']]);
+            $namesA = array_column($listA['files'] ?? [], 'filename');
+            $namesB = array_column($listB['files'] ?? [], 'filename');
+            $this->assertTrue(in_array($up['filename'], $namesA, true), 'O dono vê o próprio arquivo.');
+            $this->assertFalse(in_array($up['filename'], $namesB, true), 'Outro cliente não vê o arquivo.');
+        } finally {
+            foreach ($created as $f) @unlink($root . '/uploads/' . basename((string)$f));
+        }
+    }
+
     public function testWinnerLookupByPhoneRequiresAuth(): void
     {
         [$status] = $this->http('GET', '/api/v1/winner.php?phone=11999999999');
