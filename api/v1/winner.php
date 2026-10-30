@@ -112,6 +112,8 @@ if ($token !== '') {
 
 JsonResponse::success([
     'reserva' => $reserva,
+    // Página do pedido na rifa (informada na venda): a LP leva o comprador de volta para lá.
+    'back_url' => !empty($found['back_url']) && preg_match('#^https?://#i', (string)$found['back_url']) ? (string)$found['back_url'] : null,
     'order_id' => $found['external_order_id'],
     'customer_name' => $found['customer_name'],
     // Pelo token do card (consulta pública) o telefone vai mascarado; pedido/telefone exigem token de API ou admin.
