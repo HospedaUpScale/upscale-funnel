@@ -27,12 +27,9 @@ try {
 }
 
 $storageDir = __DIR__ . '/../storage';
-$freeBytes = @disk_free_space($storageDir);
-$totalBytes = @disk_total_space($storageDir);
+// Público: só o que serve para monitorar (sem tamanho de disco nem versão do PHP).
 $diskInfo = [
     'writable' => is_writable($storageDir),
-    'free_mb' => $freeBytes ? round($freeBytes / 1024 / 1024, 2) : null,
-    'total_mb' => $totalBytes ? round($totalBytes / 1024 / 1024, 2) : null,
 ];
 
 $requiredExtensions = ['pdo', 'curl', 'json', 'mbstring'];
@@ -56,8 +53,6 @@ $response = [
     'database' => $dbInfo,
     'disk' => $diskInfo,
     'php' => [
-        'version' => PHP_VERSION,
-        'sapi' => PHP_SAPI,
         'extensions' => $extStatus,
     ],
 ];
