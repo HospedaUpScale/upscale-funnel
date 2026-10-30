@@ -127,10 +127,10 @@ class AdminAuth
             return trim($matches[1]);
         }
 
-        return $headers['X-Admin-Token'] 
-            ?? $headers['x-admin-token'] 
-            ?? $_GET['admin_token'] 
-            ?? $_GET['token'] 
+        // Só cabeçalho: token na URL fica em logs de acesso, histórico e Referer.
+        return $headers['X-Admin-Token']
+            ?? $headers['x-admin-token']
+            ?? $_SERVER['HTTP_X_ADMIN_TOKEN']
             ?? null;
     }
 }

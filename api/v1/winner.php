@@ -114,7 +114,8 @@ JsonResponse::success([
     'reserva' => $reserva,
     'order_id' => $found['external_order_id'],
     'customer_name' => $found['customer_name'],
-    'customer_phone' => $found['customer_phone'],
+    // Pelo token do card (consulta pública) o telefone vai mascarado; pedido/telefone exigem token de API ou admin.
+    'customer_phone' => $token !== '' ? \App\Support\LogPath::maskPhone($found['customer_phone']) : $found['customer_phone'],
     'base_amount_paid' => (float)$found['base_amount'],
     'min_order_required' => (float)$found['min_order'],
     'bonus_entitled' => $isEntitled,

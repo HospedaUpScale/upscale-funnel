@@ -50,8 +50,10 @@ if ($request->method() === 'POST') {
     // Endereço da plataforma da rifa que recebe o aviso de cotas pagas (upsell.quotas_paid)
     if ($action === 'save_postback') {
         $url = trim((string)($request->all()['postback_url'] ?? ''));
-        if ($url !== '' && (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('#^https://#i', $url))) {
-            JsonResponse::error('Informe um endereço completo começando com https://', 422);
+        $localEnv = ($config['app_env'] ?? 'production') === 'local';
+        if ($url !== '' && (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('#^https://#i', $url)
+            || !\App\Support\RafflePostback::isAllowedCallback($url, $localEnv))) {
+            JsonResponse::error('Informe um endereço público completo começando com https:// (sem localhost nem IP interno).', 422);
         }
         try {
             $pdo->prepare('UPDATE workspaces SET postback_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([$url ?: null, $targetWsId]);

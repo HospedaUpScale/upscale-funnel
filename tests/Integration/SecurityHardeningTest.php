@@ -734,6 +734,36 @@ class SecurityHardeningTest extends TestCase
         $this->assertEquals(0, (int)self::$pdo->query('SELECT COUNT(*) FROM workspaces WHERE parent_id = ' . $p2['id'])->fetchColumn(), 'Nada foi criado na árvore do outro parceiro.');
     }
 
+    public function testTokensStayOutOfUrlsAndReturnAddressesStayPublic(): void
+    {
+        // Token de admin na URL não autentica (fica em logs e no Referer); no cabeçalho, sim.
+        [$inUrl] = $this->http('GET', '/api/admin/auth-status.php?token=' . urlencode(self::SUPER_TOKEN));
+        $this->assertEquals(401, $inUrl);
+        [$inUrl2] = $this->http('GET', '/api/admin/auth-status.php?admin_token=' . urlencode(self::SUPER_TOKEN));
+        $this->assertEquals(401, $inUrl2);
+        [$inHeader] = $this->http('GET', '/api/admin/auth-status.php', null, ['Authorization: Bearer ' . self::SUPER_TOKEN]);
+        $this->assertEquals(200, $inHeader);
+
+        // Retorno da rifa cadastrado no painel: só endereço público.
+        $wsId = self::$ws['sec-b']['id'];
+        $admin = ['Authorization: Bearer adm_' . self::$ws['sec-b']['api_token']];
+        foreach (['https://127.0.0.1/r', 'https://localhost/r', 'https://10.1.2.3/r', 'https://192.168.0.10/r', 'http://rifa.exemplo.com/r'] as $bad) {
+            [$st] = $this->http('POST', '/api/admin/webhook-info.php?workspace_id=' . $wsId, ['action' => 'save_postback', 'postback_url' => $bad], $admin);
+            $this->assertEquals(422, $st, 'Retorno recusado: ' . $bad);
+        }
+        [$ok] = $this->http('POST', '/api/admin/webhook-info.php?workspace_id=' . $wsId, ['action' => 'save_postback', 'postback_url' => 'https://rifa.exemplo.com/api/upscale.php?action=return'], $admin);
+        $this->assertEquals(200, $ok);
+        $this->http('POST', '/api/admin/webhook-info.php?workspace_id=' . $wsId, ['action' => 'save_postback', 'postback_url' => ''], $admin);
+
+        // Consulta pública pelo token do card: nome para a saudação, telefone mascarado.
+        [, $sale] = $this->http('POST', '/api/v1/webhook.php', ['order_id' => 'tel_' . bin2hex(random_bytes(4)), 'amount' => 10, 'status' => 'paid', 'customer' => ['name' => 'Rita Telefone', 'phone' => '11987654321']],
+            ['Authorization: Bearer ' . self::$ws['sec-b']['api_token']]);
+        [$wst, $w] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($sale['token']));
+        $this->assertEquals(200, $wst);
+        $this->assertEquals('Rita Telefone', $w['customer_name']);
+        $this->assertEquals('*******4321', $w['customer_phone']);
+    }
+
     public function testWinnerLookupByPhoneRequiresAuth(): void
     {
         [$status] = $this->http('GET', '/api/v1/winner.php?phone=11999999999');
