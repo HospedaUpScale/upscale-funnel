@@ -647,6 +647,46 @@ class SecurityHardeningTest extends TestCase
         $this->assertEquals(null, \App\Support\PaymentSettlement::reservation(self::$pdo, ['status' => 'pending', 'reservation' => null]));
     }
 
+    public function testBonusIsOnlyReleasedAfterTheUpsellIsPaid(): void
+    {
+        $wsId = self::$ws['sec-a']['id'];
+        $apiToken = self::$ws['sec-a']['api_token'];
+        self::$pdo->prepare("INSERT INTO upsell_offers (workspace_id, title, price, quota_count, slug, is_active, is_published, published_config) VALUES (?, 'Oferta bonus', 7, 5, ?, 1, 1, ?)")
+            ->execute([$wsId, 'bonus-' . bin2hex(random_bytes(4)), json_encode(['title' => 'Oferta bonus', 'price' => 7, 'quota_count' => 5])]);
+        $offerId = (int)self::$pdo->lastInsertId();
+        $orderId = 'bonus_' . bin2hex(random_bytes(4));
+        [$ok, $sale] = $this->http('POST', '/api/v1/webhook.php', ['order_id' => $orderId, 'amount' => 100, 'status' => 'paid', 'customer' => ['name' => 'Gil Ganhador']],
+            ['Authorization: Bearer ' . $apiToken]);
+        $this->assertEquals(200, $ok);
+        $card = (string)$sale['token'];
+        $cardRow = fn() => self::$pdo->query('SELECT upsell_order_id, upsell_converted FROM order_access_tokens WHERE token = ' . self::$pdo->quote($card))->fetch();
+
+        // Outra pessoa gera um Pix com o número do pedido, sem o token do card: o card não muda.
+        [$st0] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'order_id' => $orderId, 'name' => 'Intruso'], ['Host: sec-a']);
+        $this->assertEquals(201, $st0);
+        $row = $cardRow();
+        $this->assertTrue(empty($row['upsell_order_id']) && !(int)$row['upsell_converted'], 'Pix sem o token do card não se liga ao card.');
+
+        // O comprador gera o Pix e não paga: auditoria NÃO libera o bônus.
+        [$st1, $pix] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'token' => $card], ['Host: sec-a']);
+        $this->assertEquals(201, $st1);
+        $this->assertEquals((int)$pix['order_id'], (int)$cardRow()['upsell_order_id'], 'O Pix do card fica ligado ao card.');
+        [, $w1] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($card));
+        $this->assertFalse($w1['upsell_converted'], 'Gerar o Pix não é converter.');
+        $this->assertFalse(str_contains((string)$w1['veredicto'], 'LIBERADO'), 'Sem pagamento, nada de bônus liberado.');
+        $this->assertEquals(0, (int)$cardRow()['upsell_converted']);
+
+        // Pix pago: agora sim.
+        $gw = (string)self::$pdo->query('SELECT gateway_tx_id FROM transactions WHERE id = ' . (int)$pix['transaction_id'])->fetchColumn();
+        [$paid] = $this->http('POST', '/api/webhook.php?token=' . urlencode($apiToken), ['txid' => $gw, 'status' => 'paid']);
+        $this->assertEquals(200, $paid);
+        [, $w2] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($card));
+        $this->assertTrue($w2['upsell_converted'], 'Pix pago conta como convertido.');
+        $this->assertStringContains('LIBERADO', (string)$w2['veredicto']);
+        $this->assertEquals(1, (int)$cardRow()['upsell_converted']);
+        $this->assertTrue(($w2['reserva']['pago'] ?? false) === true, 'O card reabre na reserva.');
+    }
+
     public function testWinnerLookupByPhoneRequiresAuth(): void
     {
         [$status] = $this->http('GET', '/api/v1/winner.php?phone=11999999999');

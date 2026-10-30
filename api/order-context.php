@@ -185,7 +185,7 @@ if ($action === 'check_winner') {
         'extra_bonus' => (float)$foundToken['extra_bonus'],
         'min_order' => (float)$foundToken['min_order'],
         'bonus_entitled' => (bool)$foundToken['bonus_entitled'],
-        'upsell_converted' => (bool)$foundToken['upsell_converted'],
+        'upsell_converted' => \App\Support\UpsellConversion::paidOrder($pdo, $foundToken) !== null,
         'status_ganhador' => $foundToken['bonus_entitled']
             ? 'ELEGÍVEL AO BÔNUS EXTRA DE R$ ' . number_format((float)$foundToken['extra_bonus'], 2, ',', '.')
             : 'NÃO ELEGÍVEL AO BÔNUS (NÃO ATINGIU O VALOR MÍNIMO)'

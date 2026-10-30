@@ -24,6 +24,7 @@ class PaymentSettlement
 
         $txRepo->markPaid((int)$transaction['id']);
         $orderRepo->markPaid((int)$order['id']);
+        UpsellConversion::markPaid($pdo, $order);
         $eventRepo->log($workspaceId, (int)$order['id'], 'pix_paid', array_merge([
             'transaction_id' => (int)$transaction['id'],
             'gateway'        => $transaction['gateway'] ?? 'webhook',
