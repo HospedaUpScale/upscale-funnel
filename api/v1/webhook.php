@@ -252,7 +252,7 @@ if ($backUrl !== '') {
     try {
         $pdo->prepare("UPDATE order_access_tokens SET back_url = ? WHERE token = ?")->execute([$backUrl, $cardAccessToken]);
     } catch (\PDOException $e) {
-        JsonResponse::error('Faça o deploy para liberar o link de volta (migração 0035).', 503);
+        // banco ainda sem a migração 0035: a venda segue; a LP só não mostra o "voltar para a rifa".
     }
 }
 if ($callbackUrl !== '') {
