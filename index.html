@@ -1769,7 +1769,8 @@
     fetch('api/pix-test-pay.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transaction_id: currentTxId })
+      // O token do card prova que este Pix é do comprador que está com o card aberto.
+      body: JSON.stringify({ transaction_id: currentTxId, token: param(['token']) || '' })
     })
       .then(function (r) { return r.json(); })
       .then(function (d) {
