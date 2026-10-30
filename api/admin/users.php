@@ -127,7 +127,10 @@ if ($action === 'update_user' || $action === 'update_global') {
     }
 
     $users->updateGlobalUser($userId, $updateData);
-    (new AuthSessionRepository($pdo))->revokeForUser($userId);
+    // Senha ou vínculos mudaram: as sessões abertas deixam de valer (trocar só nome/telefone não derruba ninguém).
+    if (isset($updateData['password']) || isset($updateData['memberships'])) {
+        (new AuthSessionRepository($pdo))->revokeForUser($userId);
+    }
 
     JsonResponse::send([
         'status' => 'success',

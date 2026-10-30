@@ -502,6 +502,55 @@ class SecurityHardeningTest extends TestCase
         $this->assertEquals('super_admin', $auth['auth']['role'] ?? null, 'A sessão master deve ser reconhecida como super_admin.');
     }
 
+    public function testRemovingOrEditingAUserEndsTheirAccessRightAway(): void
+    {
+        $master = ['Authorization: Bearer ' . self::SUPER_TOKEN];
+        $wsId = self::$ws['sec-a']['id'];
+        $makeUser = function (string $email) use ($wsId): int {
+            self::$pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)")
+                ->execute(['Pessoa ' . $email, $email, password_hash('senha-do-cliente-123', PASSWORD_DEFAULT)]);
+            $id = (int)self::$pdo->lastInsertId();
+            self::$pdo->prepare("INSERT INTO workspace_memberships (workspace_id, user_id, role) VALUES (?, ?, 'merchant_admin')")->execute([$wsId, $id]);
+            return $id;
+        };
+        $login = function (string $email): string {
+            [$st, $d] = $this->http('POST', '/api/admin/login.php', ['type' => 'client', 'username' => $email, 'password' => 'senha-do-cliente-123'],
+                ['X-Forwarded-For: 10.2.0.' . random_int(1, 250)]);
+            $this->assertEquals(200, $st, 'Login do cliente deve funcionar.');
+            return (string)$d['token'];
+        };
+        $status = fn(string $tok) => $this->http('GET', '/api/admin/auth-status.php', null, ['Authorization: Bearer ' . $tok])[0];
+
+        // Editar só nome/telefone não derruba a sessão.
+        $u1 = $makeUser('edita.' . bin2hex(random_bytes(3)) . '@example.test');
+        $t1 = $login((string)self::$pdo->query("SELECT email FROM users WHERE id = {$u1}")->fetchColumn());
+        $this->assertEquals(200, $status($t1));
+        [$st] = $this->http('POST', '/api/admin/users.php', ['action' => 'update_global', 'user_id' => $u1, 'name' => 'Nome Novo'], $master);
+        $this->assertEquals(200, $st);
+        $this->assertEquals(200, $status($t1), 'Trocar só o nome mantém a sessão.');
+
+        // Tirar os vínculos encerra a sessão aberta.
+        [$st] = $this->http('POST', '/api/admin/users.php', ['action' => 'update_global', 'user_id' => $u1, 'memberships' => []], $master);
+        $this->assertEquals(200, $st, 'Editar vínculos responde 200 (antes dava 500).');
+        $this->assertEquals(401, $status($t1), 'Sem vínculo, a sessão antiga deixa de valer.');
+
+        // Excluir remove o usuário e a sessão.
+        $email2 = 'exclui.' . bin2hex(random_bytes(3)) . '@example.test';
+        $u2 = $makeUser($email2);
+        $t2 = $login($email2);
+        [$st] = $this->http('POST', '/api/admin/users.php', ['action' => 'delete_global', 'user_id' => $u2], $master);
+        $this->assertEquals(200, $st, 'Excluir usuário responde 200 (antes dava 500).');
+        $this->assertEquals(0, (int)self::$pdo->query("SELECT COUNT(*) FROM users WHERE id = {$u2}")->fetchColumn(), 'O usuário some do banco.');
+        $this->assertEquals(401, $status($t2), 'A sessão do usuário excluído deixa de valer.');
+
+        // Vínculo apagado direto no banco também derruba a sessão (a checagem é a cada requisição).
+        $email3 = 'direto.' . bin2hex(random_bytes(3)) . '@example.test';
+        $u3 = $makeUser($email3);
+        $t3 = $login($email3);
+        self::$pdo->prepare('DELETE FROM workspace_memberships WHERE user_id = ?')->execute([$u3]);
+        $this->assertEquals(401, $status($t3));
+    }
+
     public function testAdminEndpointsRequireTokenByDefault(): void
     {
         $envFile = __DIR__ . '/../../.env';

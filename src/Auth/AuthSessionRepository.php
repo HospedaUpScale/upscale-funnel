@@ -64,6 +64,13 @@ class AuthSessionRepository
         $this->pdo->prepare('DELETE FROM admin_sessions WHERE token_hash = ?')->execute([hash('sha256', $rawToken)]);
     }
 
+    /** Encerra todas as sessões de um usuário (exclusão, troca de senha ou de vínculos). */
+    public function revokeForUser(int $userId): void
+    {
+        $this->ensureSchema();
+        $this->pdo->prepare('DELETE FROM admin_sessions WHERE user_id = ?')->execute([$userId]);
+    }
+
     public function revokeForUserWorkspace(int $userId, int $workspaceId): void
     {
         $this->ensureSchema();
