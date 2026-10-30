@@ -828,6 +828,33 @@ class SecurityHardeningTest extends TestCase
         }
     }
 
+    public function testSaleCarriesTheOrderPageForTheButtonFlow(): void
+    {
+        $auth = ['Authorization: Bearer ' . self::$ws['sec-b']['api_token']];
+        $sale = fn(array $extra) => $this->http('POST', '/api/v1/webhook.php', array_merge(['order_id' => 'btn_' . bin2hex(random_bytes(4)), 'amount' => 30, 'status' => 'paid', 'customer' => ['name' => 'Carla Botão']], $extra), $auth);
+
+        foreach (['http://rifa.exemplo.com/pedido/1', 'https://localhost/pedido', 'https://10.0.0.8/pedido', 'javascript:alert(1)'] as $bad) {
+            [$st] = $sale(['back_url' => $bad]);
+            $this->assertEquals(422, $st, 'Link de volta recusado: ' . $bad);
+        }
+
+        $back = 'https://rifa.exemplo.com/pedido/abc?t=1';
+        [$ok, $data] = $sale(['voltar_url' => $back]);
+        $this->assertEquals(200, $ok);
+        $this->assertEquals($data['card_url'], $data['button_url'], 'O botão leva para a mesma LP do card.');
+        $this->assertEquals($back, $data['back_url']);
+        $this->assertStringContains(htmlspecialchars($data['card_url'], ENT_QUOTES), $data['button_html']);
+        $this->assertStringContains('Carla, você ganhou uma oferta especial', $data['button_html']);
+        $this->assertTrue(isset($data['iframe_snippet']), 'A integração antiga por iframe continua disponível.');
+
+        [, $w] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($data['token']));
+        $this->assertEquals($back, $w['back_url'], 'A LP recebe o link de volta pelo token do card.');
+
+        [, $semVolta] = $sale([]);
+        [, $w2] = $this->http('GET', '/api/v1/winner.php?token=' . urlencode($semVolta['token']));
+        $this->assertEquals(null, $w2['back_url']);
+    }
+
     public function testWinnerLookupByPhoneRequiresAuth(): void
     {
         [$status] = $this->http('GET', '/api/v1/winner.php?phone=11999999999');

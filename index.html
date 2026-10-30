@@ -871,6 +871,7 @@
     threshold: 0.22,
     checkoutMode: 'pix_native',
     legacyUrl: '',
+    backUrl: '', // página do pedido na rifa (vem da venda): a LP leva o comprador de volta para lá
     vturbPlayer: '',
     vturbAccount: '',
     vturbScriptUrl: '',
@@ -1196,6 +1197,10 @@
             CONFIG.buyerName = d.customer_name;
             renderSaudacao();
           }
+          if (typeof d.back_url === 'string' && /^https?:\/\//i.test(d.back_url)) {
+            CONFIG.backUrl = d.back_url;
+            atualizarVoltarRifa();
+          }
           if (d.reserva && d.reserva.pago) mostrarReserva(d.reserva);
         })
         .catch(function () {});
@@ -1424,6 +1429,35 @@
 
     ativarMecanica();
     if (revelado) iniciarMedia();
+    atualizarVoltarRifa();
+  }
+
+  // ══ LP DA OFERTA (fora da rifa) ══
+  // Integração por botão: a rifa leva o comprador para esta página (LP). Sem a rifa em volta, os botões
+  // "ver meus números" e "não quero" levam de volta pelo link da página do pedido informado na venda.
+  // Dentro da rifa (iframe de outro domínio, integração antiga) os avisos seguem por mensagem.
+  function dentroDaRifa() {
+    try { return window.top !== window.self && window.top.location.origin !== location.origin; } catch (e) { return true; }
+  }
+  function voltarParaRifa() {
+    if (!CONFIG.backUrl) return;
+    try { window.top.location.href = CONFIG.backUrl; } catch (e) { location.href = CONFIG.backUrl; }
+  }
+  function atualizarVoltarRifa() {
+    if (isEditorPreview || dentroDaRifa() || !CONFIG.backUrl) return;
+    var decline = $('decline-offer');
+    // Sem oferta alternativa (downsell), o "não quero" volta para a rifa.
+    if (decline && (decline.hidden || decline.dataset.voltar === '1')) {
+      decline.textContent = 'Não quero esta oferta. Voltar para a rifa';
+      decline.href = CONFIG.backUrl;
+      decline.target = '_top';
+      decline.rel = 'noopener';
+      decline.dataset.voltar = '1';
+      decline.onclick = null;
+      decline.hidden = false;
+    }
+    var ver = $('reserva-ver');
+    if (ver) { ver.textContent = 'VER MEUS NÚMEROS NA RIFA'; ver.hidden = false; }
   }
 
   // Métricas da campanha: visita e raspada/giro (uma vez por sessão, nunca na prévia do painel)
@@ -1818,14 +1852,16 @@
     $('reserva-nota').textContent = numeros.length
       ? (numeros.length === 1 ? 'Este é o seu novo número.' : 'Estes são os seus novos números.')
       : 'Os números aparecem na sua área de títulos da rifa.';
-    // Sem página da rifa em volta (link aberto direto), não há para onde levar.
-    $('reserva-ver').hidden = window.parent === window;
+    // Dentro da rifa: avisa a página da rifa. Na LP: volta pelo link da página do pedido (se a venda informou).
+    $('reserva-ver').hidden = !(dentroDaRifa() || CONFIG.backUrl);
+    if (!dentroDaRifa() && CONFIG.backUrl) $('reserva-ver').textContent = 'VER MEUS NÚMEROS NA RIFA';
     $('view-reserva').classList.add('on');
     try { window.scrollTo(0, 0); } catch (e) {}
   }
   window.upscaleMostrarReserva = mostrarReserva;
   $('reserva-ver').addEventListener('click', function () {
-    avisarRifa('ver_numeros', { transacao: currentTxId });
+    if (dentroDaRifa()) avisarRifa('ver_numeros', { transacao: currentTxId });
+    else voltarParaRifa();
   });
 
   $('pix-paid-close').addEventListener('click', function () {

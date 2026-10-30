@@ -115,6 +115,12 @@ if ($callbackUrl !== '') {
     }
 }
 
+// Link de volta (opcional): página do pedido na rifa. A LP da oferta mostra "voltar para a rifa" com ele.
+$backUrl = trim((string)($input['back_url'] ?? $input['voltar_url'] ?? $input['order_url'] ?? $input['pedido_url'] ?? ''));
+if ($backUrl !== '' && !\App\Support\RafflePostback::isAllowedCallback($backUrl, ($config['app_env'] ?? 'production') === 'local')) {
+    JsonResponse::error('back_url inválido: use o endereço https público da página do pedido na rifa.', 422);
+}
+
 $customerRaw = $input['customer'] ?? $input['buyer'] ?? $input['cliente'] ?? [];
 if (!is_array($customerRaw)) $customerRaw = [];
 
@@ -242,6 +248,13 @@ if ($campaignRef !== '') {
         // banco ainda sem a migração 0031
     }
 }
+if ($backUrl !== '') {
+    try {
+        $pdo->prepare("UPDATE order_access_tokens SET back_url = ? WHERE token = ?")->execute([$backUrl, $cardAccessToken]);
+    } catch (\PDOException $e) {
+        JsonResponse::error('Faça o deploy para liberar o link de volta (migração 0035).', 503);
+    }
+}
 if ($callbackUrl !== '') {
     try {
         $pdo->prepare("UPDATE order_access_tokens SET callback_url = ?, callback_key = ? WHERE token = ?")->execute([$callbackUrl, $callbackKey, $cardAccessToken]);
@@ -270,6 +283,10 @@ $iframeSnippet = '<iframe id="upscale-frame" src="' . $cardUrl . '" style="width
 '});' . "\n" .
 '</script>';
 
+// Botão para a página de compra aprovada (abre a LP da oferta na mesma aba).
+$buttonHtml = '<a href="' . htmlspecialchars($cardUrl, ENT_QUOTES, 'UTF-8') . '" style="display:block;max-width:420px;margin:16px auto;padding:16px 20px;border-radius:12px;background:#16a34a;color:#fff;font:700 17px/1.2 system-ui,-apple-system,sans-serif;text-align:center;text-decoration:none">'
+    . htmlspecialchars($firstName !== '' ? $firstName . ', você ganhou uma oferta especial →' : 'Você ganhou uma oferta especial →', ENT_QUOTES, 'UTF-8') . '</a>';
+
 // Log de Auditoria (fora do webroot; sem o token completo do card nem o nome inteiro do comprador)
 @file_put_contents(
     \App\Support\LogPath::file('upscale-sales-webhooks.log'),
@@ -290,6 +307,11 @@ JsonResponse::send([
     'token'          => $cardAccessToken,
     'order_id'       => $extOrderId,
     'card_url'       => $cardUrl,
+    // Integração por botão (recomendada): a página de compra aprovada leva o comprador para a LP da oferta.
+    'button_url'     => $cardUrl,
+    'button_html'    => $buttonHtml,
+    'back_url'       => $backUrl !== '' ? $backUrl : null,
+    // Integração antiga por iframe (mantida para quem já usa).
     'iframe_url'     => $cardUrl,
     'iframe_snippet' => $iframeSnippet,
     'buyer'          => [

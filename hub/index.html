@@ -813,7 +813,7 @@
                 <strong>Sem domínio próprio ativo.</strong> Os links e o código estão saindo no endereço do sistema, não no domínio do cliente.
                 <button type="button" class="btn-secondary" onclick="navigate('sites')">Conectar domínio do cliente</button>
               </div>
-              <p class="card-subtitle-clean">Domínio, link público e código para embutir na rifa.</p>
+              <p class="card-subtitle-clean">Domínio, link público e botão para a página de compra aprovada da rifa.</p>
               <label class="form-label" for="camp-domain-select">Domínio próprio</label>
               <div class="camp-inline-row">
                 <select id="camp-domain-select" class="form-select"></select>
@@ -824,7 +824,8 @@
                 <input type="text" id="camp-public-link" class="form-input camp-code-field" readonly onclick="this.select()">
                 <button type="button" class="btn-secondary" onclick="copiarValor(document.getElementById('camp-public-link').value)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar</button>
               </div>
-              <label class="form-label" for="camp-iframe-snippet">Código de iframe para embutir na rifa</label>
+              <label class="form-label" for="camp-iframe-snippet">Botão para a página de compra aprovada</label>
+              <p class="card-subtitle-clean" style="margin:-4px 0 8px;font-size:12px;">Leva o comprador para a LP da oferta. Com o webhook de vendas, use o <code>button_url</code> que volta em cada venda: ele já vem com o token do pedido, o nome do comprador e o retorno das cotas.</p>
               <div class="camp-inline-row camp-inline-top">
                 <textarea id="camp-iframe-snippet" class="form-input camp-code-field" rows="5" readonly onclick="this.select()"></textarea>
                 <button type="button" class="btn-secondary" onclick="copiarIframeOferta()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código</button>
@@ -4255,13 +4256,12 @@
     if (link) link.value = url;
     var snippetEl = document.getElementById('camp-iframe-snippet');
     if (snippetEl) {
-      // O iframe acompanha a altura da oferta (a página manda a altura por mensagem), sem barra de rolagem.
-      var idFrame = 'upscale-oferta-' + camp.id;
-      // Também lê o nome do comprador na página de finalização da rifa (endereço, atributos ou campo do formulário)
-      // e entrega à oferta, que mostra "Parabéns, Maria!". Nada sai da página além do primeiro nome.
-      snippetEl.value = '<iframe id="' + idFrame + '" src="' + url + '" width="100%" height="720" style="border:0;width:100%;display:block;overflow:hidden" scrolling="no" allow="clipboard-write" loading="lazy"></iframe>\n' +
-        '<script>(function(){var f=document.getElementById("' + idFrame + '");if(!f)return;' +
-        'window.addEventListener("message",function(e){if(e.source===f.contentWindow&&e.data&&e.data.tipo==="dx:altura"){f.style.height=e.data.altura+"px";}});' +
+      // Botão que leva o comprador para a LP da oferta (mesma aba). Lê o primeiro nome do comprador na
+      // página de finalização da rifa (endereço, atributos ou campo do formulário) e passa na URL (?nome=),
+      // para a LP mostrar "Parabéns, Maria!". Nada sai da página além do primeiro nome.
+      var idBotao = 'upscale-oferta-' + camp.id;
+      snippetEl.value = '<a id="' + idBotao + '" href="' + url + '" style="display:block;max-width:420px;margin:16px auto;padding:16px 20px;border-radius:12px;background:#16a34a;color:#fff;font:700 17px/1.2 system-ui,-apple-system,sans-serif;text-align:center;text-decoration:none">Você ganhou uma oferta especial →</a>\n' +
+        '<script>(function(){var a=document.getElementById("' + idBotao + '");if(!a)return;' +
         'function nome(){var q=new URLSearchParams(location.search),k=["nome","name","cliente","comprador","customer_name","first_name"],i,v;' +
         'for(i=0;i<k.length;i++){v=q.get(k[i]);if(v&&v.trim())return v;}' +
         'var el=document.querySelector("[data-upscale-nome],[data-nome],[data-customer-name],[data-buyer-name]");' +
@@ -4269,8 +4269,7 @@
         'var c=document.querySelectorAll("input[autocomplete=name],input[name*=nome i],input[id*=nome i],input[name=name],input[id=name],input[name*=fullname i]");' +
         'for(i=0;i<c.length;i++){v=c[i].value;if(v&&v.trim()&&!/@|\\d{3}/.test(v))return v;}return "";}' +
         'function primeiro(v){v=String(v||"").trim().split(/\\s+/)[0]||"";return v.slice(0,30);}' +
-        'var n=primeiro(nome());if(n){try{var u=new URL(f.src,location.href);if(!u.searchParams.get("nome")){u.searchParams.set("nome",n);f.src=u.toString();}}catch(x){}}' +
-        'var t=0,iv=setInterval(function(){var m=primeiro(nome());if(m&&f.contentWindow){f.contentWindow.postMessage({tipo:"upscale:nome",nome:m},"*");}if(++t>15)clearInterval(iv);},1000);' +
+        'a.addEventListener("click",function(){var n=primeiro(nome());if(!n)return;try{var u=new URL(a.href,location.href);if(!u.searchParams.get("nome")){u.searchParams.set("nome",n);a.href=u.toString();}}catch(x){}});' +
         '})();<\/script>';
     }
   }
