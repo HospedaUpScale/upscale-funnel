@@ -65,7 +65,7 @@ function domainDnsInstructions(string $domain, array $config): array
     ];
 }
 
-function checkDomainPointing(string $domain, array $config, string $verificationToken): array
+function checkDomainDns(string $domain, array $config, string $verificationToken): array
 {
     $domain = normalizeDomain($domain);
     if ($domain === '') {
@@ -160,28 +160,6 @@ function checkDomainPointing(string $domain, array $config, string $verification
         }
     }
 
-    // 4. Teste HTTP Direto (se o domínio responder redirect/ok)
-    try {
-        $ch = curl_init('http://' . $domain);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($code > 0 && $code < 500) {
-            return [
-                'is_pointed'   => true,
-                'method'       => 'http_response',
-                'current_ips'  => $domainIps,
-                'expected_ips' => $knownIps,
-                'message'      => 'Domínio respondendo ativamente na VPS com código HTTP ' . $code,
-            ];
-        }
-    } catch (\Throwable $e) {}
-
     $currentIpText = !empty($domainIps) ? implode(', ', $domainIps) : 'Nenhum IP encontrado';
     return [
         'is_pointed'   => false,
@@ -189,6 +167,54 @@ function checkDomainPointing(string $domain, array $config, string $verification
         'expected_ips' => $knownIps,
         'message'      => "DNS ainda não propagou. IP atual: {$currentIpText}. Esperado: 179.198.96.35",
     ];
+}
+
+/**
+ * Domínio pronto para os cards: o DNS aponta para o upScale E o endereço abre o upScale.
+ * Um domínio que responde por outro site (a própria rifa, por exemplo) não conta, mesmo respondendo:
+ * os cards sairiam nele e dariam 404.
+ */
+function checkDomainPointing(string $domain, array $config, string $verificationToken): array
+{
+    $dns = checkDomainDns($domain, $config, $verificationToken);
+    $domain = normalizeDomain($domain);
+    if ($domain === '') return $dns;
+
+    $probe = \App\Support\DomainProbe::probe($domain);
+    if ($probe['result'] === \App\Support\DomainProbe::UPSCALE) {
+        return array_merge($dns, [
+            'is_pointed' => true,
+            'method'     => 'upscale_probe',
+            'message'    => 'Domínio conectado: ' . $domain . ' abre o upScale.',
+        ]);
+    }
+    if ($probe['result'] === \App\Support\DomainProbe::OTHER) {
+        $expected = $dns['expected_ips'][0] ?? '179.198.96.35';
+        $ips = !empty($dns['current_ips']) ? implode(', ', $dns['current_ips']) : 'sem IP';
+        $message = !empty($dns['is_pointed'])
+            ? "O DNS de {$domain} já aponta para o servidor, mas o endereço ainda abre outro site (HTTP {$probe['code']}). Adicione {$domain} ao app do upScale no Easypanel e verifique de novo."
+            : "{$domain} abre outro site (IP {$ips}), não o upScale: os cards dariam 404 nesse endereço. Use um endereço só para o upScale, por exemplo " . suggestedOfferSubdomain($domain) . ", apontado para {$expected}.";
+        return array_merge($dns, [
+            'is_pointed' => false,
+            'method'     => 'other_site',
+            'message'    => $message,
+        ]);
+    }
+    // Sem resposta conclusiva (certificado ainda não emitido, por exemplo): vale o DNS.
+    return $dns;
+}
+
+/** Sugestão de subdomínio para o upScale: rifa.cliente.com → oferta.cliente.com; cliente.com.br → oferta.cliente.com.br. */
+function suggestedOfferSubdomain(string $domain): string
+{
+    $parts = explode('.', $domain);
+    if (count($parts) >= 3) {
+        $rest = implode('.', array_slice($parts, 1));
+        if (!preg_match('/^(com|net|org|gov|edu|co|art|blog|app)\.[a-z]{2}$/', $rest)) {
+            return 'oferta.' . $rest;
+        }
+    }
+    return 'oferta.' . $domain;
 }
 
 function domainIsPointed(string $domain, array $config, string $verificationToken): bool
