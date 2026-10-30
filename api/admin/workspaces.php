@@ -129,6 +129,13 @@ if ($request->method() === 'POST') {
     }
 
     $input = $request->all();
+    // Parceiro só cria clientes dentro da própria árvore: parceiros novos, "Sorteamos" e escolha de
+    // outro pai são exclusivos do master (antes um parceiro criava contas sob outro parceiro e recebia os tokens).
+    if ($auth && $auth['role'] === 'partner_admin') {
+        $input['account_type'] = 'merchant';
+        $input['partner_option'] = 'existing';
+        unset($input['type'], $input['partner_id'], $input['parent_id'], $input['new_partner_name'], $input['new_partner_slug']);
+    }
     $name = trim($input['name'] ?? '');
     $accountType = trim($input['account_type'] ?? $input['type'] ?? 'merchant');
 

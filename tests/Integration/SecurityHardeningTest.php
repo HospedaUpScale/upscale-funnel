@@ -176,17 +176,23 @@ class SecurityHardeningTest extends TestCase
         self::$pdo->prepare("INSERT INTO upsell_offers (workspace_id, title, price, quota_count, slug, is_active, is_published, published_config) VALUES (?, 'Oferta teste Pix', 9, 5, ?, 1, 1, ?)")
             ->execute([$wsId, 'pix-teste-' . bin2hex(random_bytes(4)), json_encode(['title' => 'Oferta teste Pix', 'price' => 9, 'quota_count' => 5])]);
         $offerId = (int)self::$pdo->lastInsertId();
+        // Cada Pix sai de um card (venda da rifa com token), como no fluxo real.
         $novoPix = function () use ($offerId) {
-            [$status, $data] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'name' => 'Comprador Teste'], ['Host: sec-a']);
+            [, $sale] = $this->http('POST', '/api/v1/webhook.php', ['order_id' => 'pt_' . bin2hex(random_bytes(4)), 'amount' => 20, 'status' => 'paid', 'customer' => ['name' => 'Comprador Teste']],
+                ['Authorization: Bearer ' . self::$ws['sec-a']['api_token']]);
+            [$status, $data] = $this->http('POST', '/api/pix-upsell.php', ['offer_id' => $offerId, 'token' => $sale['token']], ['Host: sec-a']);
             $this->assertEquals(201, $status);
+            $data['card'] = $sale['token'];
             return $data;
         };
+        $simular = fn(array $pix, string $host = 'sec-a', array $extra = [], array $headers = []) =>
+            $this->http('POST', '/api/pix-test-pay.php', array_merge(['transaction_id' => $pix['transaction_id'], 'token' => $pix['card']], $extra), array_merge(['Host: ' . $host], $headers));
 
         try {
             // Desligado (padrão): nada de simular.
             $pix = $novoPix();
             $this->assertFalse($pix['test_mode']);
-            [$off] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$off] = $simular($pix);
             $this->assertEquals(403, $off);
             $this->assertEquals('pending', $this->txStatus($pix['transaction_id']));
 
@@ -204,9 +210,20 @@ class SecurityHardeningTest extends TestCase
             // Ligado: a janela do Pix recebe test_mode e o botão confirma pelo caminho real.
             $pix = $novoPix();
             $this->assertTrue($pix['test_mode']);
-            [$other] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-b']);
+            [$other] = $simular($pix, 'sec-b');
             $this->assertEquals(404, $other);
-            [$paid, $paidData] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            // Sem o token do card dono (ou com o card de outra pessoa), ninguém liquida o Pix pelo ID.
+            [$noCard] = $simular($pix, 'sec-a', ['token' => '']);
+            $this->assertEquals(403, $noCard, 'Sem token do card, não simula.');
+            $outro = $novoPix();
+            [$wrongCard] = $simular($pix, 'sec-a', ['token' => $outro['card']]);
+            $this->assertEquals(403, $wrongCard, 'Card de outro pedido não simula este Pix.');
+            [$foreignAdmin] = $simular($outro, 'sec-a', ['token' => ''], $adminB);
+            $this->assertEquals(403, $foreignAdmin, 'Admin de outro workspace não simula.');
+            [$byAdmin] = $simular($outro, 'sec-a', ['token' => ''], $adminA);
+            $this->assertEquals(200, $byAdmin, 'Admin do workspace simula pelo painel.');
+            $this->assertEquals('pending', $this->txStatus($pix['transaction_id']));
+            [$paid, $paidData] = $simular($pix);
             $this->assertEquals(200, $paid);
             $this->assertTrue($paidData['paid']);
             $this->assertEquals(5, $paidData['quotas_awarded']);
@@ -222,7 +239,7 @@ class SecurityHardeningTest extends TestCase
             $pagos = (int)$ev->fetchColumn();
             $ev->closeCursor();
             $this->assertEquals(1, $pagos);
-            [$again, $againData] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$again, $againData] = $simular($pix);
             $this->assertEquals(200, $again);
             $this->assertStringContains('já estava pago', $againData['message']);
 
@@ -235,13 +252,13 @@ class SecurityHardeningTest extends TestCase
             // Desliga sozinho depois do prazo e desliga na hora pelo painel.
             $pix = $novoPix();
             self::$pdo->prepare('UPDATE workspaces SET pix_test_until = ? WHERE id = ?')->execute([date('Y-m-d H:i:s', time() - 60), $wsId]);
-            [$expired] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$expired] = $simular($pix);
             $this->assertEquals(403, $expired);
             $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => true, 'workspace_id' => $wsId], $adminA);
             [$offStatus, $offData] = $this->http('POST', $hook, ['action' => 'pix_test', 'enabled' => false, 'workspace_id' => $wsId], $adminA);
             $this->assertEquals(200, $offStatus);
             $this->assertEquals(null, $offData['pix_test_until']);
-            [$afterOff] = $this->http('POST', '/api/pix-test-pay.php', ['transaction_id' => $pix['transaction_id']], ['Host: sec-a']);
+            [$afterOff] = $simular($pix);
             $this->assertEquals(403, $afterOff);
         } finally {
             self::$pdo->prepare('UPDATE workspaces SET pix_test_until = NULL WHERE id = ?')->execute([$wsId]);
@@ -685,6 +702,36 @@ class SecurityHardeningTest extends TestCase
         $this->assertStringContains('LIBERADO', (string)$w2['veredicto']);
         $this->assertEquals(1, (int)$cardRow()['upsell_converted']);
         $this->assertTrue(($w2['reserva']['pago'] ?? false) === true, 'O card reabre na reserva.');
+    }
+
+    public function testPartnerOnlyCreatesClientsInsideItsOwnTree(): void
+    {
+        $mk = function (string $slug, string $type): array {
+            $admin = 'adm_' . $slug . '_' . bin2hex(random_bytes(6));
+            self::$pdo->prepare("INSERT INTO workspaces (type, name, slug, api_token_hash, admin_token_hash, status) VALUES (?, ?, ?, ?, ?, 'active')")
+                ->execute([$type, $slug, $slug, hash('sha256', 'api_' . $admin), hash('sha256', $admin)]);
+            return ['id' => (int)self::$pdo->lastInsertId(), 'admin' => $admin, 'slug' => $slug];
+        };
+        $p1 = $mk('parceiro-um-' . bin2hex(random_bytes(3)), 'partner_whitelabel');
+        $p2 = $mk('parceiro-dois-' . bin2hex(random_bytes(3)), 'partner_whitelabel');
+        $auth = ['Authorization: Bearer ' . $p1['admin']];
+
+        $tentativas = [
+            ['name' => 'Cliente sob outro', 'partner_option' => 'new', 'new_partner_name' => 'Dois', 'new_partner_slug' => $p2['slug']],
+            ['name' => 'Parceiro novo', 'partner_option' => 'new', 'new_partner_name' => 'Parceiro Fantasma ' . bin2hex(random_bytes(3))],
+            ['name' => 'Via sorteamos', 'partner_option' => 'sorteamos'],
+            ['name' => 'Topo', 'account_type' => 'partner_whitelabel'],
+            ['name' => 'Pai escolhido', 'parent_id' => $p2['id'], 'partner_id' => $p2['id']],
+        ];
+        foreach ($tentativas as $body) {
+            [$st, $data] = $this->http('POST', '/api/admin/workspaces.php', $body, $auth);
+            $this->assertEquals(201, $st, 'Criação de cliente pelo parceiro continua funcionando: ' . $body['name']);
+            $this->assertEquals('merchant', $data['workspace']['type'], 'Parceiro não cria parceiro: ' . $body['name']);
+            $this->assertEquals($p1['id'], (int)$data['workspace']['parent_id'], 'Cliente fica sob o próprio parceiro: ' . $body['name']);
+            $this->assertTrue(empty($data['partner']['admin_token']) && empty($data['partner']['api_token']), 'Nenhum token de outro parceiro é devolvido.');
+        }
+        $this->assertEquals(0, (int)self::$pdo->query("SELECT COUNT(*) FROM workspaces WHERE name LIKE 'Parceiro Fantasma%'")->fetchColumn());
+        $this->assertEquals(0, (int)self::$pdo->query('SELECT COUNT(*) FROM workspaces WHERE parent_id = ' . $p2['id'])->fetchColumn(), 'Nada foi criado na árvore do outro parceiro.');
     }
 
     public function testWinnerLookupByPhoneRequiresAuth(): void
